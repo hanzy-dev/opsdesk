@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: OpsDesk serverless infrastructure foundation for AWS SAM.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: opsdesk
+    AllowedPattern: "^[a-z0-9-]+$"
+    Description: Project name prefix used in resource naming.
+
+  StageName:
+    Type: String
+    Default: dev
+    AllowedPattern: "^[a-z0-9-]+$"
+    Description: Deployment stage name.
+
+  AppEnv:
+    Type: String
+    Default: development
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Backend application environment.
+
+  ApiBasePath:
+    Type: String
+    Default: /v1
+    Description: Base path expected by the backend router.
+
+  FrontendOrigin:
+    Type: String
+    Default: http://localhost:5173
+    Description: Allowed CORS origin for local frontend development.
+
+  LogLevel:
+    Type: String
+    Default: info
+    AllowedValues:
+      - debug
+      - info
+      - warn
+      - error
+    Description: Backend log level.
+
+Globals:
+  Function:
+    Runtime: provided.al2023
+    Architectures:
+      - arm64
+    Timeout: 10
+    MemorySize: 128
+    Tracing: PassThrough
+    Environment:
+      Variables:
+        APP_ENV: !Ref AppEnv
+        API_BASE_PATH: !Ref ApiBasePath
+        LOG_LEVEL: !Ref LogLevel
+    Tags:
+      Project: !Ref ProjectName
+      Stage: !Ref StageName
+
+Resources:
+  OpsDeskHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref StageName
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref FrontendOrigin
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - OPTIONS
+        MaxAge: 300
+      AccessLogSettings:
+        DestinationArn: !GetAtt HttpApiAccessLogGroup.Arn
+        Format: >-
+          {"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","protocol":"$context.protocol","responseLength":"$context.responseLength"}
+      DefaultRouteSettings:
+        DetailedMetricsEnabled: false
+
+  BackendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-${StageName}-backend"
+      CodeUri: .
+      Handler: bootstrap
+      Description: OpsDesk Go backend Lambda entrypoint.
+      Events:
+        ProxyApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref OpsDeskHttpApi
+            Path: /{proxy+}
+            Method: ANY
+        RootApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref OpsDeskHttpApi
+            Path: /
+            Method: ANY
+      Environment:
+        Variables:
+          PORT: "8080"
+
+    Metadata:
+      BuildMethod: makefile
+
+  BackendFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${BackendFunction}"
+      RetentionInDays: 7
+
+  HttpApiAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/apigateway/${ProjectName}-${StageName}-http-api"
+      RetentionInDays: 7
+
+Outputs:
+  HttpApiUrl:
+    Description: Base invoke URL for the HTTP API stage.
+    Value: !Sub "https://${OpsDeskHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+
+  BackendFunctionName:
+    Description: Lambda function name for the backend.
+    Value: !Ref BackendFunction
+
+  SuggestedHealthEndpoint:
+    Description: Example health endpoint once the Lambda handler is wired.
+    Value: !Sub "https://${OpsDeskHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/health"
