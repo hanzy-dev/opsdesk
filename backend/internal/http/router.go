@@ -1,0 +1,254 @@
+package httpapi
+
+import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"strings"
+
+	"opsdesk/backend/internal/config"
+	"opsdesk/backend/internal/domain"
+	"opsdesk/backend/internal/dto"
+	"opsdesk/backend/internal/service"
+	"opsdesk/backend/internal/validation"
+)
+
+type Router struct {
+	config      config.Config
+	validator   *validation.Validator
+	ticketSvc   service.TicketService
+	basePathMux *http.ServeMux
+}
+
+func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService) http.Handler {
+	r := &Router{
+		config:      cfg,
+		validator:   validator,
+		ticketSvc:   ticketSvc,
+		basePathMux: http.NewServeMux(),
+	}
+
+	r.registerRoutes()
+
+	rootMux := http.NewServeMux()
+	rootMux.Handle(cfg.APIBasePath+"/", http.StripPrefix(cfg.APIBasePath, r.basePathMux))
+	rootMux.Handle(cfg.APIBasePath, http.StripPrefix(cfg.APIBasePath, r.basePathMux))
+
+	return rootMux
+}
+
+func (r *Router) registerRoutes() {
+	r.basePathMux.HandleFunc("/health", r.handleHealth)
+	r.basePathMux.HandleFunc("/tickets", r.handleTickets)
+	r.basePathMux.HandleFunc("/tickets/", r.handleTicketByPath)
+}
+
+func (r *Router) handleHealth(w http.ResponseWriter, _ *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{
+		"status": "ok",
+		"env":    r.config.AppEnv,
+	})
+}
+
+func (r *Router) handleTickets(w http.ResponseWriter, req *http.Request) {
+	switch req.Method {
+	case http.MethodGet:
+		r.handleListTickets(w, req)
+	case http.MethodPost:
+		r.handleCreateTicket(w, req)
+	default:
+		writeMethodNotAllowed(w)
+	}
+}
+
+func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
+	path := strings.TrimPrefix(req.URL.Path, "/tickets/")
+	path = strings.Trim(path, "/")
+
+	if path == "" {
+		writeNotFound(w)
+		return
+	}
+
+	parts := strings.Split(path, "/")
+	ticketID := parts[0]
+
+	if len(parts) == 1 && req.Method == http.MethodGet {
+		r.handleGetTicket(w, req, ticketID)
+		return
+	}
+
+	if len(parts) == 2 && parts[1] == "status" && req.Method == http.MethodPatch {
+		r.handleUpdateTicketStatus(w, req, ticketID)
+		return
+	}
+
+	if len(parts) == 2 && parts[1] == "comments" && req.Method == http.MethodPost {
+		r.handleAddComment(w, req, ticketID)
+		return
+	}
+
+	writeMethodNotAllowed(w)
+}
+
+func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
+	var payload dto.CreateTicketRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateCreateTicketRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	ticket, err := r.ticketSvc.CreateTicket(req.Context(), service.CreateTicketInput{
+		Title:         strings.TrimSpace(payload.Title),
+		Description:   strings.TrimSpace(payload.Description),
+		Priority:      domain.TicketPriority(payload.Priority),
+		ReporterName:  strings.TrimSpace(payload.ReporterName),
+		ReporterEmail: strings.TrimSpace(payload.ReporterEmail),
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, toTicketResponse(ticket))
+}
+
+func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
+	tickets, err := r.ticketSvc.ListTickets(req.Context(), service.ListTicketsInput{
+		Status:   domain.TicketStatus(req.URL.Query().Get("status")),
+		Priority: domain.TicketPriority(req.URL.Query().Get("priority")),
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	response := make([]dto.TicketResponse, 0, len(tickets))
+	for _, ticket := range tickets {
+		response = append(response, toTicketResponse(ticket))
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
+func (r *Router) handleGetTicket(w http.ResponseWriter, req *http.Request, ticketID string) {
+	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toTicketResponse(ticket))
+}
+
+func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Request, ticketID string) {
+	var payload dto.UpdateTicketStatusRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateUpdateTicketStatusRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	ticket, err := r.ticketSvc.UpdateTicketStatus(req.Context(), ticketID, service.UpdateTicketStatusInput{
+		Status: domain.TicketStatus(payload.Status),
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toTicketResponse(ticket))
+}
+
+func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, ticketID string) {
+	var payload dto.AddCommentRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateAddCommentRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	comment, err := r.ticketSvc.AddComment(req.Context(), ticketID, service.AddCommentInput{
+		Message:    strings.TrimSpace(payload.Message),
+		AuthorName: strings.TrimSpace(payload.AuthorName),
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, toCommentResponse(comment))
+}
+
+func decodeJSON(req *http.Request, target any) error {
+	decoder := json.NewDecoder(req.Body)
+	decoder.DisallowUnknownFields()
+
+	return decoder.Decode(target)
+}
+
+func writeJSON(w http.ResponseWriter, statusCode int, payload any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func writeBadRequest(w http.ResponseWriter, code, message string, details []dto.FieldError) {
+	writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
+		Error: dto.ErrorBody{
+			Code:    code,
+			Message: message,
+			Details: details,
+		},
+	})
+}
+
+func writeNotFound(w http.ResponseWriter) {
+	writeJSON(w, http.StatusNotFound, dto.ErrorResponse{
+		Error: dto.ErrorBody{
+			Code:    "not_found",
+			Message: "resource not found",
+		},
+	})
+}
+
+func writeMethodNotAllowed(w http.ResponseWriter) {
+	writeJSON(w, http.StatusMethodNotAllowed, dto.ErrorResponse{
+		Error: dto.ErrorBody{
+			Code:    "method_not_allowed",
+			Message: "method not allowed",
+		},
+	})
+}
+
+func writeServiceError(w http.ResponseWriter, err error) {
+	switch {
+	case errors.Is(err, service.ErrNotImplemented):
+		writeJSON(w, http.StatusNotImplemented, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "not_implemented",
+				Message: "feature is not implemented yet",
+			},
+		})
+	default:
+		writeJSON(w, http.StatusInternalServerError, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "internal_error",
+				Message: "internal server error",
+			},
+		})
+	}
+}
