@@ -44,6 +44,15 @@ type CommentResponse struct {
 	UpdatedAt  string `json:"updatedAt"`
 }
 
+type HealthResponse struct {
+	Status string `json:"status"`
+	Env    string `json:"env"`
+}
+
+type SuccessResponse[T any] struct {
+	Data T `json:"data"`
+}
+
 type ErrorResponse struct {
 	Error ErrorBody `json:"error"`
 }

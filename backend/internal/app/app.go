@@ -5,6 +5,7 @@ import (
 
 	"opsdesk/backend/internal/config"
 	httpapi "opsdesk/backend/internal/http"
+	"opsdesk/backend/internal/repository/memory"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/validation"
 )
@@ -15,7 +16,8 @@ type App struct {
 
 func New(cfg config.Config) (*App, error) {
 	validator := validation.New()
-	ticketService := service.NewStubTicketService()
+	ticketRepository := memory.NewTicketRepository()
+	ticketService := service.NewTicketService(ticketRepository)
 
 	router := httpapi.NewRouter(cfg, validator, ticketService)
 

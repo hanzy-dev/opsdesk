@@ -44,9 +44,11 @@ func (r *Router) registerRoutes() {
 }
 
 func (r *Router) handleHealth(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{
-		"status": "ok",
-		"env":    r.config.AppEnv,
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.HealthResponse]{
+		Data: dto.HealthResponse{
+			Status: "ok",
+			Env:    r.config.AppEnv,
+		},
 	})
 }
 
@@ -115,7 +117,9 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toTicketResponse(ticket))
+	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.TicketResponse]{
+		Data: toTicketResponse(ticket),
+	})
 }
 
 func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
@@ -133,7 +137,9 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 		response = append(response, toTicketResponse(ticket))
 	}
 
-	writeJSON(w, http.StatusOK, response)
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[[]dto.TicketResponse]{
+		Data: response,
+	})
 }
 
 func (r *Router) handleGetTicket(w http.ResponseWriter, req *http.Request, ticketID string) {
@@ -143,7 +149,9 @@ func (r *Router) handleGetTicket(w http.ResponseWriter, req *http.Request, ticke
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toTicketResponse(ticket))
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
+		Data: toTicketResponse(ticket),
+	})
 }
 
 func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Request, ticketID string) {
@@ -166,7 +174,9 @@ func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toTicketResponse(ticket))
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
+		Data: toTicketResponse(ticket),
+	})
 }
 
 func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, ticketID string) {
@@ -190,7 +200,9 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toCommentResponse(comment))
+	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.CommentResponse]{
+		Data: toCommentResponse(comment),
+	})
 }
 
 func decodeJSON(req *http.Request, target any) error {
@@ -236,6 +248,13 @@ func writeMethodNotAllowed(w http.ResponseWriter) {
 
 func writeServiceError(w http.ResponseWriter, err error) {
 	switch {
+	case errors.Is(err, service.ErrTicketNotFound):
+		writeJSON(w, http.StatusNotFound, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "ticket_not_found",
+				Message: "ticket not found",
+			},
+		})
 	case errors.Is(err, service.ErrNotImplemented):
 		writeJSON(w, http.StatusNotImplemented, dto.ErrorResponse{
 			Error: dto.ErrorBody{
