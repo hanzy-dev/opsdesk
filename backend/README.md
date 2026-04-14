@@ -5,7 +5,7 @@ This package contains the Go foundation for the OpsDesk serverless backend.
 Current scope:
 
 - local HTTP bootstrap for development
-- Lambda-oriented bootstrap placeholder
+- Lambda bootstrap wired through the existing Go HTTP router
 - shared config loading
 - domain models and API DTOs
 - request validation helpers

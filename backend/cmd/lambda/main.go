@@ -3,18 +3,29 @@ package main
 import (
 	"log"
 
+	"github.com/aws/aws-lambda-go/lambda"
+
 	"opsdesk/backend/internal/app"
 	"opsdesk/backend/internal/config"
+	"opsdesk/backend/internal/lambdahttp"
 )
 
 func main() {
-	cfg := config.Load()
-
-	_, err := app.New(cfg)
+	handler, err := buildHandler()
 	if err != nil {
-		log.Fatalf("build application: %v", err)
+		log.Fatalf("build lambda handler: %v", err)
 	}
 
-	log.Println("opsdesk backend lambda placeholder initialized")
-	log.Println("lambda event adapter wiring will be added in a later batch")
+	lambda.Start(handler.Proxy)
+}
+
+func buildHandler() (*lambdahttp.Adapter, error) {
+	cfg := config.Load()
+
+	application, err := app.New(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return lambdahttp.New(application.Router()), nil
 }
