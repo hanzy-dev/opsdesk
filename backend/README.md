@@ -10,6 +10,6 @@ Current scope:
 - domain models and API DTOs
 - request validation helpers
 - thin HTTP handlers with service and repository layers
-- in-memory ticket creation, listing, detail lookup, status updates, and comments
+- DynamoDB-backed ticket creation, listing, detail lookup, status updates, and comments
 
-Real persistence, AWS integration, and business workflow implementation will be added in later batches.
+This batch switches backend persistence from in-memory storage to DynamoDB while keeping the current HTTP API contract stable.

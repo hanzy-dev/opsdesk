@@ -8,6 +8,7 @@ Current infrastructure scope is intentionally small:
 
 - one Go-based AWS Lambda function
 - one API Gateway HTTP API
+- one DynamoDB table for ticket persistence
 - CloudWatch-friendly log retention defaults
 - basic environment variable wiring for the backend
 
@@ -21,9 +22,8 @@ Current infrastructure scope is intentionally small:
 
 ## Deployment Boundary
 
-This batch prepares the deployment foundation only. It does not yet include:
+This batch includes the minimum persistence infrastructure needed for the current backend workflow. It still does not include:
 
-- DynamoDB resources
 - Cognito or any authentication layer
 - S3, file storage, or attachments
 - custom domains
@@ -43,6 +43,14 @@ Key deploy-time parameters:
 - `ApiBasePath`
 - `FrontendOrigin`
 - `LogLevel`
+
+Backend runtime environment variables wired by SAM:
+
+- `APP_ENV`
+- `API_BASE_PATH`
+- `LOG_LEVEL`
+- `PORT`
+- `TICKET_TABLE_NAME`
 
 ## Example Commands
 
@@ -68,7 +76,5 @@ sam deploy --guided --template-file infra/template.yaml
 
 Later batches should add:
 
-- DynamoDB table resources and IAM permissions
-- backend environment variables for persistence
 - deployment environments beyond the dev baseline
 - CI/CD workflow integration
