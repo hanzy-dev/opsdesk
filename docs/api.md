@@ -1,0 +1,72 @@
+# API Documentation
+
+## Overview
+
+OpsDesk exposes a small HTTP API for a serverless helpdesk workflow. The current implementation supports:
+
+- health checks
+- ticket creation
+- ticket listing
+- ticket detail lookup
+- ticket status updates
+- ticket comments
+
+The authoritative machine-readable contract is in [openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml).
+
+## How To Read The OpenAPI File
+
+The OpenAPI file is written in OpenAPI 3.0.3 YAML format.
+
+Key sections:
+
+- `paths`: available endpoints and methods
+- `components/schemas`: request and response models
+- `servers`: example local and deployed base URLs
+- `components/parameters`: reusable path parameters such as ticket ID
+
+The spec follows the current backend implementation instead of proposing a redesigned API.
+
+## Example Base URLs
+
+Local example:
+
+```text
+http://localhost:8080/v1
+```
+
+Deployed API Gateway placeholder:
+
+```text
+https://your-api-id.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+```
+
+## Quick Lecturer Review Guide
+
+Fast inspection path:
+
+1. Open [openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml).
+2. Review the `paths` section for the six supported endpoints.
+3. Check `TicketStatus` to see the allowed status values:
+   `open`, `in_progress`, `resolved`
+4. Check `ErrorResponse` to understand the JSON error shape used by the backend.
+
+## Quick Testing Suggestions
+
+Recommended quick checks:
+
+1. `GET /health`
+   This confirms the backend is reachable.
+2. `POST /tickets`
+   Create one ticket with a small JSON payload.
+3. `GET /tickets`
+   Confirm the created ticket appears in the list.
+4. `PATCH /tickets/{id}/status`
+   Change the status to `in_progress` or `resolved`.
+5. `POST /tickets/{id}/comments`
+   Add one comment and verify the detail response includes it.
+
+## Notes
+
+- Timestamps are documented as UTC RFC3339 / ISO 8601 strings.
+- There is currently no authentication layer.
+- The documentation is intentionally small and lecturer-friendly for the current project scope.

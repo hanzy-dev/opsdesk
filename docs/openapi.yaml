@@ -1,0 +1,488 @@
+openapi: 3.0.3
+info:
+  title: OpsDesk API
+  version: 0.1.0
+  description: |
+    OpenAPI specification for the current OpsDesk backend implementation.
+
+    The API provides a simple serverless helpdesk workflow for:
+    - health checks
+    - ticket creation
+    - ticket listing
+    - ticket detail lookup
+    - ticket status updates
+    - ticket comments
+
+    All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Local development
+  - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}/v1
+    description: Example deployed API Gateway URL
+    variables:
+      apiId:
+        default: your-api-id
+      region:
+        default: ap-southeast-1
+      stage:
+        default: dev
+
+tags:
+  - name: System
+  - name: Tickets
+
+paths:
+  /health:
+    get:
+      tags:
+        - System
+      summary: Check backend health
+      operationId: getHealth
+      responses:
+        "200":
+          description: Backend is reachable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthSuccessResponse"
+              example:
+                data:
+                  status: ok
+                  env: development
+
+  /tickets:
+    get:
+      tags:
+        - Tickets
+      summary: List tickets
+      operationId: listTickets
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema:
+            $ref: "#/components/schemas/TicketStatus"
+          description: Optional status filter.
+        - in: query
+          name: priority
+          required: false
+          schema:
+            $ref: "#/components/schemas/TicketPriority"
+          description: Optional priority filter.
+      responses:
+        "200":
+          description: Ticket list returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketListSuccessResponse"
+              example:
+                data:
+                  - id: TCK-0002
+                    title: API Gateway timeout
+                    description: Investigate repeated timeout errors
+                    status: in_progress
+                    priority: high
+                    reporterName: Cloud Lab
+                    reporterEmail: lab@example.com
+                    comments:
+                      - id: CMT-0001
+                        ticketId: TCK-0002
+                        message: Initial triage started
+                        authorName: Support Engineer
+                        createdAt: "2026-04-14T09:15:00Z"
+                        updatedAt: "2026-04-14T09:15:00Z"
+                    createdAt: "2026-04-14T09:00:00Z"
+                    updatedAt: "2026-04-14T09:15:00Z"
+    post:
+      tags:
+        - Tickets
+      summary: Create a ticket
+      operationId: createTicket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+            example:
+              title: API Gateway timeout
+              description: Investigate repeated timeout errors in the ticket service
+              priority: high
+              reporterName: Cloud Lab
+              reporterEmail: lab@example.com
+      responses:
+        "201":
+          description: Ticket created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketSuccessResponse"
+        "400":
+          description: Invalid JSON or validation failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                invalidJson:
+                  value:
+                    error:
+                      code: invalid_json
+                      message: request body must be valid JSON
+                validationFailed:
+                  value:
+                    error:
+                      code: validation_failed
+                      message: request validation failed
+                      details:
+                        - field: priority
+                          message: priority must be one of: low, medium, high
+
+  /tickets/{id}:
+    get:
+      tags:
+        - Tickets
+      summary: Get ticket detail
+      operationId: getTicket
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: Ticket detail returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketSuccessResponse"
+        "404":
+          description: Ticket was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: ticket_not_found
+                  message: ticket not found
+
+  /tickets/{id}/status:
+    patch:
+      tags:
+        - Tickets
+      summary: Update ticket status
+      operationId: updateTicketStatus
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTicketStatusRequest"
+            example:
+              status: resolved
+      responses:
+        "200":
+          description: Ticket status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketSuccessResponse"
+        "400":
+          description: Invalid JSON or validation failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: validation_failed
+                  message: request validation failed
+                  details:
+                    - field: status
+                      message: status must be one of: open, in_progress, resolved
+        "404":
+          description: Ticket was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tickets/{id}/comments:
+    post:
+      tags:
+        - Tickets
+      summary: Add a comment to a ticket
+      operationId: addTicketComment
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCommentRequest"
+            example:
+              message: Investigation has started
+              authorName: Support Engineer
+      responses:
+        "201":
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentSuccessResponse"
+        "400":
+          description: Invalid JSON or validation failure
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: validation_failed
+                  message: request validation failed
+                  details:
+                    - field: message
+                      message: message is required
+        "404":
+          description: Ticket was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  parameters:
+    TicketId:
+      in: path
+      name: id
+      required: true
+      description: Ticket identifier.
+      schema:
+        type: string
+        example: TCK-0001
+
+  schemas:
+    TicketStatus:
+      type: string
+      enum:
+        - open
+        - in_progress
+        - resolved
+      description: Allowed ticket status values.
+
+    TicketPriority:
+      type: string
+      enum:
+        - low
+        - medium
+        - high
+      description: Allowed ticket priority values.
+
+    Timestamp:
+      type: string
+      format: date-time
+      description: UTC timestamp in RFC3339 / ISO 8601 format.
+      example: "2026-04-14T09:00:00Z"
+
+    FieldError:
+      type: object
+      required:
+        - field
+        - message
+      properties:
+        field:
+          type: string
+          example: status
+        message:
+          type: string
+          example: status must be one of: open, in_progress, resolved
+
+    ErrorBody:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: validation_failed
+        message:
+          type: string
+          example: request validation failed
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldError"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          $ref: "#/components/schemas/ErrorBody"
+
+    Health:
+      type: object
+      required:
+        - status
+        - env
+      properties:
+        status:
+          type: string
+          example: ok
+        env:
+          type: string
+          example: development
+
+    Comment:
+      type: object
+      required:
+        - id
+        - ticketId
+        - message
+        - authorName
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          example: CMT-0001
+        ticketId:
+          type: string
+          example: TCK-0001
+        message:
+          type: string
+          example: Investigation has started
+        authorName:
+          type: string
+          example: Support Engineer
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    Ticket:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - status
+        - priority
+        - reporterName
+        - reporterEmail
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          example: TCK-0001
+        title:
+          type: string
+          example: API Gateway timeout
+        description:
+          type: string
+          example: Investigate repeated timeout errors in the ticket service
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        reporterName:
+          type: string
+          example: Cloud Lab
+        reporterEmail:
+          type: string
+          format: email
+          example: lab@example.com
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+        updatedAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    CreateTicketRequest:
+      type: object
+      required:
+        - title
+        - description
+        - priority
+        - reporterName
+        - reporterEmail
+      properties:
+        title:
+          type: string
+          example: API Gateway timeout
+        description:
+          type: string
+          example: Investigate repeated timeout errors in the ticket service
+        priority:
+          $ref: "#/components/schemas/TicketPriority"
+        reporterName:
+          type: string
+          example: Cloud Lab
+        reporterEmail:
+          type: string
+          format: email
+          example: lab@example.com
+
+    UpdateTicketStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/TicketStatus"
+
+    AddCommentRequest:
+      type: object
+      required:
+        - message
+        - authorName
+      properties:
+        message:
+          type: string
+          example: Investigation has started
+        authorName:
+          type: string
+          example: Support Engineer
+
+    HealthSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Health"
+
+    TicketSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Ticket"
+
+    TicketListSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ticket"
+
+    CommentSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Comment"
