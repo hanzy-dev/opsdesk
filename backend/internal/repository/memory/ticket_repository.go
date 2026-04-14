@@ -28,6 +28,18 @@ func (r *TicketRepository) CreateTicket(_ context.Context, ticket domain.Ticket)
 	return nil
 }
 
+func (r *TicketRepository) UpdateTicket(_ context.Context, ticket domain.Ticket) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, ok := r.tickets[ticket.ID]; !ok {
+		return repository.ErrTicketNotFound
+	}
+
+	r.tickets[ticket.ID] = cloneTicket(ticket)
+	return nil
+}
+
 func (r *TicketRepository) ListTickets(_ context.Context, filter repository.ListTicketsFilter) ([]domain.Ticket, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

@@ -45,21 +45,23 @@ type TicketService interface {
 }
 
 type ticketService struct {
-	repo      repository.TicketRepository
-	idFactory *ticketIDFactory
+	repo             repository.TicketRepository
+	ticketIDFactory  *idFactory
+	commentIDFactory *idFactory
 }
 
 func NewTicketService(repo repository.TicketRepository) TicketService {
 	return &ticketService{
-		repo:      repo,
-		idFactory: &ticketIDFactory{},
+		repo:             repo,
+		ticketIDFactory:  newIDFactory("TCK"),
+		commentIDFactory: newIDFactory("CMT"),
 	}
 }
 
 func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error) {
 	now := domain.UTCNow()
 	ticket := domain.Ticket{
-		ID:            s.idFactory.Next(),
+		ID:            s.ticketIDFactory.Next(),
 		Title:         strings.TrimSpace(input.Title),
 		Description:   strings.TrimSpace(input.Description),
 		Status:        domain.TicketStatusOpen,
@@ -97,23 +99,78 @@ func (s *ticketService) GetTicket(ctx context.Context, ticketID string) (domain.
 	return ticket, nil
 }
 
-func (s *ticketService) UpdateTicketStatus(context.Context, string, UpdateTicketStatusInput) (domain.Ticket, error) {
-	return domain.Ticket{}, ErrNotImplemented
+func (s *ticketService) UpdateTicketStatus(ctx context.Context, ticketID string, input UpdateTicketStatusInput) (domain.Ticket, error) {
+	ticket, err := s.repo.GetTicketByID(ctx, ticketID)
+	if err != nil {
+		if errors.Is(err, repository.ErrTicketNotFound) {
+			return domain.Ticket{}, ErrTicketNotFound
+		}
+
+		return domain.Ticket{}, err
+	}
+
+	ticket.Status = input.Status
+	ticket.UpdatedAt = domain.UTCNow()
+
+	if err := s.repo.UpdateTicket(ctx, ticket); err != nil {
+		if errors.Is(err, repository.ErrTicketNotFound) {
+			return domain.Ticket{}, ErrTicketNotFound
+		}
+
+		return domain.Ticket{}, err
+	}
+
+	return ticket, nil
 }
 
-func (s *ticketService) AddComment(context.Context, string, AddCommentInput) (domain.Comment, error) {
-	return domain.Comment{}, ErrNotImplemented
+func (s *ticketService) AddComment(ctx context.Context, ticketID string, input AddCommentInput) (domain.Comment, error) {
+	ticket, err := s.repo.GetTicketByID(ctx, ticketID)
+	if err != nil {
+		if errors.Is(err, repository.ErrTicketNotFound) {
+			return domain.Comment{}, ErrTicketNotFound
+		}
+
+		return domain.Comment{}, err
+	}
+
+	now := domain.UTCNow()
+	comment := domain.Comment{
+		ID:         s.commentIDFactory.Next(),
+		TicketID:   ticketID,
+		Message:    strings.TrimSpace(input.Message),
+		AuthorName: strings.TrimSpace(input.AuthorName),
+		CreatedAt:  now,
+		UpdatedAt:  now,
+	}
+
+	ticket.Comments = append(ticket.Comments, comment)
+	ticket.UpdatedAt = now
+
+	if err := s.repo.UpdateTicket(ctx, ticket); err != nil {
+		if errors.Is(err, repository.ErrTicketNotFound) {
+			return domain.Comment{}, ErrTicketNotFound
+		}
+
+		return domain.Comment{}, err
+	}
+
+	return comment, nil
 }
 
-type ticketIDFactory struct {
+type idFactory struct {
 	mu      sync.Mutex
+	prefix  string
 	counter uint64
 }
 
-func (f *ticketIDFactory) Next() string {
+func newIDFactory(prefix string) *idFactory {
+	return &idFactory{prefix: prefix}
+}
+
+func (f *idFactory) Next() string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
 	f.counter++
-	return fmt.Sprintf("TCK-%04d", f.counter)
+	return fmt.Sprintf("%s-%04d", f.prefix, f.counter)
 }
