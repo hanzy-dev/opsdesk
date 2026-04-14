@@ -1,0 +1,25 @@
+version = 0.1
+
+[default.build.parameters]
+template_file = "template.yaml"
+cached = true
+parallel = true
+
+[default.validate.parameters]
+template_file = "template.yaml"
+lint = false
+
+[default.deploy.parameters]
+stack_name = "opsdesk-dev"
+resolve_s3 = true
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+template_file = "template.yaml"
+parameter_overrides = [
+  "ProjectName=opsdesk",
+  "StageName=dev",
+  "AppEnv=development",
+  "ApiBasePath=/v1",
+  "FrontendOrigin=http://localhost:5173",
+  "LogLevel=info"
+]

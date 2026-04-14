@@ -103,6 +103,8 @@ http://localhost:8080/v1
 
 Backend saat ini membutuhkan `TICKET_TABLE_NAME` yang mengarah ke tabel DynamoDB yang dapat diakses.
 
+Saat dideploy ke AWS melalui SAM, nilai `TICKET_TABLE_NAME` di-wire otomatis oleh stack.
+
 ## Cara Deploy Backend Dengan SAM
 
 Masuk ke folder `infra/`, lalu:
@@ -110,13 +112,21 @@ Masuk ke folder `infra/`, lalu:
 ```bash
 sam validate --template-file template.yaml
 sam build --template-file template.yaml
-sam deploy --guided --template-file template.yaml
+sam deploy --guided --config-file samconfig.toml --template-file template.yaml
 ```
 
 Parameter deploy utama sudah dicontohkan di:
 
 - [infra/template.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/template.yaml)
+- [infra/samconfig.toml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/samconfig.toml)
 - [infra/samconfig.example.toml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/samconfig.example.toml)
+
+Output stack yang paling penting setelah deploy:
+
+- `HttpApiUrl`
+- `ApiBaseUrl`
+- `SuggestedHealthEndpoint`
+- `TicketsTableName`
 
 ## Cara Menyiapkan Frontend Untuk Vercel
 

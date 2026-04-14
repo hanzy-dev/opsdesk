@@ -28,8 +28,6 @@ Variables used by the current implementation:
 
 - `APP_ENV`
   Example: `development`
-- `PORT`
-  Example: `8080`
 - `API_BASE_PATH`
   Example: `/v1`
 - `LOG_LEVEL`
@@ -54,6 +52,7 @@ The SAM template uses deploy-time parameters:
 - `LogLevel`
 
 These are shown in [infra/template.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/template.yaml) and [infra/samconfig.example.toml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/samconfig.example.toml).
+The ready-to-use default SAM config for this batch is [infra/samconfig.toml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/samconfig.toml).
 
 ## Local Backend Run
 
@@ -104,10 +103,42 @@ sam build --template-file template.yaml
 Deploy with guided setup:
 
 ```bash
-sam deploy --guided --template-file template.yaml
+sam deploy --guided --config-file samconfig.toml --template-file template.yaml
 ```
 
 After the first guided deploy, the saved SAM configuration can be reused for later deployments.
+
+Recommended parameter values for the current backend deployment:
+
+```text
+ProjectName=opsdesk
+StageName=dev
+AppEnv=development
+ApiBasePath=/v1
+FrontendOrigin=http://localhost:5173
+LogLevel=info
+```
+
+Recommended later deploy flow:
+
+```bash
+sam build --template-file template.yaml
+sam deploy --config-file samconfig.toml
+```
+
+Useful commands after deployment:
+
+```bash
+aws cloudformation describe-stacks --stack-name opsdesk-dev --query "Stacks[0].Outputs" --output table
+aws cloudformation describe-stacks --stack-name opsdesk-dev --query "Stacks[0].Outputs[?OutputKey=='SuggestedHealthEndpoint'].OutputValue" --output text
+```
+
+Example verification with the deployed API:
+
+```bash
+curl https://your-api-id.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
+curl https://your-api-id.execute-api.ap-southeast-1.amazonaws.com/dev/v1/tickets
+```
 
 ## GitHub Actions
 

@@ -106,7 +106,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-${StageName}-backend"
-      CodeUri: .
+      CodeUri: ../backend
       Handler: bootstrap
       Description: OpsDesk Go backend Lambda entrypoint.
       Events:
@@ -116,15 +116,16 @@ Resources:
             ApiId: !Ref OpsDeskHttpApi
             Path: /{proxy+}
             Method: ANY
+            PayloadFormatVersion: "2.0"
         RootApi:
           Type: HttpApi
           Properties:
             ApiId: !Ref OpsDeskHttpApi
             Path: /
             Method: ANY
+            PayloadFormatVersion: "2.0"
       Environment:
         Variables:
-          PORT: "8080"
           TICKET_TABLE_NAME: !Ref TicketsTable
       Policies:
         - DynamoDBCrudPolicy:
@@ -150,10 +151,18 @@ Outputs:
     Description: Base invoke URL for the HTTP API stage.
     Value: !Sub "https://${OpsDeskHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
 
+  ApiBaseUrl:
+    Description: Backend base URL including the configured API base path.
+    Value: !Sub "https://${OpsDeskHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}${ApiBasePath}"
+
   BackendFunctionName:
     Description: Lambda function name for the backend.
     Value: !Ref BackendFunction
 
+  TicketsTableName:
+    Description: DynamoDB table name used by the backend.
+    Value: !Ref TicketsTable
+
   SuggestedHealthEndpoint:
-    Description: Example health endpoint once the Lambda handler is wired.
+    Description: Health endpoint for post-deploy verification.
     Value: !Sub "https://${OpsDeskHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/health"

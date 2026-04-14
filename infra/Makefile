@@ -1,2 +1,2 @@
-build-BackendFunction:
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o "$(ARTIFACTS_DIR)/bootstrap" ../backend/cmd/lambda
+# Legacy placeholder.
+# SAM now builds BackendFunction from backend/Makefile because the function CodeUri points to ../backend.

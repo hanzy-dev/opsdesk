@@ -31,7 +31,7 @@ This batch includes the minimum persistence infrastructure needed for the curren
 
 ## Build Assumption
 
-The SAM template builds the Lambda binary from `../backend/cmd/lambda` using the local Go toolchain through the Makefile in this directory.
+The SAM template builds the Lambda binary from `backend/cmd/lambda` using the local Go toolchain through [backend/Makefile](/d:/Semester%206/Cloud%20Computing/opsdesk/backend/Makefile).
 
 ## Parameters
 
@@ -49,7 +49,6 @@ Backend runtime environment variables wired by SAM:
 - `APP_ENV`
 - `API_BASE_PATH`
 - `LOG_LEVEL`
-- `PORT`
 - `TICKET_TABLE_NAME`
 
 ## Example Commands
@@ -71,6 +70,26 @@ Deploy with guided prompts:
 ```bash
 sam deploy --guided --template-file infra/template.yaml
 ```
+
+Recommended first deploy from `infra/`:
+
+```bash
+sam deploy --guided --config-file samconfig.toml --template-file template.yaml
+```
+
+Recommended later deploys from `infra/` after `samconfig.toml` exists:
+
+```bash
+sam build --template-file template.yaml
+sam deploy --config-file samconfig.toml
+```
+
+Useful stack outputs after deployment:
+
+- `HttpApiUrl`
+- `ApiBaseUrl`
+- `SuggestedHealthEndpoint`
+- `TicketsTableName`
 
 ## Deferred Work
 
