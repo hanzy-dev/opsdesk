@@ -199,3 +199,4 @@ Urutan review yang disarankan:
 - [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md)
 - [docs/architecture.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/architecture.md)
 - [docs/roadmap.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/roadmap.md)
+- [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md)

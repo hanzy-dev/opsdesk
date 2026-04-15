@@ -12,24 +12,33 @@ export function TicketDetailPage() {
   const { ticketId = "" } = useParams();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [commentMessage, setCommentMessage] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>("open");
   const [commentForm, setCommentForm] = useState({ message: "", authorName: "" });
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
 
-  async function loadTicket() {
-    setLoading(true);
-    setError(null);
+  async function loadTicket(options?: { preserveView?: boolean }) {
+    if (!options?.preserveView) {
+      setLoading(true);
+    }
+
+    setPageError(null);
 
     try {
       const data = await getTicket(ticketId);
       setTicket(data);
       setSelectedStatus(data.status);
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Detail tiket belum bisa dimuat.");
+      setPageError(error instanceof Error ? error.message : "Detail tiket belum bisa dimuat.");
     } finally {
-      setLoading(false);
+      if (!options?.preserveView) {
+        setLoading(false);
+      }
     }
   }
 
@@ -40,12 +49,15 @@ export function TicketDetailPage() {
   async function handleStatusSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSavingStatus(true);
+    setStatusMessage(null);
+    setStatusError(null);
 
     try {
       const updatedTicket = await updateTicketStatus(ticketId, selectedStatus);
       setTicket(updatedTicket);
+      setStatusMessage("Status tiket berhasil diperbarui.");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Status belum berhasil diperbarui.");
+      setStatusError(error instanceof Error ? error.message : "Status belum berhasil diperbarui.");
     } finally {
       setIsSavingStatus(false);
     }
@@ -54,13 +66,16 @@ export function TicketDetailPage() {
   async function handleCommentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSavingComment(true);
+    setCommentMessage(null);
+    setCommentError(null);
 
     try {
       await addComment(ticketId, commentForm);
       setCommentForm({ message: "", authorName: "" });
-      await loadTicket();
+      await loadTicket({ preserveView: true });
+      setCommentMessage("Komentar baru berhasil ditambahkan ke tiket.");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Komentar belum berhasil ditambahkan.");
+      setCommentError(error instanceof Error ? error.message : "Komentar belum berhasil ditambahkan.");
     } finally {
       setIsSavingComment(false);
     }
@@ -70,8 +85,14 @@ export function TicketDetailPage() {
     return <LoadingState label="Memuat detail tiket..." />;
   }
 
-  if (error) {
-    return <ErrorState message={error} onRetry={() => void loadTicket()} />;
+  if (pageError) {
+    return (
+      <ErrorState
+        title="Detail tiket belum tersedia"
+        message={pageError}
+        onRetry={() => void loadTicket()}
+      />
+    );
   }
 
   if (!ticket) {
@@ -125,8 +146,11 @@ export function TicketDetailPage() {
               </select>
             </label>
 
+            {statusError ? <p className="form-error">{statusError}</p> : null}
+            {statusMessage ? <p className="form-success">{statusMessage}</p> : null}
+
             <button className="button button--primary" disabled={isSavingStatus} type="submit">
-              {isSavingStatus ? "Menyimpan..." : "Perbarui Status"}
+              {isSavingStatus ? "Menyimpan status..." : "Perbarui Status"}
             </button>
           </form>
         </article>
@@ -182,8 +206,11 @@ export function TicketDetailPage() {
               />
             </label>
 
+            {commentError ? <p className="form-error">{commentError}</p> : null}
+            {commentMessage ? <p className="form-success">{commentMessage}</p> : null}
+
             <button className="button button--primary" disabled={isSavingComment} type="submit">
-              {isSavingComment ? "Mengirim..." : "Tambah Komentar"}
+              {isSavingComment ? "Mengirim komentar..." : "Tambah Komentar"}
             </button>
           </form>
         </article>

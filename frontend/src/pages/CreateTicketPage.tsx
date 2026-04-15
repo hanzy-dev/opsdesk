@@ -17,12 +17,14 @@ export function CreateTicketPage() {
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [submitNotice, setSubmitNotice] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSubmitNotice("Menyimpan tiket dan menyiapkan halaman detail...");
     setFieldErrors({});
 
     try {
@@ -35,6 +37,7 @@ export function CreateTicketPage() {
       } else {
         setErrorMessage("Tiket belum berhasil dibuat. Silakan coba lagi.");
       }
+      setSubmitNotice(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,6 +52,13 @@ export function CreateTicketPage() {
       </div>
 
       <form className="panel form-panel" onSubmit={handleSubmit}>
+        <div className="form-intro">
+          <p>
+            Isi informasi inti tiket secara singkat dan jelas. Setelah tersimpan, Anda akan langsung diarahkan ke detail
+            tiket untuk melanjutkan tindak lanjut.
+          </p>
+        </div>
+
         <div className="form-grid">
           <label className="field">
             <span>Judul tiket</span>
@@ -107,10 +117,11 @@ export function CreateTicketPage() {
         </div>
 
         {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+        {submitNotice ? <p className="form-hint">{submitNotice}</p> : null}
 
         <div className="form-actions">
           <button className="button button--primary" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Menyimpan..." : "Simpan Tiket"}
+            {isSubmitting ? "Menyimpan tiket..." : "Simpan Tiket"}
           </button>
         </div>
       </form>

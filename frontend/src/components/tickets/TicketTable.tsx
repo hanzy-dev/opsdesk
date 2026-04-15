@@ -5,15 +5,24 @@ import { StatusBadge } from "./StatusBadge";
 
 type TicketTableProps = {
   tickets: Ticket[];
+  title?: string;
+  eyebrow?: string;
+  helperText?: string;
 };
 
-export function TicketTable({ tickets }: TicketTableProps) {
+export function TicketTable({
+  tickets,
+  title = "Daftar tiket aktif",
+  eyebrow = "Ringkasan",
+  helperText,
+}: TicketTableProps) {
   return (
     <div className="panel table-panel">
       <div className="table-panel__header">
         <div>
-          <p className="section-eyebrow">Ringkasan</p>
-          <h2>Daftar tiket aktif</h2>
+          <p className="section-eyebrow">{eyebrow}</p>
+          <h2>{title}</h2>
+          {helperText ? <p className="table-panel__helper">{helperText}</p> : null}
         </div>
         <p>{tickets.length} tiket</p>
       </div>

@@ -92,6 +92,7 @@ button {
 .topbar__identity p,
 .metric-card p,
 .hero-card p,
+.section-heading p,
 .field small,
 .empty-state p,
 .error-state p,
@@ -216,7 +217,8 @@ button {
 .table-panel__header,
 .ticket-summary__header,
 .detail-grid,
-.form-actions {
+.form-actions,
+.section-heading {
   display: flex;
   justify-content: space-between;
   gap: 16px;
@@ -258,6 +260,12 @@ button {
   width: 100%;
   border-collapse: collapse;
   margin-top: 18px;
+}
+
+.table-panel__helper {
+  margin-top: 8px;
+  color: var(--muted);
+  max-width: 60ch;
 }
 
 .ticket-table th,
@@ -373,13 +381,20 @@ button {
 .form-grid,
 .field,
 .comment-list,
-.comment-card {
+.comment-card,
+.activity-list {
   display: grid;
 }
 
 .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.form-intro {
+  margin-bottom: 4px;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 .field {
@@ -414,6 +429,59 @@ button {
 .field small,
 .form-error {
   color: var(--danger);
+}
+
+.form-hint,
+.form-success,
+.filter-summary {
+  margin: 0;
+  color: var(--muted);
+}
+
+.form-success {
+  color: #8fe1b7;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  gap: 18px;
+}
+
+.field--search input {
+  padding-right: 18px;
+}
+
+.activity-list {
+  gap: 12px;
+}
+
+.activity-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  transition: 180ms ease;
+}
+
+.activity-card:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.activity-card strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.activity-card p,
+.activity-card span {
+  margin: 0;
+  color: var(--muted);
 }
 
 .detail-grid {
@@ -529,6 +597,7 @@ button {
   .metrics-grid,
   .form-grid,
   .meta-grid,
+  .filter-grid,
   .sidebar__nav {
     grid-template-columns: 1fr;
   }

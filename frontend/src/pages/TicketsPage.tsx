@@ -11,6 +11,8 @@ export function TicketsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
 
   async function loadTickets() {
     setLoading(true);
@@ -39,12 +41,35 @@ export function TicketsPage() {
     [tickets],
   );
 
+  const filteredTickets = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    return tickets.filter((ticket) => {
+      const matchesStatus = statusFilter === "all" ? true : ticket.status === statusFilter;
+      const matchesQuery =
+        normalizedQuery === ""
+          ? true
+          : [ticket.id, ticket.title, ticket.reporterName, ticket.reporterEmail, ticket.description]
+              .join(" ")
+              .toLowerCase()
+              .includes(normalizedQuery);
+
+      return matchesStatus && matchesQuery;
+    });
+  }, [searchQuery, statusFilter, tickets]);
+
   if (loading) {
-    return <LoadingState label="Memuat daftar tiket..." />;
+    return <LoadingState label="Memuat daftar tiket operasional..." />;
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={() => void loadTickets()} />;
+    return (
+      <ErrorState
+        title="Daftar tiket belum tersedia"
+        message={error}
+        onRetry={() => void loadTickets()}
+      />
+    );
   }
 
   return (
@@ -74,6 +99,42 @@ export function TicketsPage() {
         </article>
       </div>
 
+      <div className="panel stack-md">
+        <div className="section-heading">
+          <div>
+            <p className="section-eyebrow">Pencarian cepat</p>
+            <h3>Temukan tiket lebih cepat saat demo</h3>
+          </div>
+          <p className="filter-summary">
+            Menampilkan {filteredTickets.length} dari {tickets.length} tiket
+          </p>
+        </div>
+
+        <div className="filter-grid">
+          <label className="field field--search">
+            <span>Cari tiket</span>
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Cari ID tiket, judul, atau nama pelapor"
+            />
+          </label>
+
+          <label className="field">
+            <span>Filter status</span>
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as "all" | Ticket["status"])}
+            >
+              <option value="all">Semua status</option>
+              <option value="open">Terbuka</option>
+              <option value="in_progress">Sedang ditangani</option>
+              <option value="resolved">Selesai</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       {tickets.length === 0 ? (
         <EmptyState
           title="Belum ada tiket yang tercatat"
@@ -84,8 +145,18 @@ export function TicketsPage() {
             </Link>
           }
         />
+      ) : filteredTickets.length === 0 ? (
+        <EmptyState
+          title="Tidak ada tiket yang cocok"
+          description="Coba ubah kata kunci pencarian atau pilih status lain agar hasil lebih luas."
+        />
       ) : (
-        <TicketTable tickets={tickets} />
+        <TicketTable
+          tickets={filteredTickets}
+          title="Daftar tiket"
+          eyebrow="Operasional"
+          helperText="Gunakan pencarian dan filter status untuk menyiapkan demo atau review lebih cepat."
+        />
       )}
     </section>
   );

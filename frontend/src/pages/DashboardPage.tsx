@@ -6,6 +6,7 @@ import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { TicketTable } from "../components/tickets/TicketTable";
 import type { Ticket } from "../types/ticket";
+import { formatDateTime } from "../utils/date";
 
 export function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -42,12 +43,26 @@ export function DashboardPage() {
     ];
   }, [tickets]);
 
+  const recentlyUpdated = useMemo(
+    () =>
+      [...tickets]
+        .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+        .slice(0, 3),
+    [tickets],
+  );
+
   if (loading) {
-    return <LoadingState label="Memuat ringkasan dashboard..." />;
+    return <LoadingState label="Menyiapkan ringkasan operasional tiket..." />;
   }
 
   if (error) {
-    return <ErrorState message={error} onRetry={() => void loadTickets()} />;
+    return (
+      <ErrorState
+        title="Dashboard belum siap ditampilkan"
+        message={error}
+        onRetry={() => void loadTickets()}
+      />
+    );
   }
 
   return (
@@ -80,7 +95,40 @@ export function DashboardPage() {
           }
         />
       ) : (
-        <TicketTable tickets={tickets.slice(0, 5)} />
+        <div className="stack-lg">
+          <TicketTable
+            tickets={tickets.slice(0, 5)}
+            title="Tiket terbaru"
+            eyebrow="Ringkasan cepat"
+            helperText="Lima tiket dengan pembaruan terbaru untuk membantu triase awal."
+          />
+
+          <section className="panel stack-md">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Perlu perhatian</p>
+                <h3>Aktivitas tiket terbaru</h3>
+              </div>
+              <Link className="button button--secondary" to="/tickets">
+                Lihat Semua Tiket
+              </Link>
+            </div>
+
+            <div className="activity-list">
+              {recentlyUpdated.map((ticket) => (
+                <Link className="activity-card" key={ticket.id} to={`/tickets/${ticket.id}`}>
+                  <div>
+                    <strong>{ticket.title}</strong>
+                    <p>
+                      {ticket.id} • {ticket.reporterName}
+                    </p>
+                  </div>
+                  <span>{formatDateTime(ticket.updatedAt)}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
       )}
     </section>
   );

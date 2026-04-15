@@ -9,7 +9,7 @@ type EmptyStateProps = {
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
     <div className="panel empty-state">
-      <div className="empty-state__icon">◎</div>
+      <div className="empty-state__icon">O</div>
       <h3>{title}</h3>
       <p>{description}</p>
       {action}
