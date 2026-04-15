@@ -43,7 +43,12 @@ func (r *Router) registerRoutes() {
 	r.basePathMux.HandleFunc("/tickets/", r.handleTicketByPath)
 }
 
-func (r *Router) handleHealth(w http.ResponseWriter, _ *http.Request) {
+func (r *Router) handleHealth(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.HealthResponse]{
 		Data: dto.HealthResponse{
 			Status: "ok",
@@ -53,6 +58,11 @@ func (r *Router) handleHealth(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (r *Router) handleTickets(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
 	switch req.Method {
 	case http.MethodGet:
 		r.handleListTickets(w, req)
@@ -64,6 +74,11 @@ func (r *Router) handleTickets(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
 	path := strings.TrimPrefix(req.URL.Path, "/tickets/")
 	path = strings.Trim(path, "/")
 
@@ -244,6 +259,10 @@ func writeMethodNotAllowed(w http.ResponseWriter) {
 			Message: "method not allowed",
 		},
 	})
+}
+
+func writeNoContent(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func writeServiceError(w http.ResponseWriter, err error) {

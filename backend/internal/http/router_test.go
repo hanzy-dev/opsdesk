@@ -161,6 +161,38 @@ func TestPostTicketCommentReturnsNotFoundForMissingTicket(t *testing.T) {
 	}
 }
 
+func TestOptionsTicketsReturnsNoContent(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter()
+
+	recorder := performRequest(t, router, http.MethodOptions, "/v1/tickets", nil)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", recorder.Code)
+	}
+
+	if recorder.Body.Len() != 0 {
+		t.Fatalf("expected empty response body, got %q", recorder.Body.String())
+	}
+}
+
+func TestOptionsTicketSubresourceReturnsNoContent(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter()
+
+	recorder := performRequest(t, router, http.MethodOptions, "/v1/tickets/TCK-1001/status", nil)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", recorder.Code)
+	}
+
+	if recorder.Body.Len() != 0 {
+		t.Fatalf("expected empty response body, got %q", recorder.Body.String())
+	}
+}
+
 func newTestRouter() http.Handler {
 	cfg := config.Config{
 		AppEnv:      "test",
@@ -193,13 +225,22 @@ func createTestTicket(t *testing.T, router http.Handler) dto.TicketResponse {
 func performRequest(t *testing.T, router http.Handler, method, path string, body any) *httptest.ResponseRecorder {
 	t.Helper()
 
-	payload, err := json.Marshal(body)
-	if err != nil {
-		t.Fatalf("json.Marshal() error = %v", err)
+	var requestBody *bytes.Reader
+	if body == nil {
+		requestBody = bytes.NewReader(nil)
+	} else {
+		payload, err := json.Marshal(body)
+		if err != nil {
+			t.Fatalf("json.Marshal() error = %v", err)
+		}
+
+		requestBody = bytes.NewReader(payload)
 	}
 
-	req := httptest.NewRequest(method, path, bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(method, path, requestBody)
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
