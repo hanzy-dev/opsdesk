@@ -112,8 +112,10 @@ Masuk ke folder `infra/`, lalu:
 ```bash
 sam validate --template-file template.yaml
 sam build --template-file template.yaml
-sam deploy --guided --config-file samconfig.toml --template-file template.yaml
+sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
 ```
+
+Batch deployment ini memakai Lambda container image yang dibangun dari `backend/Dockerfile.lambda`, jadi Docker Desktop perlu aktif saat menjalankan `sam build`.
 
 Parameter deploy utama sudah dicontohkan di:
 

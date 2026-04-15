@@ -46,9 +46,8 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: provided.al2023
     Architectures:
-      - arm64
+      - x86_64
     Timeout: 10
     MemorySize: 128
     Tracing: PassThrough
@@ -105,9 +104,7 @@ Resources:
   BackendFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub "${ProjectName}-${StageName}-backend"
-      CodeUri: ../backend
-      Handler: bootstrap
+      PackageType: Image
       Description: OpsDesk Go backend Lambda entrypoint.
       Events:
         ProxyApi:
@@ -132,7 +129,9 @@ Resources:
             TableName: !Ref TicketsTable
 
     Metadata:
-      BuildMethod: makefile
+      DockerContext: ../backend
+      Dockerfile: Dockerfile.lambda
+      DockerTag: go1-al2023-v1
 
   BackendFunctionLogGroup:
     Type: AWS::Logs::LogGroup

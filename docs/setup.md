@@ -103,10 +103,11 @@ sam build --template-file template.yaml
 Deploy with guided setup:
 
 ```bash
-sam deploy --guided --config-file samconfig.toml --template-file template.yaml
+sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
 ```
 
 After the first guided deploy, the saved SAM configuration can be reused for later deployments.
+This batch packages the backend Lambda as a container image built from `backend/Dockerfile.lambda`, so Docker must be running locally before `sam build`.
 
 Recommended parameter values for the current backend deployment:
 
@@ -123,7 +124,7 @@ Recommended later deploy flow:
 
 ```bash
 sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml
+sam deploy --config-file samconfig.toml --resolve-image-repos
 ```
 
 Useful commands after deployment:

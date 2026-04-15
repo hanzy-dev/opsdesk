@@ -12,14 +12,13 @@ lint = false
 [default.deploy.parameters]
 stack_name = "opsdesk-dev"
 resolve_s3 = true
+resolve_image_repos = true
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 template_file = "template.yaml"
-parameter_overrides = [
-  "ProjectName=opsdesk",
-  "StageName=dev",
-  "AppEnv=development",
-  "ApiBasePath=/v1",
-  "FrontendOrigin=http://localhost:5173",
-  "LogLevel=info"
-]
+parameter_overrides = "ProjectName=\"opsdesk\" StageName=\"dev\" AppEnv=\"development\" ApiBasePath=\"/v1\" FrontendOrigin=\"http://localhost:5173\" LogLevel=\"info\""
+s3_prefix = "opsdesk-dev"
+image_repositories = []
+
+[default.global.parameters]
+region = "ap-southeast-1"

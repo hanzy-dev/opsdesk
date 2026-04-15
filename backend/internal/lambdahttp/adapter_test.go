@@ -102,3 +102,73 @@ func TestProxyDecodesBase64RequestBody(t *testing.T) {
 		t.Fatalf("expected decoded message hello, got %q", received)
 	}
 }
+
+func TestProxyStripsStagePrefixBeforeRouting(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name           string
+		rawPath        string
+		requestPath    string
+		expectedPath   string
+		expectedURI    string
+		rawQueryString string
+	}{
+		{
+			name:           "health route",
+			rawPath:        "/dev/v1/health",
+			requestPath:    "/dev/v1/health",
+			expectedPath:   "/v1/health",
+			expectedURI:    "/v1/health?source=apigw",
+			rawQueryString: "source=apigw",
+		},
+		{
+			name:         "tickets route",
+			rawPath:      "/dev/v1/tickets",
+			requestPath:  "/dev/v1/tickets",
+			expectedPath: "/v1/tickets",
+			expectedURI:  "/v1/tickets",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			adapter := New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != tt.expectedPath {
+					t.Fatalf("expected normalized path %q, got %q", tt.expectedPath, r.URL.Path)
+				}
+
+				if r.RequestURI != tt.expectedURI {
+					t.Fatalf("expected normalized request URI %q, got %q", tt.expectedURI, r.RequestURI)
+				}
+
+				w.WriteHeader(http.StatusOK)
+			}))
+
+			response, err := adapter.Proxy(context.Background(), events.APIGatewayV2HTTPRequest{
+				RawPath:        tt.rawPath,
+				RawQueryString: tt.rawQueryString,
+				Headers: map[string]string{
+					"host": "example.execute-api.ap-southeast-1.amazonaws.com",
+				},
+				RequestContext: events.APIGatewayV2HTTPRequestContext{
+					Stage: "dev",
+					HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+						Method: "GET",
+						Path:   tt.requestPath,
+					},
+				},
+			})
+			if err != nil {
+				t.Fatalf("Proxy() error = %v", err)
+			}
+
+			if response.StatusCode != http.StatusOK {
+				t.Fatalf("expected status 200, got %d", response.StatusCode)
+			}
+		})
+	}
+}

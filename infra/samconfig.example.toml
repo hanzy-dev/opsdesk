@@ -12,6 +12,7 @@ lint = false
 [default.deploy.parameters]
 stack_name = "opsdesk-dev"
 resolve_s3 = true
+resolve_image_repos = true
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 template_file = "template.yaml"

@@ -15,7 +15,7 @@ Current infrastructure scope is intentionally small:
 ## Design Choices
 
 - **AWS SAM** is used to keep the infrastructure approachable for a university assignment.
-- **Lambda runtime** uses `provided.al2023` to support a Go custom runtime path.
+- **Lambda packaging** uses a Lambda-compatible container image built by SAM from `backend/Dockerfile.lambda`.
 - **API Gateway HTTP API** is used instead of REST API to keep cost and complexity lower.
 - **ARM64** is the default Lambda architecture to stay cost-conscious.
 - **CloudWatch log retention** is limited to 7 days to avoid unnecessary log storage growth.
@@ -31,7 +31,7 @@ This batch includes the minimum persistence infrastructure needed for the curren
 
 ## Build Assumption
 
-The SAM template builds the Lambda binary from `backend/cmd/lambda` using the local Go toolchain through [backend/Makefile](/d:/Semester%206/Cloud%20Computing/opsdesk/backend/Makefile).
+The SAM template builds the backend Lambda image from [backend/Dockerfile.lambda](/d:/Semester%206/Cloud%20Computing/opsdesk/backend/Dockerfile.lambda). The Dockerfile compiles `backend/cmd/lambda` into a `bootstrap` binary and places it into the AWS Lambda `provided.al2023` base image for ARM64.
 
 ## Parameters
 
@@ -68,20 +68,21 @@ sam build --template-file infra/template.yaml
 Deploy with guided prompts:
 
 ```bash
-sam deploy --guided --template-file infra/template.yaml
+sam deploy --guided --resolve-image-repos --template-file infra/template.yaml
 ```
 
 Recommended first deploy from `infra/`:
 
 ```bash
-sam deploy --guided --config-file samconfig.toml --template-file template.yaml
+sam build --template-file template.yaml
+sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
 ```
 
 Recommended later deploys from `infra/` after `samconfig.toml` exists:
 
 ```bash
 sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml
+sam deploy --config-file samconfig.toml --resolve-image-repos
 ```
 
 Useful stack outputs after deployment:

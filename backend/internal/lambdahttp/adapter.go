@@ -68,13 +68,7 @@ func newRequest(ctx context.Context, event events.APIGatewayV2HTTPRequest) (*htt
 		body = string(decoded)
 	}
 
-	path := event.RawPath
-	if path == "" {
-		path = event.RequestContext.HTTP.Path
-	}
-	if path == "" {
-		path = "/"
-	}
+	path := normalizedPath(event)
 
 	rawQuery := event.RawQueryString
 	if rawQuery == "" && len(event.QueryStringParameters) > 0 {
@@ -117,4 +111,34 @@ func newRequest(ctx context.Context, event events.APIGatewayV2HTTPRequest) (*htt
 	}
 
 	return req, nil
+}
+
+func normalizedPath(event events.APIGatewayV2HTTPRequest) string {
+	path := event.RawPath
+	if path == "" {
+		path = event.RequestContext.HTTP.Path
+	}
+
+	return stripStagePrefix(path, event.RequestContext.Stage)
+}
+
+func stripStagePrefix(path, stage string) string {
+	if path == "" {
+		return "/"
+	}
+
+	if stage == "" || stage == "$default" {
+		return path
+	}
+
+	stagePrefix := "/" + strings.TrimPrefix(stage, "/")
+	if path == stagePrefix {
+		return "/"
+	}
+
+	if strings.HasPrefix(path, stagePrefix+"/") {
+		return strings.TrimPrefix(path, stagePrefix)
+	}
+
+	return path
 }
