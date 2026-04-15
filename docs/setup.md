@@ -173,6 +173,20 @@ This should point to the deployed backend API Gateway base path, for example:
 https://your-api-id.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 ```
 
+Vercel also needs the frontend root directory set to `frontend`, and this batch includes `frontend/vercel.json` so direct browser access to routes like `/tickets` or `/tickets/{id}` is rewritten back to the SPA entrypoint.
+
+Recommended deployment flow:
+
+1. Deploy the frontend to Vercel with `VITE_API_BASE_URL` pointing to the current AWS backend URL.
+2. Copy the final Vercel production URL, for example `https://opsdesk.vercel.app`.
+3. Update the backend `FrontendOrigin` parameter to that exact Vercel URL and redeploy the SAM stack so browser CORS matches production.
+
+Example follow-up command after obtaining the real Vercel URL:
+
+```bash
+sam deploy --config-file samconfig.toml --resolve-image-repos --parameter-overrides ProjectName=opsdesk StageName=dev AppEnv=development ApiBasePath=/v1 FrontendOrigin=https://your-actual-vercel-app.vercel.app LogLevel=info
+```
+
 ## Quick Lecturer Review Path
 
 Recommended quick review flow:
