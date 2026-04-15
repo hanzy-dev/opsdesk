@@ -12,6 +12,15 @@ Dalam banyak tugas akademik, aplikasi sering selesai di level CRUD lokal tanpa k
 - berjalan pada arsitektur serverless yang relevan untuk pembelajaran cloud
 - tetap cukup kecil untuk direview cepat oleh dosen atau recruiter
 
+## Mulai Dari Mana
+
+Jika Anda membuka repo ini untuk pertama kali, urutan tercepat untuk memahami proyek adalah:
+
+1. Buka [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md) untuk melihat alur klik utama.
+2. Lihat [docs/reviewer-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/reviewer-checklist.md) untuk jalur review singkat.
+3. Cek [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml) jika ingin meninjau kontrak API.
+4. Lihat folder [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md) untuk placeholder aset portfolio final.
+
 ## Masalah Yang Diselesaikan
 
 OpsDesk memodelkan kebutuhan dasar operasional support:
@@ -78,6 +87,7 @@ Masuk ke folder `frontend/`, lalu:
 ```bash
 npm install
 npm run dev
+npm run test
 ```
 
 Buat file `.env` berdasarkan `frontend/.env.example`:
@@ -170,10 +180,11 @@ Dokumentasi API tersedia di:
 Urutan review yang disarankan:
 
 1. Baca [docs/reviewer-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/reviewer-checklist.md)
-2. Lihat [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md) dan [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml)
-3. Lihat [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md) untuk setup dan deployment
-4. Tinjau struktur `frontend/`, `backend/`, dan `infra/`
-5. Jika perlu, jalankan frontend dan backend secara lokal
+2. Ikuti [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md) untuk tahu apa yang perlu diklik lebih dulu
+3. Lihat [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md) dan [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml)
+4. Lihat [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md) untuk setup dan deployment
+5. Tinjau struktur `frontend/`, `backend/`, dan `infra/`
+6. Jika perlu, jalankan frontend, backend, dan smoke test frontend secara lokal
 
 ## Keputusan Teknis Utama
 
@@ -200,3 +211,4 @@ Urutan review yang disarankan:
 - [docs/architecture.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/architecture.md)
 - [docs/roadmap.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/roadmap.md)
 - [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md)
+- [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md)

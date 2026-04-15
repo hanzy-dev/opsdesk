@@ -19,6 +19,15 @@ Ganti placeholder di atas dengan URL deployment aktif sebelum dibagikan ke revie
 6. Setelah tiket tersimpan, buka halaman detail tiket.
 7. Ubah status tiket lalu tambahkan komentar tindak lanjut.
 
+## What To Click First
+
+Jika reviewer hanya punya waktu 2 sampai 3 menit, gunakan urutan ini:
+
+1. Buka dashboard dan perhatikan kartu metrik serta aktivitas tiket terbaru.
+2. Masuk ke halaman daftar tiket lalu coba pencarian cepat berdasarkan judul atau ID.
+3. Buka satu tiket untuk melihat detail, perubahan status, dan komentar.
+4. Jika ingin melihat alur input, buka halaman "Buat Tiket" dan submit satu contoh tiket.
+
 ## Yang Perlu Diuji Manual
 
 - Dashboard dapat dimuat tanpa error dan menampilkan ringkasan tiket.
@@ -32,3 +41,7 @@ Ganti placeholder di atas dengan URL deployment aktif sebelum dibagikan ke revie
 - UI teks sengaja menggunakan Bahasa Indonesia agar relevan untuk konteks tugas kuliah lokal.
 - Backend tetap memakai arsitektur cloud yang realistis: AWS Lambda, API Gateway HTTP API, dan DynamoDB.
 - Scope aplikasi sengaja dijaga kecil agar reviewer bisa melihat kualitas implementasi inti dengan cepat.
+
+## Screenshot Final
+
+Struktur placeholder screenshot sudah disiapkan di [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md) agar aset portfolio final bisa ditambahkan dengan rapi.

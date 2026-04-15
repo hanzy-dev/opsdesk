@@ -32,6 +32,14 @@ Jika ingin melakukan verifikasi singkat secara manual:
 7. Ubah status tiket.
 8. Tambahkan komentar.
 
+## Jalur Review 3 Menit
+
+Jika waktu review sangat singkat, cek tiga hal ini terlebih dahulu:
+
+1. Dashboard memuat ringkasan tiket tanpa error.
+2. Halaman daftar tiket mendukung pencarian atau filter status.
+3. Detail tiket bisa memperbarui status dan menambahkan komentar.
+
 ## Catatan
 
 OpsDesk sengaja dibatasi pada workflow helpdesk inti agar tetap realistis untuk tugas kuliah, mudah direview, dan tetap layak sebagai proyek portofolio.
