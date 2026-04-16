@@ -51,3 +51,6 @@ temp/
 backend/.gocache/
 backend/.gocache*/
 backend/.gomodcache/
+
+# Tool/editor backup files
+*.go.[0-9]*
