@@ -86,6 +86,7 @@ function buildAuthSession(result: CognitoAuthenticationResult | undefined, fallb
   const groups = getStringArrayClaim(idTokenClaims, "cognito:groups");
 
   return {
+    subject: getStringClaim(idTokenClaims, "sub"),
     accessToken: result.AccessToken,
     idToken: result.IdToken,
     refreshToken,

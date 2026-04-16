@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { loginWithCredentials, logoutCurrentSession, restoreAuthSession } from "./authService";
-import { canCreateTickets, canUpdateTicketStatus, canViewOperationalTickets, getRoleLabel } from "./roles";
+import { canAssignTickets, canCreateTickets, canUpdateTicketStatus, canViewOperationalTickets, getRoleLabel } from "./roles";
 import { subscribeToSession } from "./sessionStore";
 import type { AuthSession } from "./sessionStore";
 
@@ -11,6 +11,7 @@ type AuthContextValue = {
   session: AuthSession | null;
   roleLabel: string | null;
   permissions: {
+    canAssignTickets: boolean;
     canCreateTickets: boolean;
     canUpdateTicketStatus: boolean;
     canViewOperationalTickets: boolean;
@@ -44,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       roleLabel: session ? getRoleLabel(session.role) : null,
       permissions: {
+        canAssignTickets: session ? canAssignTickets(session.role) : false,
         canCreateTickets: session ? canCreateTickets(session.role) : false,
         canUpdateTicketStatus: session ? canUpdateTicketStatus(session.role) : false,
         canViewOperationalTickets: session ? canViewOperationalTickets(session.role) : false,

@@ -11,6 +11,7 @@ info:
     - ticket creation
     - ticket listing
     - ticket detail lookup
+    - ticket ownership and assignment
     - ticket status updates
     - ticket comments
 
@@ -92,6 +93,12 @@ paths:
           schema:
             $ref: "#/components/schemas/TicketPriority"
           description: Optional priority filter.
+        - in: query
+          name: assignedToMe
+          required: false
+          schema:
+            type: boolean
+          description: Optional lightweight filter for the authenticated operator.
       responses:
         "200":
           description: Ticket list returned successfully
@@ -106,8 +113,15 @@ paths:
                     description: Investigate repeated timeout errors
                     status: in_progress
                     priority: high
+                    createdBy: user-123
+                    createdByName: Cloud Lab
+                    createdByEmail: lab@example.com
+                    reporterId: user-123
                     reporterName: Cloud Lab
                     reporterEmail: lab@example.com
+                    assigneeId: agent-123
+                    assigneeName: Support Engineer
+                    assignedAt: "2026-04-14T09:10:00Z"
                     comments:
                       - id: CMT-0001
                         ticketId: TCK-0002
@@ -250,6 +264,43 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to update ticket status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tickets/{id}/assignment:
+    patch:
+      tags:
+        - Tickets
+      summary: Assign or reassign a ticket to the authenticated operator
+      operationId: assignTicket
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignTicketRequest"
+            example: {}
+      responses:
+        "200":
+          description: Ticket assignment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketSuccessResponse"
+        "403":
+          description: Authenticated but not allowed to assign the ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Ticket was not found
           content:
             application/json:
               schema:
@@ -486,6 +537,19 @@ components:
           $ref: "#/components/schemas/TicketStatus"
         priority:
           $ref: "#/components/schemas/TicketPriority"
+        createdBy:
+          type: string
+          example: user-123
+        createdByName:
+          type: string
+          example: Cloud Lab
+        createdByEmail:
+          type: string
+          format: email
+          example: lab@example.com
+        reporterId:
+          type: string
+          example: user-123
         reporterName:
           type: string
           example: Cloud Lab
@@ -493,6 +557,14 @@ components:
           type: string
           format: email
           example: lab@example.com
+        assigneeId:
+          type: string
+          example: agent-123
+        assigneeName:
+          type: string
+          example: Support Engineer
+        assignedAt:
+          $ref: "#/components/schemas/Timestamp"
         comments:
           type: array
           items:
@@ -534,6 +606,13 @@ components:
       properties:
         status:
           $ref: "#/components/schemas/TicketStatus"
+
+    AssignTicketRequest:
+      type: object
+      properties:
+        assigneeId:
+          type: string
+          description: Reserved for future extension. Current implementation assigns to the authenticated operator.
 
     AddCommentRequest:
       type: object

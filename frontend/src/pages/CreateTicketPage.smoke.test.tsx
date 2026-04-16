@@ -12,11 +12,13 @@ vi.mock("../api/tickets", () => ({
 vi.mock("../modules/auth/AuthContext", () => ({
   useAuth: () => ({
     session: {
+      subject: "admin-123",
       email: "aulia@example.com",
       displayName: "Aulia Rahman",
       role: "admin",
     },
     permissions: {
+      canAssignTickets: true,
       canCreateTickets: true,
       canUpdateTicketStatus: true,
       canViewOperationalTickets: true,

@@ -2,7 +2,7 @@
 
 OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch 3 menambahkan RBAC sederhana di atas autentikasi Cognito dengan tiga peran: `reporter`, `agent`, dan `admin`.
+Batch 4 menambahkan ownership tiket berbasis identitas login dan workflow assignment sederhana untuk operator.
 
 ## Deployment Tetap
 
@@ -20,6 +20,8 @@ OpsDesk saat ini mendukung:
 - daftar tiket
 - pembuatan tiket
 - detail tiket
+- ownership tiket berbasis pengguna terautentikasi
+- assignment dan reassignment sederhana ke operator yang sedang login
 - pembaruan status tiket
 - komentar tiket
 - health endpoint
@@ -28,7 +30,7 @@ OpsDesk saat ini mendukung:
 
 ## Batasan Yang Masih Berlaku
 
-- belum ada assignment, audit trail, attachment, atau observability lanjutan
+- belum ada audit trail, attachment, atau observability lanjutan
 - scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
 ## Arsitektur Singkat
@@ -162,26 +164,32 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 - `POST /v1/tickets`
 - `GET /v1/tickets`
 - `GET /v1/tickets/{id}`
+- `PATCH /v1/tickets/{id}/assignment`
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 3
+## Catatan Batch 4
 
-Batch ini menambahkan RBAC sederhana:
+Batch ini menambahkan ownership dan assignment:
 
-- `reporter`: dapat membuat tiket, melihat tiket milik sendiri, melihat detail tiket milik sendiri, dan menambah komentar pada tiket milik sendiri
-- `agent`: dapat melihat tiket operasional, memperbarui status, dan menambah komentar
-- `admin`: full access
+- tiket baru menyimpan creator dan reporter dari identitas Cognito bila pelapor membuat tiket sendiri
+- tiket sekarang dapat menyimpan petugas penanggung jawab
+- petugas dan admin dapat mengambil alih tiket ke dirinya sendiri melalui endpoint assignment
+- daftar tiket mendukung visibilitas ringan "Ditugaskan kepada saya"
 
-Role dibaca dari Cognito group dengan nama persis:
+Kebijakan assignment saat ini:
 
-- `reporter`
-- `agent`
-- `admin`
+- `reporter` tidak dapat menugaskan tiket
+- `agent` dapat assign atau reassign tiket ke dirinya sendiri
+- `admin` dapat assign atau reassign tiket ke dirinya sendiri
+
+Kompatibilitas tiket lama:
+
+- tiket lama tanpa field ownership/assignment tetap dapat dibaca
+- akses pelapor untuk tiket lama tetap memakai fallback `reporterEmail`
 
 Yang sengaja belum dikerjakan:
 
-- assignment tiket
 - audit trail
 - attachment
 - observability lanjutan

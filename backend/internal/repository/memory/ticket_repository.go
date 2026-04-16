@@ -59,6 +59,10 @@ func (r *TicketRepository) ListTickets(_ context.Context, filter repository.List
 			continue
 		}
 
+		if strings.TrimSpace(filter.AssigneeID) != "" && !strings.EqualFold(ticket.AssigneeID, strings.TrimSpace(filter.AssigneeID)) {
+			continue
+		}
+
 		tickets = append(tickets, cloneTicket(ticket))
 	}
 

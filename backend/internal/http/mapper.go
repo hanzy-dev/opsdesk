@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"time"
+
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
 )
@@ -12,16 +14,23 @@ func toTicketResponse(ticket domain.Ticket) dto.TicketResponse {
 	}
 
 	return dto.TicketResponse{
-		ID:            ticket.ID,
-		Title:         ticket.Title,
-		Description:   ticket.Description,
-		Status:        string(ticket.Status),
-		Priority:      string(ticket.Priority),
-		ReporterName:  ticket.ReporterName,
-		ReporterEmail: ticket.ReporterEmail,
-		Comments:      comments,
-		CreatedAt:     domain.FormatTimestamp(ticket.CreatedAt),
-		UpdatedAt:     domain.FormatTimestamp(ticket.UpdatedAt),
+		ID:             ticket.ID,
+		Title:          ticket.Title,
+		Description:    ticket.Description,
+		Status:         string(ticket.Status),
+		Priority:       string(ticket.Priority),
+		CreatedBy:      ticket.CreatedBy,
+		CreatedByName:  ticket.CreatedByName,
+		CreatedByEmail: ticket.CreatedByEmail,
+		ReporterID:     ticket.ReporterID,
+		ReporterName:   ticket.ReporterName,
+		ReporterEmail:  ticket.ReporterEmail,
+		AssigneeID:     ticket.AssigneeID,
+		AssigneeName:   ticket.AssigneeName,
+		AssignedAt:     formatOptionalTimestamp(ticket.AssignedAt),
+		Comments:       comments,
+		CreatedAt:      domain.FormatTimestamp(ticket.CreatedAt),
+		UpdatedAt:      domain.FormatTimestamp(ticket.UpdatedAt),
 	}
 }
 
@@ -34,4 +43,12 @@ func toCommentResponse(comment domain.Comment) dto.CommentResponse {
 		CreatedAt:  domain.FormatTimestamp(comment.CreatedAt),
 		UpdatedAt:  domain.FormatTimestamp(comment.UpdatedAt),
 	}
+}
+
+func formatOptionalTimestamp(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+
+	return domain.FormatTimestamp(value)
 }

@@ -1,4 +1,5 @@
 export type AuthSession = {
+  subject: string;
   accessToken: string;
   idToken: string;
   refreshToken: string;

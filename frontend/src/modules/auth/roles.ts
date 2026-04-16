@@ -36,3 +36,7 @@ export function canUpdateTicketStatus(role: UserRole) {
 export function canViewOperationalTickets(role: UserRole) {
   return role === "agent" || role === "admin";
 }
+
+export function canAssignTickets(role: UserRole) {
+  return role === "agent" || role === "admin";
+}

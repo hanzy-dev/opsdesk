@@ -22,17 +22,28 @@ type AddCommentRequest struct {
 	AuthorName string `json:"authorName"`
 }
 
+type AssignTicketRequest struct {
+	AssigneeID string `json:"assigneeId,omitempty"`
+}
+
 type TicketResponse struct {
-	ID            string            `json:"id"`
-	Title         string            `json:"title"`
-	Description   string            `json:"description"`
-	Status        string            `json:"status"`
-	Priority      string            `json:"priority"`
-	ReporterName  string            `json:"reporterName"`
-	ReporterEmail string            `json:"reporterEmail"`
-	Comments      []CommentResponse `json:"comments,omitempty"`
-	CreatedAt     string            `json:"createdAt"`
-	UpdatedAt     string            `json:"updatedAt"`
+	ID             string            `json:"id"`
+	Title          string            `json:"title"`
+	Description    string            `json:"description"`
+	Status         string            `json:"status"`
+	Priority       string            `json:"priority"`
+	CreatedBy      string            `json:"createdBy,omitempty"`
+	CreatedByName  string            `json:"createdByName,omitempty"`
+	CreatedByEmail string            `json:"createdByEmail,omitempty"`
+	ReporterID     string            `json:"reporterId,omitempty"`
+	ReporterName   string            `json:"reporterName"`
+	ReporterEmail  string            `json:"reporterEmail"`
+	AssigneeID     string            `json:"assigneeId,omitempty"`
+	AssigneeName   string            `json:"assigneeName,omitempty"`
+	AssignedAt     string            `json:"assignedAt,omitempty"`
+	Comments       []CommentResponse `json:"comments,omitempty"`
+	CreatedAt      string            `json:"createdAt"`
+	UpdatedAt      string            `json:"updatedAt"`
 }
 
 type CommentResponse struct {

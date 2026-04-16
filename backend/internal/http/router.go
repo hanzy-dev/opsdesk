@@ -139,6 +139,11 @@ func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if len(parts) == 2 && parts[1] == "assignment" && req.Method == http.MethodPatch {
+		r.handleAssignTicket(w, req, ticketID)
+		return
+	}
+
 	writeMethodNotAllowed(w)
 }
 
@@ -177,11 +182,15 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 	}
 
 	ticket, err := r.ticketSvc.CreateTicket(req.Context(), service.CreateTicketInput{
-		Title:         strings.TrimSpace(payload.Title),
-		Description:   strings.TrimSpace(payload.Description),
-		Priority:      domain.TicketPriority(payload.Priority),
-		ReporterName:  reporterName,
-		ReporterEmail: reporterEmail,
+		Title:          strings.TrimSpace(payload.Title),
+		Description:    strings.TrimSpace(payload.Description),
+		Priority:       domain.TicketPriority(payload.Priority),
+		CreatedBy:      identity.Subject,
+		CreatedByName:  identity.Name,
+		CreatedByEmail: identity.Email,
+		ReporterID:     reporterIDFor(identity, reporterEmail),
+		ReporterName:   reporterName,
+		ReporterEmail:  reporterEmail,
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -209,6 +218,7 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 		Status:        domain.TicketStatus(req.URL.Query().Get("status")),
 		Priority:      domain.TicketPriority(req.URL.Query().Get("priority")),
 		ReporterEmail: reporterEmail,
+		AssigneeID:    assignedToMeFilter(identity, req.URL.Query().Get("assignedToMe")),
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -332,6 +342,43 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 	})
 }
 
+func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ticketID string) {
+	var payload dto.AssignTicketRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateAssignTicketRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, "unauthorized", "authentication is required")
+		return
+	}
+
+	if !canAssignTicket(identity) {
+		writeForbidden(w, "forbidden", "you do not have permission to assign this ticket")
+		return
+	}
+
+	ticket, err := r.ticketSvc.AssignTicket(req.Context(), ticketID, service.AssignTicketInput{
+		AssigneeID:   identity.Subject,
+		AssigneeName: displayNameFor(identity),
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
+		Data: toTicketResponse(ticket),
+	})
+}
+
 func decodeJSON(req *http.Request, target any) error {
 	decoder := json.NewDecoder(req.Body)
 	decoder.DisallowUnknownFields()
@@ -442,4 +489,28 @@ func (r *Router) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		next(w, req.WithContext(auth.WithIdentity(req.Context(), identity)))
 	}
+}
+
+func reporterIDFor(identity auth.Identity, reporterEmail string) string {
+	if strings.EqualFold(strings.TrimSpace(identity.Email), strings.TrimSpace(reporterEmail)) {
+		return identity.Subject
+	}
+
+	return ""
+}
+
+func assignedToMeFilter(identity auth.Identity, rawValue string) string {
+	if strings.EqualFold(strings.TrimSpace(rawValue), "true") && canAssignTicket(identity) {
+		return identity.Subject
+	}
+
+	return ""
+}
+
+func displayNameFor(identity auth.Identity) string {
+	if strings.TrimSpace(identity.Name) != "" {
+		return strings.TrimSpace(identity.Name)
+	}
+
+	return strings.TrimSpace(identity.Username)
 }

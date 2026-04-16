@@ -15,17 +15,22 @@ var ErrNotImplemented = errors.New("not implemented")
 var ErrTicketNotFound = errors.New("ticket not found")
 
 type CreateTicketInput struct {
-	Title         string
-	Description   string
-	Priority      domain.TicketPriority
-	ReporterName  string
-	ReporterEmail string
+	Title          string
+	Description    string
+	Priority       domain.TicketPriority
+	CreatedBy      string
+	CreatedByName  string
+	CreatedByEmail string
+	ReporterID     string
+	ReporterName   string
+	ReporterEmail  string
 }
 
 type ListTicketsInput struct {
 	Status        domain.TicketStatus
 	Priority      domain.TicketPriority
 	ReporterEmail string
+	AssigneeID    string
 }
 
 type UpdateTicketStatusInput struct {
@@ -37,12 +42,18 @@ type AddCommentInput struct {
 	AuthorName string
 }
 
+type AssignTicketInput struct {
+	AssigneeID   string
+	AssigneeName string
+}
+
 type TicketService interface {
 	CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error)
 	ListTickets(ctx context.Context, input ListTicketsInput) ([]domain.Ticket, error)
 	GetTicket(ctx context.Context, ticketID string) (domain.Ticket, error)
 	UpdateTicketStatus(ctx context.Context, ticketID string, input UpdateTicketStatusInput) (domain.Ticket, error)
 	AddComment(ctx context.Context, ticketID string, input AddCommentInput) (domain.Comment, error)
+	AssignTicket(ctx context.Context, ticketID string, input AssignTicketInput) (domain.Ticket, error)
 }
 
 type ticketService struct {
@@ -62,15 +73,19 @@ func NewTicketService(repo repository.TicketRepository) TicketService {
 func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error) {
 	now := domain.UTCNow()
 	ticket := domain.Ticket{
-		ID:            s.ticketIDFactory.Next(),
-		Title:         strings.TrimSpace(input.Title),
-		Description:   strings.TrimSpace(input.Description),
-		Status:        domain.TicketStatusOpen,
-		Priority:      input.Priority,
-		ReporterName:  strings.TrimSpace(input.ReporterName),
-		ReporterEmail: strings.TrimSpace(input.ReporterEmail),
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		ID:             s.ticketIDFactory.Next(),
+		Title:          strings.TrimSpace(input.Title),
+		Description:    strings.TrimSpace(input.Description),
+		Status:         domain.TicketStatusOpen,
+		Priority:       input.Priority,
+		CreatedBy:      strings.TrimSpace(input.CreatedBy),
+		CreatedByName:  strings.TrimSpace(input.CreatedByName),
+		CreatedByEmail: strings.TrimSpace(input.CreatedByEmail),
+		ReporterID:     strings.TrimSpace(input.ReporterID),
+		ReporterName:   strings.TrimSpace(input.ReporterName),
+		ReporterEmail:  strings.TrimSpace(input.ReporterEmail),
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 
 	if err := s.repo.CreateTicket(ctx, ticket); err != nil {
@@ -85,6 +100,7 @@ func (s *ticketService) ListTickets(ctx context.Context, input ListTicketsInput)
 		Status:        input.Status,
 		Priority:      input.Priority,
 		ReporterEmail: strings.TrimSpace(input.ReporterEmail),
+		AssigneeID:    strings.TrimSpace(input.AssigneeID),
 	})
 }
 
@@ -157,6 +173,33 @@ func (s *ticketService) AddComment(ctx context.Context, ticketID string, input A
 	}
 
 	return comment, nil
+}
+
+func (s *ticketService) AssignTicket(ctx context.Context, ticketID string, input AssignTicketInput) (domain.Ticket, error) {
+	ticket, err := s.repo.GetTicketByID(ctx, ticketID)
+	if err != nil {
+		if errors.Is(err, repository.ErrTicketNotFound) {
+			return domain.Ticket{}, ErrTicketNotFound
+		}
+
+		return domain.Ticket{}, err
+	}
+
+	now := domain.UTCNow()
+	ticket.AssigneeID = strings.TrimSpace(input.AssigneeID)
+	ticket.AssigneeName = strings.TrimSpace(input.AssigneeName)
+	ticket.AssignedAt = now
+	ticket.UpdatedAt = now
+
+	if err := s.repo.UpdateTicket(ctx, ticket); err != nil {
+		if errors.Is(err, repository.ErrTicketNotFound) {
+			return domain.Ticket{}, ErrTicketNotFound
+		}
+
+		return domain.Ticket{}, err
+	}
+
+	return ticket, nil
 }
 
 type idFactory struct {

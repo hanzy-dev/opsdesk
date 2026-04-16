@@ -1,8 +1,9 @@
 import { apiRequest } from "./client";
-import type { Comment, CreateTicketInput, NewCommentInput, Ticket, TicketStatus } from "../types/ticket";
+import type { AssignTicketInput, Comment, CreateTicketInput, NewCommentInput, Ticket, TicketStatus } from "../types/ticket";
 
-export function listTickets() {
-  return apiRequest<Ticket[]>("/tickets");
+export function listTickets(options?: { assignedToMe?: boolean }) {
+  const query = options?.assignedToMe ? "?assignedToMe=true" : "";
+  return apiRequest<Ticket[]>(`/tickets${query}`);
 }
 
 export function getTicket(ticketId: string) {
@@ -26,6 +27,13 @@ export function updateTicketStatus(ticketId: string, status: TicketStatus) {
 export function addComment(ticketId: string, input: NewCommentInput) {
   return apiRequest<Comment>(`/tickets/${ticketId}/comments`, {
     method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function assignTicket(ticketId: string, input: AssignTicketInput = {}) {
+  return apiRequest<Ticket>(`/tickets/${ticketId}/assignment`, {
+    method: "PATCH",
     body: JSON.stringify(input),
   });
 }

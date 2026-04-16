@@ -142,8 +142,14 @@ aws cognito-idp admin-add-user-to-group --user-pool-id <user-pool-id> --username
 Role yang didukung:
 
 - `reporter`: buat tiket, lihat tiket milik sendiri, detail tiket milik sendiri, komentar pada tiket milik sendiri
-- `agent`: lihat tiket operasional, ubah status, tambah komentar
-- `admin`: full access
+- `agent`: lihat tiket operasional, ubah status, tambah komentar, dan ambil assignment tiket ke dirinya sendiri
+- `admin`: full access, termasuk assignment tiket ke dirinya sendiri
+
+Catatan ownership dan assignment:
+
+- tiket baru yang dibuat pelapor akan menyimpan owner dari identitas Cognito yang sedang login
+- tiket lama tanpa field ownership baru tetap dibaca dengan fallback ke `reporterEmail`
+- batch ini belum membuat direktori operator, sehingga assignment masih memakai pola sederhana "Tugaskan ke Saya"
 
 ## Build and Deploy Backend
 
@@ -205,9 +211,9 @@ Karena backend CORS dikunci ke domain production final, jangan arahkan deploymen
 
 ## Release Notes For This Batch
 
-Batch ini menambahkan RBAC sederhana:
+Batch ini menambahkan ownership dan assignment sederhana:
 
-- backend membaca role dari Cognito group pada ID token
-- endpoint tiket mengembalikan `403` untuk aksi yang tidak diizinkan
-- frontend menampilkan aksi sesuai role aktif
-- group Cognito `reporter`, `agent`, dan `admin` dibuat lewat SAM
+- backend menyimpan creator, reporter, dan assignee pada tiket
+- endpoint baru `PATCH /tickets/{id}/assignment` tersedia untuk assignment
+- frontend menampilkan informasi owner dan petugas penanggung jawab
+- filter ringan "Ditugaskan kepada saya" tersedia untuk petugas dan admin

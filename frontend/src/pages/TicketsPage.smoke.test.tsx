@@ -6,6 +6,7 @@ import { TicketsPage } from "./TicketsPage";
 const listTicketsMock = vi.fn();
 const useAuthMock = vi.fn(() => ({
   permissions: {
+    canAssignTickets: false,
     canCreateTickets: true,
     canUpdateTicketStatus: false,
     canViewOperationalTickets: false,
@@ -26,6 +27,7 @@ describe("TicketsPage smoke tests", () => {
     useAuthMock.mockReset();
     useAuthMock.mockReturnValue({
       permissions: {
+        canAssignTickets: false,
         canCreateTickets: true,
         canUpdateTicketStatus: false,
         canViewOperationalTickets: false,
@@ -96,6 +98,7 @@ describe("TicketsPage smoke tests", () => {
   it("hides create ticket action for agent accounts", async () => {
     useAuthMock.mockReturnValue({
       permissions: {
+        canAssignTickets: true,
         canCreateTickets: false,
         canUpdateTicketStatus: true,
         canViewOperationalTickets: true,

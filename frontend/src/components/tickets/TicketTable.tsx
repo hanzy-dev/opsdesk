@@ -36,6 +36,7 @@ export function TicketTable({
               <th>Status</th>
               <th>Prioritas</th>
               <th>Pelapor</th>
+              <th>Petugas</th>
               <th>Diperbarui</th>
             </tr>
           </thead>
@@ -53,6 +54,7 @@ export function TicketTable({
                 </td>
                 <td className="ticket-table__priority">{formatPriority(ticket.priority)}</td>
                 <td>{ticket.reporterName}</td>
+                <td>{ticket.assigneeName || "Belum ditugaskan"}</td>
                 <td>{formatDateTime(ticket.updatedAt)}</td>
               </tr>
             ))}

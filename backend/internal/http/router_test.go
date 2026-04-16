@@ -262,6 +262,45 @@ func TestReporterCannotUpdateTicketStatus(t *testing.T) {
 	}
 }
 
+func TestAgentCanAssignTicketToSelf(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
+
+	recorder := performRequest(t, agentRouter, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/assignment", dto.AssignTicketRequest{})
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.TicketResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.AssigneeID != "agent-123" {
+		t.Fatalf("expected assignee agent-123, got %q", response.Data.AssigneeID)
+	}
+
+	if response.Data.AssigneeName != "OpsDesk Agent" {
+		t.Fatalf("expected assignee name OpsDesk Agent, got %q", response.Data.AssigneeName)
+	}
+}
+
+func TestReporterCannotAssignTicket(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	ticket := createTestTicket(t, router)
+
+	recorder := performRequest(t, router, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/assignment", dto.AssignTicketRequest{})
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", recorder.Code)
+	}
+}
+
 func TestReporterSeesOnlyOwnTickets(t *testing.T) {
 	t.Parallel()
 
@@ -353,6 +392,11 @@ func createTestTicket(t *testing.T, router http.Handler) dto.TicketResponse {
 
 	var response dto.SuccessResponse[dto.TicketResponse]
 	decodeResponse(t, recorder, &response)
+
+	if response.Data.CreatedBy == "" {
+		t.Fatalf("expected createdBy to be set")
+	}
+
 	return response.Data
 }
 

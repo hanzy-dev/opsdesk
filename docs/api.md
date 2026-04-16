@@ -9,6 +9,8 @@ OpsDesk exposes a small HTTP API for a serverless helpdesk workflow. The current
 - ticket creation
 - ticket listing
 - ticket detail lookup
+- ticket ownership and assignee metadata
+- ticket assignment
 - ticket status updates
 - ticket comments
 
@@ -65,7 +67,9 @@ Recommended quick checks:
    Confirm the created ticket appears in the list.
 5. `PATCH /tickets/{id}/status`
    Change the status to `in_progress` or `resolved`.
-6. `POST /tickets/{id}/comments`
+6. `PATCH /tickets/{id}/assignment`
+   Assign the ticket to the authenticated operator.
+7. `POST /tickets/{id}/comments`
    Add one comment and verify the detail response includes it.
 
 ## Notes
@@ -74,4 +78,5 @@ Recommended quick checks:
 - All endpoints except `GET /health` require a valid Cognito JWT bearer token.
 - Backend reads RBAC from Cognito groups `reporter`, `agent`, and `admin`.
 - Forbidden actions return `403` even if the frontend hides the action.
+- Assignment policy in this batch is intentionally simple: `agent` and `admin` may assign or reassign a ticket to themselves.
 - The deployment baseline uses the `dev` backend environment.

@@ -12,6 +12,10 @@ func canViewTicket(identity auth.Identity, ticket domain.Ticket) bool {
 		return true
 	}
 
+	if strings.TrimSpace(ticket.ReporterID) != "" && strings.EqualFold(strings.TrimSpace(identity.Subject), strings.TrimSpace(ticket.ReporterID)) {
+		return true
+	}
+
 	return strings.EqualFold(strings.TrimSpace(identity.Email), strings.TrimSpace(ticket.ReporterEmail))
 }
 
@@ -32,5 +36,13 @@ func canAddComment(identity auth.Identity, ticket domain.Ticket) bool {
 		return true
 	}
 
+	if strings.TrimSpace(ticket.ReporterID) != "" && strings.EqualFold(strings.TrimSpace(identity.Subject), strings.TrimSpace(ticket.ReporterID)) {
+		return true
+	}
+
 	return strings.EqualFold(strings.TrimSpace(identity.Email), strings.TrimSpace(ticket.ReporterEmail))
+}
+
+func canAssignTicket(identity auth.Identity) bool {
+	return identity.Role == auth.RoleAgent || identity.Role == auth.RoleAdmin
 }

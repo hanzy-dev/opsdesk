@@ -28,16 +28,23 @@ type TicketRepository struct {
 }
 
 type ticketItem struct {
-	ID            string        `dynamodbav:"id"`
-	Title         string        `dynamodbav:"title"`
-	Description   string        `dynamodbav:"description"`
-	Status        string        `dynamodbav:"status"`
-	Priority      string        `dynamodbav:"priority"`
-	ReporterName  string        `dynamodbav:"reporterName"`
-	ReporterEmail string        `dynamodbav:"reporterEmail"`
-	Comments      []commentItem `dynamodbav:"comments"`
-	CreatedAt     string        `dynamodbav:"createdAt"`
-	UpdatedAt     string        `dynamodbav:"updatedAt"`
+	ID             string        `dynamodbav:"id"`
+	Title          string        `dynamodbav:"title"`
+	Description    string        `dynamodbav:"description"`
+	Status         string        `dynamodbav:"status"`
+	Priority       string        `dynamodbav:"priority"`
+	CreatedBy      string        `dynamodbav:"createdBy"`
+	CreatedByName  string        `dynamodbav:"createdByName"`
+	CreatedByEmail string        `dynamodbav:"createdByEmail"`
+	ReporterID     string        `dynamodbav:"reporterId"`
+	ReporterName   string        `dynamodbav:"reporterName"`
+	ReporterEmail  string        `dynamodbav:"reporterEmail"`
+	AssigneeID     string        `dynamodbav:"assigneeId"`
+	AssigneeName   string        `dynamodbav:"assigneeName"`
+	AssignedAt     string        `dynamodbav:"assignedAt"`
+	Comments       []commentItem `dynamodbav:"comments"`
+	CreatedAt      string        `dynamodbav:"createdAt"`
+	UpdatedAt      string        `dynamodbav:"updatedAt"`
 }
 
 type commentItem struct {
@@ -90,7 +97,7 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 	}
 
 	expressionValues := map[string]types.AttributeValue{}
-	filterExpressions := make([]string, 0, 3)
+	filterExpressions := make([]string, 0, 4)
 
 	if filter.Status != "" {
 		filterExpressions = append(filterExpressions, "#status = :status")
@@ -107,12 +114,18 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 		expressionValues[":reporterEmail"] = &types.AttributeValueMemberS{Value: strings.TrimSpace(filter.ReporterEmail)}
 	}
 
+	if strings.TrimSpace(filter.AssigneeID) != "" {
+		filterExpressions = append(filterExpressions, "#assigneeId = :assigneeId")
+		expressionValues[":assigneeId"] = &types.AttributeValueMemberS{Value: strings.TrimSpace(filter.AssigneeID)}
+	}
+
 	if len(filterExpressions) > 0 {
 		input.FilterExpression = aws.String(joinFilterExpressions(filterExpressions))
 		input.ExpressionAttributeNames = map[string]string{
 			"#status":        "status",
 			"#priority":      "priority",
 			"#reporterEmail": "reporterEmail",
+			"#assigneeId":    "assigneeId",
 		}
 		input.ExpressionAttributeValues = expressionValues
 	}
@@ -181,16 +194,23 @@ func toTicketItem(ticket domain.Ticket) ticketItem {
 	}
 
 	return ticketItem{
-		ID:            ticket.ID,
-		Title:         ticket.Title,
-		Description:   ticket.Description,
-		Status:        string(ticket.Status),
-		Priority:      string(ticket.Priority),
-		ReporterName:  ticket.ReporterName,
-		ReporterEmail: ticket.ReporterEmail,
-		Comments:      comments,
-		CreatedAt:     domain.FormatTimestamp(ticket.CreatedAt),
-		UpdatedAt:     domain.FormatTimestamp(ticket.UpdatedAt),
+		ID:             ticket.ID,
+		Title:          ticket.Title,
+		Description:    ticket.Description,
+		Status:         string(ticket.Status),
+		Priority:       string(ticket.Priority),
+		CreatedBy:      ticket.CreatedBy,
+		CreatedByName:  ticket.CreatedByName,
+		CreatedByEmail: ticket.CreatedByEmail,
+		ReporterID:     ticket.ReporterID,
+		ReporterName:   ticket.ReporterName,
+		ReporterEmail:  ticket.ReporterEmail,
+		AssigneeID:     ticket.AssigneeID,
+		AssigneeName:   ticket.AssigneeName,
+		AssignedAt:     formatOptionalTimestamp(ticket.AssignedAt),
+		Comments:       comments,
+		CreatedAt:      domain.FormatTimestamp(ticket.CreatedAt),
+		UpdatedAt:      domain.FormatTimestamp(ticket.UpdatedAt),
 	}
 }
 
@@ -201,6 +221,11 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 	}
 
 	updatedAt, err := parseTimestamp(item.UpdatedAt)
+	if err != nil {
+		return domain.Ticket{}, err
+	}
+
+	assignedAt, err := parseOptionalTimestamp(item.AssignedAt)
 	if err != nil {
 		return domain.Ticket{}, err
 	}
@@ -228,16 +253,23 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 	}
 
 	return domain.Ticket{
-		ID:            item.ID,
-		Title:         item.Title,
-		Description:   item.Description,
-		Status:        domain.TicketStatus(item.Status),
-		Priority:      domain.TicketPriority(item.Priority),
-		ReporterName:  item.ReporterName,
-		ReporterEmail: item.ReporterEmail,
-		Comments:      comments,
-		CreatedAt:     createdAt,
-		UpdatedAt:     updatedAt,
+		ID:             item.ID,
+		Title:          item.Title,
+		Description:    item.Description,
+		Status:         domain.TicketStatus(item.Status),
+		Priority:       domain.TicketPriority(item.Priority),
+		CreatedBy:      item.CreatedBy,
+		CreatedByName:  item.CreatedByName,
+		CreatedByEmail: item.CreatedByEmail,
+		ReporterID:     item.ReporterID,
+		ReporterName:   item.ReporterName,
+		ReporterEmail:  item.ReporterEmail,
+		AssigneeID:     item.AssigneeID,
+		AssigneeName:   item.AssigneeName,
+		AssignedAt:     assignedAt,
+		Comments:       comments,
+		CreatedAt:      createdAt,
+		UpdatedAt:      updatedAt,
 	}, nil
 }
 
@@ -248,6 +280,22 @@ func parseTimestamp(value string) (time.Time, error) {
 	}
 
 	return parsed.UTC(), nil
+}
+
+func parseOptionalTimestamp(value string) (time.Time, error) {
+	if strings.TrimSpace(value) == "" {
+		return time.Time{}, nil
+	}
+
+	return parseTimestamp(value)
+}
+
+func formatOptionalTimestamp(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+
+	return domain.FormatTimestamp(value)
 }
 
 func joinFilterExpressions(expressions []string) string {

@@ -63,6 +63,10 @@ func (v *Validator) ValidateAddCommentRequest(input dto.AddCommentRequest) []dto
 	return errs
 }
 
+func (v *Validator) ValidateAssignTicketRequest(_ dto.AssignTicketRequest) []dto.FieldError {
+	return nil
+}
+
 func isValidPriority(value string) bool {
 	switch domain.TicketPriority(value) {
 	case domain.TicketPriorityLow, domain.TicketPriorityMedium, domain.TicketPriorityHigh:

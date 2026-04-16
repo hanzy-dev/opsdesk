@@ -28,7 +28,9 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
    reporter dapat membuat tiket dan hanya melihat tiket miliknya.
 6. Verifikasi aksi sesuai role:
    agent dapat melihat tiket operasional, memperbarui status, dan menambah komentar.
-7. Verifikasi aksi sesuai role:
+7. Verifikasi assignment:
+   agent atau admin dapat menekan "Tugaskan ke Saya" dan informasi petugas tersimpan.
+8. Verifikasi aksi sesuai role:
    admin memiliki akses penuh.
 
 ## Verifikasi Backend
@@ -45,7 +47,6 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
 
 ## Yang Sengaja Belum Dicentang Pada Batch Ini
 
-- assignment tiket
 - audit trail
 - attachment
 - observability lanjutan

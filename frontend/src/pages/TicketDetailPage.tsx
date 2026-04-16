@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { addComment, getTicket, updateTicketStatus } from "../api/tickets";
+import { addComment, assignTicket, getTicket, updateTicketStatus } from "../api/tickets";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -26,6 +26,9 @@ export function TicketDetailPage() {
   });
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
+  const [assignmentMessage, setAssignmentMessage] = useState<string | null>(null);
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
+  const [isSavingAssignment, setIsSavingAssignment] = useState(false);
 
   async function loadTicket(options?: { preserveView?: boolean }) {
     if (!options?.preserveView) {
@@ -93,6 +96,22 @@ export function TicketDetailPage() {
     }
   }
 
+  async function handleAssignToMe() {
+    setIsSavingAssignment(true);
+    setAssignmentMessage(null);
+    setAssignmentError(null);
+
+    try {
+      const updatedTicket = await assignTicket(ticketId);
+      setTicket(updatedTicket);
+      setAssignmentMessage("Tiket berhasil ditugaskan kepada Anda.");
+    } catch (error) {
+      setAssignmentError(error instanceof Error ? error.message : "Penugasan tiket belum berhasil.");
+    } finally {
+      setIsSavingAssignment(false);
+    }
+  }
+
   if (loading) {
     return <LoadingState label="Memuat detail tiket..." />;
   }
@@ -139,10 +158,52 @@ export function TicketDetailPage() {
               <dd>{formatDateTime(ticket.createdAt)}</dd>
             </div>
             <div>
+              <dt>Dibuat oleh</dt>
+              <dd>{ticket.createdByName || ticket.createdByEmail || "Data belum tersedia"}</dd>
+            </div>
+            <div>
+              <dt>Petugas</dt>
+              <dd>{ticket.assigneeName || "Belum ditugaskan"}</dd>
+            </div>
+            <div>
+              <dt>Waktu penugasan</dt>
+              <dd>{ticket.assignedAt ? formatDateTime(ticket.assignedAt) : "Belum ditugaskan"}</dd>
+            </div>
+            <div>
               <dt>Diperbarui</dt>
               <dd>{formatDateTime(ticket.updatedAt)}</dd>
             </div>
           </dl>
+        </article>
+
+        <article className="panel">
+          <p className="section-eyebrow">Penugasan</p>
+          <h3>Tanggung jawab tiket</h3>
+          {permissions.canAssignTickets ? (
+            <div className="stack-md">
+              <p className="form-hint">
+                {ticket.assigneeId === session?.subject
+                  ? "Tiket ini sudah tercatat atas nama Anda."
+                  : ticket.assigneeName
+                    ? `Saat ini ditangani oleh ${ticket.assigneeName}.`
+                    : "Tiket ini belum memiliki petugas yang bertanggung jawab."}
+              </p>
+
+              {assignmentError ? <p className="form-error">{assignmentError}</p> : null}
+              {assignmentMessage ? <p className="form-success">{assignmentMessage}</p> : null}
+
+              <button
+                className="button button--secondary"
+                disabled={isSavingAssignment || ticket.assigneeId === session?.subject}
+                onClick={() => void handleAssignToMe()}
+                type="button"
+              >
+                {isSavingAssignment ? "Menyimpan penugasan..." : "Tugaskan ke Saya"}
+              </button>
+            </div>
+          ) : (
+            <p className="form-hint">Penugasan tiket hanya dapat dilakukan oleh petugas atau admin.</p>
+          )}
         </article>
 
         <article className="panel">

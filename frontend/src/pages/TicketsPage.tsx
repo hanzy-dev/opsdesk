@@ -15,13 +15,14 @@ export function TicketsPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
+  const [showAssignedToMe, setShowAssignedToMe] = useState(false);
 
   async function loadTickets() {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await listTickets();
+      const data = await listTickets({ assignedToMe: showAssignedToMe });
       setTickets(data);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Daftar tiket belum bisa dimuat.");
@@ -32,7 +33,7 @@ export function TicketsPage() {
 
   useEffect(() => {
     void loadTickets();
-  }, []);
+  }, [showAssignedToMe]);
 
   const stats = useMemo(
     () => ({
@@ -51,7 +52,7 @@ export function TicketsPage() {
       const matchesQuery =
         normalizedQuery === ""
           ? true
-          : [ticket.id, ticket.title, ticket.reporterName, ticket.reporterEmail, ticket.description]
+          : [ticket.id, ticket.title, ticket.reporterName, ticket.reporterEmail, ticket.assigneeName, ticket.description]
               .join(" ")
               .toLowerCase()
               .includes(normalizedQuery);
@@ -136,6 +137,19 @@ export function TicketsPage() {
               <option value="resolved">Selesai</option>
             </select>
           </label>
+
+          {permissions.canAssignTickets ? (
+            <label className="field">
+              <span>Penugasan</span>
+              <select
+                value={showAssignedToMe ? "assigned" : "all"}
+                onChange={(event) => setShowAssignedToMe(event.target.value === "assigned")}
+              >
+                <option value="all">Semua tiket</option>
+                <option value="assigned">Ditugaskan kepada saya</option>
+              </select>
+            </label>
+          ) : null}
         </div>
       </div>
 

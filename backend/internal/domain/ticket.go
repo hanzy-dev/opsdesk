@@ -19,16 +19,23 @@ const (
 )
 
 type Ticket struct {
-	ID            string
-	Title         string
-	Description   string
-	Status        TicketStatus
-	Priority      TicketPriority
-	ReporterName  string
-	ReporterEmail string
-	Comments      []Comment
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID             string
+	Title          string
+	Description    string
+	Status         TicketStatus
+	Priority       TicketPriority
+	CreatedBy      string
+	CreatedByName  string
+	CreatedByEmail string
+	ReporterID     string
+	ReporterName   string
+	ReporterEmail  string
+	AssigneeID     string
+	AssigneeName   string
+	AssignedAt     time.Time
+	Comments       []Comment
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type Comment struct {
