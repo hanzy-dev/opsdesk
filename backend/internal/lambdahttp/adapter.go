@@ -101,6 +101,10 @@ func newRequest(ctx context.Context, event events.APIGatewayV2HTTPRequest) (*htt
 		req.Header.Set(key, value)
 	}
 
+	if req.Header.Get("X-Request-Id") == "" && strings.TrimSpace(event.RequestContext.RequestID) != "" {
+		req.Header.Set("X-Request-Id", event.RequestContext.RequestID)
+	}
+
 	for _, cookie := range event.Cookies {
 		req.Header.Add("Cookie", cookie)
 	}

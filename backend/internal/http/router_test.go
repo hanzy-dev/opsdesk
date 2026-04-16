@@ -13,6 +13,7 @@ import (
 	"opsdesk/backend/internal/config"
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
+	"opsdesk/backend/internal/observability"
 	"opsdesk/backend/internal/repository/memory"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/storage"
@@ -222,6 +223,14 @@ func TestGetTicketsRequiresAuthentication(t *testing.T) {
 
 	if response.Error.Code != "unauthorized" {
 		t.Fatalf("expected unauthorized error code, got %q", response.Error.Code)
+	}
+
+	if response.Error.RequestID == "" {
+		t.Fatal("expected requestId to be included in error response")
+	}
+
+	if recorder.Header().Get("X-Request-Id") == "" {
+		t.Fatal("expected X-Request-Id header to be set")
 	}
 }
 
@@ -600,6 +609,7 @@ func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepo
 		validation.New(),
 		service.NewTicketService(repo, attachmentStorages...),
 		staticVerifier{identity: identity},
+		observability.NewLogger("error", "test"),
 	)
 }
 

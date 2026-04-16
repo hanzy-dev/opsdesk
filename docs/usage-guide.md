@@ -49,6 +49,7 @@ Jika hanya punya waktu singkat:
 - Aktivitas tiket dicatat append-only dan ditampilkan pada halaman detail.
 - Daftar tiket sekarang memakai query server-side agar pencarian dan pagination tetap konsisten untuk data yang lebih besar.
 - Lampiran memakai S3 private dan diakses melalui URL presigned yang berlaku sementara.
+- Jika UI menampilkan "Kode referensi" saat error, gunakan nilainya untuk mencari log backend di CloudWatch.
 
 ## Screenshot
 

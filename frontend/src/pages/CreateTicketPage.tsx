@@ -5,6 +5,7 @@ import { createTicket } from "../api/tickets";
 import { ErrorState } from "../components/common/ErrorState";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { CreateTicketInput } from "../types/ticket";
+import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 
 const initialForm: CreateTicketInput = {
   title: "",
@@ -20,6 +21,7 @@ export function CreateTicketPage() {
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorReferenceId, setErrorReferenceId] = useState<string | null>(null);
   const [submitNotice, setSubmitNotice] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -27,6 +29,7 @@ export function CreateTicketPage() {
     event.preventDefault();
     setIsSubmitting(true);
     setErrorMessage(null);
+    setErrorReferenceId(null);
     setSubmitNotice("Menyimpan tiket dan menyiapkan halaman detail...");
     setFieldErrors({});
 
@@ -45,9 +48,11 @@ export function CreateTicketPage() {
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
+        setErrorReferenceId(error.requestId ?? null);
         setFieldErrors(Object.fromEntries((error.details ?? []).map((detail) => [detail.field, detail.message])));
       } else {
-        setErrorMessage("Tiket belum berhasil dibuat. Silakan coba lagi.");
+        setErrorMessage(getErrorMessage(error, "Tiket belum berhasil dibuat. Silakan coba lagi."));
+        setErrorReferenceId(getErrorReferenceId(error) ?? null);
       }
       setSubmitNotice(null);
     } finally {
@@ -155,7 +160,12 @@ export function CreateTicketPage() {
           )}
         </div>
 
-        {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+        {errorMessage ? (
+          <div>
+            <p className="form-error">{errorMessage}</p>
+            {errorReferenceId ? <p className="form-hint">Kode referensi: {errorReferenceId}</p> : null}
+          </div>
+        ) : null}
         {submitNotice ? <p className="form-hint">{submitNotice}</p> : null}
 
         <div className="form-actions">

@@ -19,6 +19,7 @@ import { getRoleLabel } from "../modules/auth/roles";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Attachment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
+import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 
 const allowedAttachmentTypes = [
   "application/pdf",
@@ -38,10 +39,13 @@ export function TicketDetailPage() {
   const [activities, setActivities] = useState<TicketActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
+  const [pageErrorReferenceId, setPageErrorReferenceId] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusErrorReferenceId, setStatusErrorReferenceId] = useState<string | null>(null);
   const [commentMessage, setCommentMessage] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentErrorReferenceId, setCommentErrorReferenceId] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>("open");
   const [commentForm, setCommentForm] = useState({
     message: "",
@@ -51,9 +55,11 @@ export function TicketDetailPage() {
   const [isSavingComment, setIsSavingComment] = useState(false);
   const [assignmentMessage, setAssignmentMessage] = useState<string | null>(null);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
+  const [assignmentErrorReferenceId, setAssignmentErrorReferenceId] = useState<string | null>(null);
   const [isSavingAssignment, setIsSavingAssignment] = useState(false);
   const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [attachmentErrorReferenceId, setAttachmentErrorReferenceId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
@@ -65,6 +71,7 @@ export function TicketDetailPage() {
     }
 
     setPageError(null);
+    setPageErrorReferenceId(null);
 
     try {
       const [ticketData, activityData] = await Promise.all([getTicket(ticketId), getTicketActivities(ticketId)]);
@@ -72,7 +79,8 @@ export function TicketDetailPage() {
       setActivities(activityData);
       setSelectedStatus(ticketData.status);
     } catch (error) {
-      setPageError(error instanceof Error ? error.message : "Detail tiket belum bisa dimuat.");
+      setPageError(getErrorMessage(error, "Detail tiket belum bisa dimuat."));
+      setPageErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       if (!options?.preserveView) {
         setLoading(false);
@@ -96,13 +104,15 @@ export function TicketDetailPage() {
     setIsSavingStatus(true);
     setStatusMessage(null);
     setStatusError(null);
+    setStatusErrorReferenceId(null);
 
     try {
       const updatedTicket = await updateTicketStatus(ticketId, selectedStatus);
       setTicket(updatedTicket);
       setStatusMessage("Status tiket berhasil diperbarui.");
     } catch (error) {
-      setStatusError(error instanceof Error ? error.message : "Status belum berhasil diperbarui.");
+      setStatusError(getErrorMessage(error, "Status belum berhasil diperbarui."));
+      setStatusErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setIsSavingStatus(false);
     }
@@ -113,6 +123,7 @@ export function TicketDetailPage() {
     setIsSavingComment(true);
     setCommentMessage(null);
     setCommentError(null);
+    setCommentErrorReferenceId(null);
 
     try {
       await addComment(ticketId, commentForm);
@@ -120,7 +131,8 @@ export function TicketDetailPage() {
       await loadTicket({ preserveView: true });
       setCommentMessage("Komentar baru berhasil ditambahkan ke tiket.");
     } catch (error) {
-      setCommentError(error instanceof Error ? error.message : "Komentar belum berhasil ditambahkan.");
+      setCommentError(getErrorMessage(error, "Komentar belum berhasil ditambahkan."));
+      setCommentErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setIsSavingComment(false);
     }
@@ -130,13 +142,15 @@ export function TicketDetailPage() {
     setIsSavingAssignment(true);
     setAssignmentMessage(null);
     setAssignmentError(null);
+    setAssignmentErrorReferenceId(null);
 
     try {
       const updatedTicket = await assignTicket(ticketId);
       setTicket(updatedTicket);
       setAssignmentMessage("Tiket berhasil ditugaskan kepada Anda.");
     } catch (error) {
-      setAssignmentError(error instanceof Error ? error.message : "Penugasan tiket belum berhasil.");
+      setAssignmentError(getErrorMessage(error, "Penugasan tiket belum berhasil."));
+      setAssignmentErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setIsSavingAssignment(false);
     }
@@ -146,6 +160,7 @@ export function TicketDetailPage() {
     event.preventDefault();
     setAttachmentMessage(null);
     setAttachmentError(null);
+    setAttachmentErrorReferenceId(null);
 
     if (!selectedFile) {
       setAttachmentError("Pilih file lampiran terlebih dahulu.");
@@ -184,7 +199,8 @@ export function TicketDetailPage() {
       await loadTicket({ preserveView: true });
       setAttachmentMessage("Lampiran berhasil ditambahkan ke tiket.");
     } catch (error) {
-      setAttachmentError(error instanceof Error ? error.message : "Lampiran belum berhasil diunggah.");
+      setAttachmentError(getErrorMessage(error, "Lampiran belum berhasil diunggah."));
+      setAttachmentErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setIsUploadingAttachment(false);
     }
@@ -193,12 +209,14 @@ export function TicketDetailPage() {
   async function handleOpenAttachment(attachment: Attachment) {
     setDownloadingAttachmentId(attachment.id);
     setAttachmentError(null);
+    setAttachmentErrorReferenceId(null);
 
     try {
       const downloadTarget = await getAttachmentDownloadUrl(ticketId, attachment.id);
       window.open(downloadTarget.downloadUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
-      setAttachmentError(error instanceof Error ? error.message : "Lampiran belum bisa dibuka.");
+      setAttachmentError(getErrorMessage(error, "Lampiran belum bisa dibuka."));
+      setAttachmentErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setDownloadingAttachmentId(null);
     }
@@ -213,6 +231,7 @@ export function TicketDetailPage() {
       <ErrorState
         title="Detail tiket belum tersedia"
         message={pageError}
+        referenceId={pageErrorReferenceId ?? undefined}
         onRetry={() => void loadTicket()}
       />
     );
@@ -282,6 +301,7 @@ export function TicketDetailPage() {
               </p>
 
               {assignmentError ? <p className="form-error">{assignmentError}</p> : null}
+              {assignmentErrorReferenceId ? <p className="form-hint">Kode referensi: {assignmentErrorReferenceId}</p> : null}
               {assignmentMessage ? <p className="form-success">{assignmentMessage}</p> : null}
 
               <button
@@ -313,6 +333,7 @@ export function TicketDetailPage() {
               </label>
 
               {statusError ? <p className="form-error">{statusError}</p> : null}
+              {statusErrorReferenceId ? <p className="form-hint">Kode referensi: {statusErrorReferenceId}</p> : null}
               {statusMessage ? <p className="form-success">{statusMessage}</p> : null}
 
               <button className="button button--primary" disabled={isSavingStatus} type="submit">
@@ -379,6 +400,7 @@ export function TicketDetailPage() {
             {selectedFile ? <p className="form-hint">{selectedFile.name} • {formatFileSize(selectedFile.size)}</p> : null}
             {isUploadingAttachment ? <p className="form-hint">Progres upload: {uploadProgress}%</p> : null}
             {attachmentError ? <p className="form-error">{attachmentError}</p> : null}
+            {attachmentErrorReferenceId ? <p className="form-hint">Kode referensi: {attachmentErrorReferenceId}</p> : null}
             {attachmentMessage ? <p className="form-success">{attachmentMessage}</p> : null}
 
             <button className="button button--primary" disabled={isUploadingAttachment} type="submit">
@@ -437,6 +459,7 @@ export function TicketDetailPage() {
             </label>
 
             {commentError ? <p className="form-error">{commentError}</p> : null}
+            {commentErrorReferenceId ? <p className="form-hint">Kode referensi: {commentErrorReferenceId}</p> : null}
             {commentMessage ? <p className="form-success">{commentMessage}</p> : null}
 
             <button className="button button--primary" disabled={isSavingComment} type="submit">

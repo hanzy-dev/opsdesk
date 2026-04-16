@@ -7,6 +7,7 @@ import { LoadingState } from "../components/common/LoadingState";
 import { TicketTable } from "../components/tickets/TicketTable";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
+import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 
 export function TicketsPage() {
   const { permissions } = useAuth();
@@ -20,6 +21,7 @@ export function TicketsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorReferenceId, setErrorReferenceId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
@@ -32,6 +34,7 @@ export function TicketsPage() {
   async function loadTickets() {
     setLoading(true);
     setError(null);
+    setErrorReferenceId(null);
 
     try {
       const data = await listTickets({
@@ -53,7 +56,8 @@ export function TicketsPage() {
         hasNext: data.pagination.has_next,
       });
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Daftar tiket belum bisa dimuat.");
+      setError(getErrorMessage(error, "Daftar tiket belum bisa dimuat."));
+      setErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setLoading(false);
     }
@@ -81,6 +85,7 @@ export function TicketsPage() {
       <ErrorState
         title="Daftar tiket belum tersedia"
         message={error}
+        referenceId={errorReferenceId ?? undefined}
         onRetry={() => void loadTickets()}
       />
     );

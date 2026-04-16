@@ -2,7 +2,7 @@
 
 OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch 7 menambahkan lampiran tiket yang aman dengan Amazon S3 private, presigned upload URL, dan presigned download URL.
+Batch 8 menambahkan observability dasar yang ringan: structured logging backend, request ID, error response yang konsisten, dan troubleshooting operasional yang lebih praktis.
 
 ## Deployment Tetap
 
@@ -33,7 +33,7 @@ OpsDesk saat ini mendukung:
 
 ## Batasan Yang Masih Berlaku
 
-- belum ada malware scanning, pemrosesan file lanjutan, atau observability lanjutan
+- belum ada malware scanning, pemrosesan file lanjutan, atau observability lanjutan seperti distributed tracing penuh
 - scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
 ## Arsitektur Singkat
@@ -136,6 +136,17 @@ Output stack yang paling penting:
 - `CognitoUserPoolClientId`
 - `CognitoIssuerUrl`
 
+## Observability Dasar
+
+Backend sekarang memakai structured logging JSON yang ramah CloudWatch dan request ID ringan untuk korelasi log.
+
+- log Lambda dapat diperiksa di CloudWatch Log Group `/aws/lambda/<BackendFunctionName>`
+- access log API Gateway tersedia di `/aws/apigateway/opsdesk-dev-http-api`
+- response error backend menyertakan `error.requestId`
+- frontend menampilkan `Kode referensi` saat request ID tersedia
+
+Panduan operasional ringkas ada di [docs/operations.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/operations.md).
+
 ## Deploy Frontend Ke Vercel
 
 Konfigurasi yang dipakai:
@@ -175,15 +186,15 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 7
+## Catatan Batch 8
 
-Batch ini menambahkan lampiran tiket yang aman:
+Batch ini menambahkan observability dasar dan error handling operasional:
 
-- backend membuat presigned upload URL untuk S3 private
-- frontend mengunggah file langsung ke S3
-- metadata lampiran disimpan pada record tiket yang sama
-- detail tiket menampilkan daftar lampiran dan tombol buka dengan presigned download URL
-- penambahan lampiran dicatat ke riwayat aktivitas tiket
+- backend menulis structured log JSON untuk request, response, auth failure, dan aksi bisnis penting
+- setiap request backend memiliki `requestId` atau correlation ID ringan
+- response error backend sekarang konsisten dan membawa `requestId`
+- frontend menampilkan pesan error Indonesia yang lebih operasional beserta kode referensi bila tersedia
+- panduan troubleshooting dasar ditambahkan untuk CloudWatch dan error umum
 
 Kebijakan assignment tetap:
 
@@ -206,6 +217,7 @@ Yang sengaja belum dikerjakan:
 
 - [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md)
 - [docs/architecture.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/architecture.md)
+- [docs/operations.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/operations.md)
 - [docs/usage-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/usage-guide.md)
 - [docs/release-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/release-checklist.md)
 - [docs/roadmap.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/roadmap.md)

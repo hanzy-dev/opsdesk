@@ -6,14 +6,22 @@ import type { ApiErrorResponse, ApiSuccessResponse } from "../types/api";
 export class ApiError extends Error {
   code: string;
   status: number;
+  requestId?: string;
   details?: { field: string; message: string }[];
 
-  constructor(message: string, status: number, code = "api_error", details?: { field: string; message: string }[]) {
+  constructor(
+    message: string,
+    status: number,
+    code = "api_error",
+    details?: { field: string; message: string }[],
+    requestId?: string,
+  ) {
     super(message);
     this.name = "ApiError";
     this.status = status;
     this.code = code;
     this.details = details;
+    this.requestId = requestId;
   }
 }
 
@@ -57,6 +65,7 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
       response.status,
       payload && "error" in payload ? payload.error.code : "api_error",
       payload && "error" in payload ? payload.error.details : undefined,
+      payload && "error" in payload ? payload.error.requestId : undefined,
     );
   }
 

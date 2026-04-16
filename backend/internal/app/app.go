@@ -12,6 +12,7 @@ import (
 	"opsdesk/backend/internal/auth"
 	"opsdesk/backend/internal/config"
 	httpapi "opsdesk/backend/internal/http"
+	"opsdesk/backend/internal/observability"
 	dynamorepo "opsdesk/backend/internal/repository/dynamodb"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/storage"
@@ -45,7 +46,8 @@ func New(cfg config.Config) (*App, error) {
 		return nil, err
 	}
 
-	router := httpapi.NewRouter(cfg, validator, ticketService, authVerifier)
+	logger := observability.NewLogger(cfg.LogLevel, cfg.AppEnv)
+	router := httpapi.NewRouter(cfg, validator, ticketService, authVerifier, logger)
 
 	return &App{router: router}, nil
 }

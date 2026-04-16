@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"opsdesk/backend/internal/config"
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
+	"opsdesk/backend/internal/observability"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/validation"
 )
@@ -23,7 +25,7 @@ type Router struct {
 	basePathMux  *http.ServeMux
 }
 
-func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService, authVerifier auth.Verifier) http.Handler {
+func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService, authVerifier auth.Verifier, logger *slog.Logger) http.Handler {
 	r := &Router{
 		config:       cfg,
 		validator:    validator,
@@ -38,7 +40,7 @@ func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc ser
 	rootMux.Handle(cfg.APIBasePath+"/", http.StripPrefix(cfg.APIBasePath, r.basePathMux))
 	rootMux.Handle(cfg.APIBasePath, http.StripPrefix(cfg.APIBasePath, r.basePathMux))
 
-	return rootMux
+	return withObservability(logger, rootMux)
 }
 
 func (r *Router) registerRoutes() {
@@ -74,7 +76,7 @@ func (r *Router) handleTickets(w http.ResponseWriter, req *http.Request) {
 	case http.MethodPost:
 		r.handleCreateTicket(w, req)
 	default:
-		writeMethodNotAllowed(w)
+		writeMethodNotAllowed(w, req)
 	}
 }
 
@@ -85,13 +87,13 @@ func (r *Router) handleAuthMe(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if req.Method != http.MethodGet {
-		writeMethodNotAllowed(w)
+		writeMethodNotAllowed(w, req)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
@@ -118,7 +120,7 @@ func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
 	path = strings.Trim(path, "/")
 
 	if path == "" {
-		writeNotFound(w)
+		writeNotFound(w, req)
 		return
 	}
 
@@ -165,29 +167,29 @@ func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	writeMethodNotAllowed(w)
+	writeMethodNotAllowed(w, req)
 }
 
 func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 	var payload dto.CreateTicketRequest
 	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
 		return
 	}
 
 	if fieldErrors := r.validator.ValidateCreateTicketRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	if !canCreateTicket(identity) {
-		writeForbidden(w, "forbidden", "you do not have permission to create tickets")
+		writeForbidden(w, req, "forbidden", "you do not have permission to create tickets")
 		return
 	}
 
@@ -215,9 +217,16 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 		ReporterEmail:  reporterEmail,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("ticket created",
+		slog.String("event", "business.ticket_created"),
+		slog.String("ticketId", ticket.ID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+	)
 
 	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.TicketResponse]{
 		Data: toTicketResponse(ticket),
@@ -227,13 +236,13 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	query := parseListTicketsQuery(req)
 	if fieldErrors := r.validator.ValidateListTicketsQuery(query); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
@@ -257,7 +266,7 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 		SortOrder:      query.SortOrder,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
@@ -283,18 +292,18 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 func (r *Router) handleGetTicket(w http.ResponseWriter, req *http.Request, ticketID string) {
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
 	if !canViewTicket(identity, ticket) {
-		writeForbidden(w, "forbidden", "you do not have permission to view this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to view this ticket")
 		return
 	}
 
@@ -306,28 +315,28 @@ func (r *Router) handleGetTicket(w http.ResponseWriter, req *http.Request, ticke
 func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Request, ticketID string) {
 	var payload dto.UpdateTicketStatusRequest
 	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
 		return
 	}
 
 	if fieldErrors := r.validator.ValidateUpdateTicketStatusRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	if !canUpdateTicketStatus(identity) {
-		writeForbidden(w, "forbidden", "you do not have permission to update ticket status")
+		writeForbidden(w, req, "forbidden", "you do not have permission to update ticket status")
 		return
 	}
 
 	if _, err := r.ticketSvc.GetTicket(req.Context(), ticketID); err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
@@ -338,9 +347,17 @@ func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Reque
 		ActorRole: string(identity.Role),
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("ticket status updated",
+		slog.String("event", "business.ticket_status_updated"),
+		slog.String("ticketId", ticket.ID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+		slog.String("status", string(ticket.Status)),
+	)
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
 		Data: toTicketResponse(ticket),
@@ -350,29 +367,29 @@ func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Reque
 func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, ticketID string) {
 	var payload dto.AddCommentRequest
 	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
 		return
 	}
 
 	if fieldErrors := r.validator.ValidateAddCommentRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
 	if !canAddComment(identity, ticket) {
-		writeForbidden(w, "forbidden", "you do not have permission to comment on this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to comment on this ticket")
 		return
 	}
 
@@ -384,9 +401,17 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 		ActorRole:  string(identity.Role),
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("ticket comment added",
+		slog.String("event", "business.ticket_comment_added"),
+		slog.String("ticketId", ticketID),
+		slog.String("commentId", comment.ID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+	)
 
 	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.CommentResponse]{
 		Data: toCommentResponse(comment),
@@ -396,23 +421,23 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ticketID string) {
 	var payload dto.AssignTicketRequest
 	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
 		return
 	}
 
 	if fieldErrors := r.validator.ValidateAssignTicketRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	if !canAssignTicket(identity) {
-		writeForbidden(w, "forbidden", "you do not have permission to assign this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to assign this ticket")
 		return
 	}
 
@@ -423,9 +448,17 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 		ActorRole:    string(identity.Role),
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("ticket assigned",
+		slog.String("event", "business.ticket_assigned"),
+		slog.String("ticketId", ticket.ID),
+		slog.String("assigneeId", ticket.AssigneeID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+	)
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
 		Data: toTicketResponse(ticket),
@@ -435,24 +468,24 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 func (r *Router) handleListTicketActivities(w http.ResponseWriter, req *http.Request, ticketID string) {
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
 	if !canViewTicket(identity, ticket) {
-		writeForbidden(w, "forbidden", "you do not have permission to view this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to view this ticket")
 		return
 	}
 
 	activities, err := r.ticketSvc.ListTicketActivities(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
@@ -469,29 +502,29 @@ func (r *Router) handleListTicketActivities(w http.ResponseWriter, req *http.Req
 func (r *Router) handleCreateAttachmentUploadURL(w http.ResponseWriter, req *http.Request, ticketID string) {
 	var payload dto.RequestAttachmentUploadURLRequest
 	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
 		return
 	}
 
 	if fieldErrors := r.validator.ValidateRequestAttachmentUploadURLRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
 	if !canAddComment(identity, ticket) {
-		writeForbidden(w, "forbidden", "you do not have permission to add attachments to this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to add attachments to this ticket")
 		return
 	}
 
@@ -501,9 +534,24 @@ func (r *Router) handleCreateAttachmentUploadURL(w http.ResponseWriter, req *htt
 		SizeBytes:   payload.SizeBytes,
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		observability.LoggerFromContext(req.Context()).Warn("attachment upload URL generation failed",
+			slog.String("event", "business.attachment_upload_url_failed"),
+			slog.String("ticketId", ticketID),
+			slog.String("actorId", identity.Subject),
+			slog.String("actorRole", string(identity.Role)),
+			slog.String("error", err.Error()),
+		)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("attachment upload URL generated",
+		slog.String("event", "business.attachment_upload_url_created"),
+		slog.String("ticketId", ticketID),
+		slog.String("attachmentId", upload.AttachmentID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+	)
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.RequestAttachmentUploadURLResponse]{
 		Data: dto.RequestAttachmentUploadURLResponse{
@@ -520,29 +568,29 @@ func (r *Router) handleCreateAttachmentUploadURL(w http.ResponseWriter, req *htt
 func (r *Router) handleSaveAttachment(w http.ResponseWriter, req *http.Request, ticketID string) {
 	var payload dto.SaveAttachmentRequest
 	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
 		return
 	}
 
 	if fieldErrors := r.validator.ValidateSaveAttachmentRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
 		return
 	}
 
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
 	if !canAddComment(identity, ticket) {
-		writeForbidden(w, "forbidden", "you do not have permission to add attachments to this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to add attachments to this ticket")
 		return
 	}
 
@@ -555,9 +603,25 @@ func (r *Router) handleSaveAttachment(w http.ResponseWriter, req *http.Request, 
 		ActorRole:    string(identity.Role),
 	})
 	if err != nil {
-		writeServiceError(w, err)
+		observability.LoggerFromContext(req.Context()).Warn("attachment save failed",
+			slog.String("event", "business.attachment_save_failed"),
+			slog.String("ticketId", ticketID),
+			slog.String("attachmentId", strings.TrimSpace(payload.AttachmentID)),
+			slog.String("actorId", identity.Subject),
+			slog.String("actorRole", string(identity.Role)),
+			slog.String("error", err.Error()),
+		)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("attachment saved",
+		slog.String("event", "business.attachment_saved"),
+		slog.String("ticketId", ticketID),
+		slog.String("attachmentId", attachment.ID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+	)
 
 	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.AttachmentResponse]{
 		Data: toAttachmentResponse(attachment),
@@ -567,26 +631,42 @@ func (r *Router) handleSaveAttachment(w http.ResponseWriter, req *http.Request, 
 func (r *Router) handleCreateAttachmentDownloadURL(w http.ResponseWriter, req *http.Request, ticketID string, attachmentID string) {
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
-		writeUnauthorized(w, "unauthorized", "authentication is required")
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
 		return
 	}
 
 	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
 	if err != nil {
-		writeServiceError(w, err)
+		writeServiceError(w, req, err)
 		return
 	}
 
 	if !canViewTicket(identity, ticket) {
-		writeForbidden(w, "forbidden", "you do not have permission to view this ticket")
+		writeForbidden(w, req, "forbidden", "you do not have permission to view this ticket")
 		return
 	}
 
 	download, err := r.ticketSvc.CreateAttachmentDownloadURL(req.Context(), ticketID, attachmentID)
 	if err != nil {
-		writeServiceError(w, err)
+		observability.LoggerFromContext(req.Context()).Warn("attachment download URL generation failed",
+			slog.String("event", "business.attachment_download_url_failed"),
+			slog.String("ticketId", ticketID),
+			slog.String("attachmentId", attachmentID),
+			slog.String("actorId", identity.Subject),
+			slog.String("actorRole", string(identity.Role)),
+			slog.String("error", err.Error()),
+		)
+		writeServiceError(w, req, err)
 		return
 	}
+
+	observability.LoggerFromContext(req.Context()).Info("attachment download URL generated",
+		slog.String("event", "business.attachment_download_url_created"),
+		slog.String("ticketId", ticketID),
+		slog.String("attachmentId", attachmentID),
+		slog.String("actorId", identity.Subject),
+		slog.String("actorRole", string(identity.Role)),
+	)
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.AttachmentDownloadURLResponse]{
 		Data: dto.AttachmentDownloadURLResponse{
@@ -610,122 +690,71 @@ func writeJSON(w http.ResponseWriter, statusCode int, payload any) {
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
-func writeBadRequest(w http.ResponseWriter, code, message string, details []dto.FieldError) {
-	writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
-		Error: dto.ErrorBody{
-			Code:    code,
-			Message: message,
-			Details: details,
-		},
-	})
+func writeBadRequest(w http.ResponseWriter, req *http.Request, code, message string, details []dto.FieldError) {
+	writeError(w, req, http.StatusBadRequest, code, message, details)
 }
 
-func writeNotFound(w http.ResponseWriter) {
-	writeJSON(w, http.StatusNotFound, dto.ErrorResponse{
-		Error: dto.ErrorBody{
-			Code:    "not_found",
-			Message: "resource not found",
-		},
-	})
+func writeNotFound(w http.ResponseWriter, req *http.Request) {
+	writeError(w, req, http.StatusNotFound, "not_found", "resource not found", nil)
 }
 
-func writeMethodNotAllowed(w http.ResponseWriter) {
-	writeJSON(w, http.StatusMethodNotAllowed, dto.ErrorResponse{
-		Error: dto.ErrorBody{
-			Code:    "method_not_allowed",
-			Message: "method not allowed",
-		},
-	})
+func writeMethodNotAllowed(w http.ResponseWriter, req *http.Request) {
+	writeError(w, req, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", nil)
 }
 
-func writeUnauthorized(w http.ResponseWriter, code, message string) {
-	writeJSON(w, http.StatusUnauthorized, dto.ErrorResponse{
-		Error: dto.ErrorBody{
-			Code:    code,
-			Message: message,
-		},
-	})
+func writeUnauthorized(w http.ResponseWriter, req *http.Request, code, message string) {
+	writeError(w, req, http.StatusUnauthorized, code, message, nil)
 }
 
-func writeForbidden(w http.ResponseWriter, code, message string) {
-	writeJSON(w, http.StatusForbidden, dto.ErrorResponse{
-		Error: dto.ErrorBody{
-			Code:    code,
-			Message: message,
-		},
-	})
+func writeForbidden(w http.ResponseWriter, req *http.Request, code, message string) {
+	writeError(w, req, http.StatusForbidden, code, message, nil)
 }
 
 func writeNoContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func writeServiceError(w http.ResponseWriter, err error) {
+func writeServiceError(w http.ResponseWriter, req *http.Request, err error) {
 	switch {
 	case errors.Is(err, service.ErrTicketNotFound):
-		writeJSON(w, http.StatusNotFound, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "ticket_not_found",
-				Message: "ticket not found",
-			},
-		})
+		writeError(w, req, http.StatusNotFound, "ticket_not_found", "ticket not found", nil)
 	case errors.Is(err, service.ErrNotImplemented):
-		writeJSON(w, http.StatusNotImplemented, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "not_implemented",
-				Message: "feature is not implemented yet",
-			},
-		})
+		writeError(w, req, http.StatusNotImplemented, "not_implemented", "feature is not implemented yet", nil)
 	case errors.Is(err, service.ErrAttachmentNotFound):
-		writeJSON(w, http.StatusNotFound, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "attachment_not_found",
-				Message: "attachment not found",
-			},
-		})
+		writeError(w, req, http.StatusNotFound, "attachment_not_found", "attachment not found", nil)
 	case errors.Is(err, service.ErrAttachmentInvalid):
-		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "invalid_attachment",
-				Message: "attachment request is invalid",
-			},
-		})
+		writeError(w, req, http.StatusBadRequest, "invalid_attachment", "attachment request is invalid", nil)
 	case errors.Is(err, service.ErrAttachmentTooLarge):
-		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "attachment_too_large",
-				Message: "attachment exceeds the allowed size limit",
-			},
-		})
+		writeError(w, req, http.StatusBadRequest, "attachment_too_large", "attachment exceeds the allowed size limit", nil)
 	case errors.Is(err, service.ErrAttachmentContentTypeNotAllowed):
-		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "attachment_content_type_not_allowed",
-				Message: "attachment content type is not allowed",
-			},
-		})
+		writeError(w, req, http.StatusBadRequest, "attachment_content_type_not_allowed", "attachment content type is not allowed", nil)
 	case errors.Is(err, service.ErrAttachmentUploadMissing):
-		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "attachment_upload_missing",
-				Message: "attachment upload was not found in storage",
-			},
-		})
+		writeError(w, req, http.StatusBadRequest, "attachment_upload_missing", "attachment upload was not found in storage", nil)
 	case errors.Is(err, service.ErrAttachmentStorageUnavailable):
-		writeJSON(w, http.StatusInternalServerError, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "attachment_storage_unavailable",
-				Message: "attachment storage is not configured",
-			},
-		})
+		writeError(w, req, http.StatusInternalServerError, "attachment_storage_unavailable", "attachment storage is not configured", nil)
 	default:
-		writeJSON(w, http.StatusInternalServerError, dto.ErrorResponse{
-			Error: dto.ErrorBody{
-				Code:    "internal_error",
-				Message: "internal server error",
-			},
-		})
+		writeInternalError(w, req, "internal server error")
 	}
+}
+
+func writeInternalError(w http.ResponseWriter, req *http.Request, message string) {
+	writeError(w, req, http.StatusInternalServerError, "internal_error", message, nil)
+}
+
+func writeError(w http.ResponseWriter, req *http.Request, statusCode int, code, message string, details []dto.FieldError) {
+	requestID := ""
+	if req != nil {
+		requestID = observability.RequestIDFromContext(req.Context())
+	}
+
+	writeJSON(w, statusCode, dto.ErrorResponse{
+		Error: dto.ErrorBody{
+			Code:      code,
+			Message:   message,
+			RequestID: requestID,
+			Details:   details,
+		},
+	})
 }
 
 func (r *Router) requireAuth(next http.HandlerFunc) http.HandlerFunc {
@@ -737,13 +766,23 @@ func (r *Router) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 
 		token, err := auth.ExtractBearerToken(req.Header.Get("Authorization"))
 		if err != nil {
-			writeUnauthorized(w, "unauthorized", "authentication is required")
+			observability.LoggerFromContext(req.Context()).Warn("authentication failed",
+				slog.String("event", "auth.failure"),
+				slog.String("reason", "missing_or_invalid_authorization_header"),
+				slog.String("path", req.URL.Path),
+			)
+			writeUnauthorized(w, req, "unauthorized", "authentication is required")
 			return
 		}
 
 		identity, err := r.authVerifier.VerifyToken(req.Context(), token)
 		if err != nil {
-			writeUnauthorized(w, "invalid_token", "authentication token is invalid or expired")
+			observability.LoggerFromContext(req.Context()).Warn("authentication failed",
+				slog.String("event", "auth.failure"),
+				slog.String("reason", "invalid_or_expired_token"),
+				slog.String("path", req.URL.Path),
+			)
+			writeUnauthorized(w, req, "invalid_token", "authentication token is invalid or expired")
 			return
 		}
 

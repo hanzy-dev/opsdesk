@@ -17,6 +17,7 @@ export type ApiErrorResponse = {
   error: {
     code: string;
     message: string;
+    requestId?: string;
     details?: { field: string; message: string }[];
   };
 };

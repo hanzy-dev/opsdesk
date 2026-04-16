@@ -172,3 +172,36 @@ func TestProxyStripsStagePrefixBeforeRouting(t *testing.T) {
 		})
 	}
 }
+
+func TestProxyPassesGatewayRequestIDToHandler(t *testing.T) {
+	t.Parallel()
+
+	adapter := New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("X-Request-Id"); got != "gateway-request-123" {
+			t.Fatalf("expected X-Request-Id gateway-request-123, got %q", got)
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	response, err := adapter.Proxy(context.Background(), events.APIGatewayV2HTTPRequest{
+		RawPath: "/v1/health",
+		Headers: map[string]string{
+			"host": "example.execute-api.ap-southeast-1.amazonaws.com",
+		},
+		RequestContext: events.APIGatewayV2HTTPRequestContext{
+			RequestID: "gateway-request-123",
+			HTTP: events.APIGatewayV2HTTPRequestContextHTTPDescription{
+				Method: "GET",
+				Path:   "/v1/health",
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("Proxy() error = %v", err)
+	}
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+}
