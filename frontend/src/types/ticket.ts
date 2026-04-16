@@ -10,6 +10,18 @@ export type Comment = {
   updatedAt: string;
 };
 
+export type TicketActivity = {
+  id: string;
+  ticketId: string;
+  actorId?: string;
+  actorName?: string;
+  actorRole?: "reporter" | "agent" | "admin";
+  action: "ticket_created" | "status_changed" | "comment_added" | "assignment_changed";
+  summary: string;
+  metadata?: Record<string, string>;
+  timestamp: string;
+};
+
 export type Ticket = {
   id: string;
   title: string;

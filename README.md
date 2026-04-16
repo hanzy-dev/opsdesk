@@ -2,7 +2,7 @@
 
 OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch 4 menambahkan ownership tiket berbasis identitas login dan workflow assignment sederhana untuk operator.
+Batch 5 menambahkan audit trail append-only untuk aktivitas tiket dan menampilkannya sebagai timeline pada detail tiket.
 
 ## Deployment Tetap
 
@@ -22,6 +22,7 @@ OpsDesk saat ini mendukung:
 - detail tiket
 - ownership tiket berbasis pengguna terautentikasi
 - assignment dan reassignment sederhana ke operator yang sedang login
+- audit trail aktivitas tiket
 - pembaruan status tiket
 - komentar tiket
 - health endpoint
@@ -30,7 +31,7 @@ OpsDesk saat ini mendukung:
 
 ## Batasan Yang Masih Berlaku
 
-- belum ada audit trail, attachment, atau observability lanjutan
+- belum ada attachment atau observability lanjutan
 - scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
 ## Arsitektur Singkat
@@ -164,20 +165,22 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 - `POST /v1/tickets`
 - `GET /v1/tickets`
 - `GET /v1/tickets/{id}`
+- `GET /v1/tickets/{id}/activities`
 - `PATCH /v1/tickets/{id}/assignment`
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 4
+## Catatan Batch 5
 
-Batch ini menambahkan ownership dan assignment:
+Batch ini menambahkan audit trail append-only:
 
-- tiket baru menyimpan creator dan reporter dari identitas Cognito bila pelapor membuat tiket sendiri
-- tiket sekarang dapat menyimpan petugas penanggung jawab
-- petugas dan admin dapat mengambil alih tiket ke dirinya sendiri melalui endpoint assignment
-- daftar tiket mendukung visibilitas ringan "Ditugaskan kepada saya"
+- aktivitas dicatat saat tiket dibuat
+- aktivitas dicatat saat status diubah
+- aktivitas dicatat saat komentar ditambahkan
+- aktivitas dicatat saat assignment berubah
+- timeline aktivitas tampil di halaman detail tiket
 
-Kebijakan assignment saat ini:
+Kebijakan assignment tetap:
 
 - `reporter` tidak dapat menugaskan tiket
 - `agent` dapat assign atau reassign tiket ke dirinya sendiri
@@ -190,7 +193,6 @@ Kompatibilitas tiket lama:
 
 Yang sengaja belum dikerjakan:
 
-- audit trail
 - attachment
 - observability lanjutan
 

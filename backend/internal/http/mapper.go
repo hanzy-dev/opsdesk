@@ -45,6 +45,20 @@ func toCommentResponse(comment domain.Comment) dto.CommentResponse {
 	}
 }
 
+func toTicketActivityResponse(activity domain.ActivityEntry) dto.TicketActivityResponse {
+	return dto.TicketActivityResponse{
+		ID:        activity.ID,
+		TicketID:  activity.TicketID,
+		ActorID:   activity.ActorID,
+		ActorName: activity.ActorName,
+		ActorRole: activity.ActorRole,
+		Action:    string(activity.Action),
+		Summary:   activity.Summary,
+		Metadata:  activity.Metadata,
+		Timestamp: domain.FormatTimestamp(activity.Timestamp),
+	}
+}
+
 func formatOptionalTimestamp(value time.Time) string {
 	if value.IsZero() {
 		return ""

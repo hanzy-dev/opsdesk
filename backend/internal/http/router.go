@@ -144,6 +144,11 @@ func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if len(parts) == 2 && parts[1] == "activities" && req.Method == http.MethodGet {
+		r.handleListTicketActivities(w, req, ticketID)
+		return
+	}
+
 	writeMethodNotAllowed(w)
 }
 
@@ -186,8 +191,9 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 		Description:    strings.TrimSpace(payload.Description),
 		Priority:       domain.TicketPriority(payload.Priority),
 		CreatedBy:      identity.Subject,
-		CreatedByName:  identity.Name,
+		CreatedByName:  displayNameFor(identity),
 		CreatedByEmail: identity.Email,
+		CreatedByRole:  string(identity.Role),
 		ReporterID:     reporterIDFor(identity, reporterEmail),
 		ReporterName:   reporterName,
 		ReporterEmail:  reporterEmail,
@@ -287,7 +293,10 @@ func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Reque
 	}
 
 	ticket, err := r.ticketSvc.UpdateTicketStatus(req.Context(), ticketID, service.UpdateTicketStatusInput{
-		Status: domain.TicketStatus(payload.Status),
+		Status:    domain.TicketStatus(payload.Status),
+		ActorID:   identity.Subject,
+		ActorName: displayNameFor(identity),
+		ActorRole: string(identity.Role),
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -331,6 +340,9 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 	comment, err := r.ticketSvc.AddComment(req.Context(), ticketID, service.AddCommentInput{
 		Message:    strings.TrimSpace(payload.Message),
 		AuthorName: strings.TrimSpace(payload.AuthorName),
+		ActorID:    identity.Subject,
+		ActorName:  displayNameFor(identity),
+		ActorRole:  string(identity.Role),
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -368,6 +380,8 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 	ticket, err := r.ticketSvc.AssignTicket(req.Context(), ticketID, service.AssignTicketInput{
 		AssigneeID:   identity.Subject,
 		AssigneeName: displayNameFor(identity),
+		ActorID:      identity.Subject,
+		ActorRole:    string(identity.Role),
 	})
 	if err != nil {
 		writeServiceError(w, err)
@@ -376,6 +390,40 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
 		Data: toTicketResponse(ticket),
+	})
+}
+
+func (r *Router) handleListTicketActivities(w http.ResponseWriter, req *http.Request, ticketID string) {
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, "unauthorized", "authentication is required")
+		return
+	}
+
+	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	if !canViewTicket(identity, ticket) {
+		writeForbidden(w, "forbidden", "you do not have permission to view this ticket")
+		return
+	}
+
+	activities, err := r.ticketSvc.ListTicketActivities(req.Context(), ticketID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	response := make([]dto.TicketActivityResponse, 0, len(activities))
+	for _, activity := range activities {
+		response = append(response, toTicketActivityResponse(activity))
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[[]dto.TicketActivityResponse]{
+		Data: response,
 	})
 }
 

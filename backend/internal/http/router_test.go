@@ -286,6 +286,22 @@ func TestAgentCanAssignTicketToSelf(t *testing.T) {
 	if response.Data.AssigneeName != "OpsDesk Agent" {
 		t.Fatalf("expected assignee name OpsDesk Agent, got %q", response.Data.AssigneeName)
 	}
+
+	activitiesRecorder := performRequest(t, agentRouter, http.MethodGet, "/v1/tickets/"+ticket.ID+"/activities", nil)
+	if activitiesRecorder.Code != http.StatusOK {
+		t.Fatalf("expected activities status 200, got %d", activitiesRecorder.Code)
+	}
+
+	var activitiesResponse dto.SuccessResponse[[]dto.TicketActivityResponse]
+	decodeResponse(t, activitiesRecorder, &activitiesResponse)
+
+	if len(activitiesResponse.Data) != 2 {
+		t.Fatalf("expected 2 activity entries, got %d", len(activitiesResponse.Data))
+	}
+
+	if activitiesResponse.Data[1].Action != "assignment_changed" {
+		t.Fatalf("expected assignment_changed action, got %q", activitiesResponse.Data[1].Action)
+	}
 }
 
 func TestReporterCannotAssignTicket(t *testing.T) {
@@ -298,6 +314,54 @@ func TestReporterCannotAssignTicket(t *testing.T) {
 
 	if recorder.Code != http.StatusForbidden {
 		t.Fatalf("expected status 403, got %d", recorder.Code)
+	}
+}
+
+func TestTicketActivitiesIncludeCreateStatusAndComment(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
+
+	statusRecorder := performRequest(t, agentRouter, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/status", dto.UpdateTicketStatusRequest{
+		Status: "in_progress",
+	})
+	if statusRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status update 200, got %d", statusRecorder.Code)
+	}
+
+	commentRecorder := performRequest(t, reporterRouter, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
+		Message:    "Reporter added more detail",
+		AuthorName: "OpsDesk User",
+	})
+	if commentRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected comment create 201, got %d", commentRecorder.Code)
+	}
+
+	activitiesRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets/"+ticket.ID+"/activities", nil)
+	if activitiesRecorder.Code != http.StatusOK {
+		t.Fatalf("expected activities status 200, got %d", activitiesRecorder.Code)
+	}
+
+	var response dto.SuccessResponse[[]dto.TicketActivityResponse]
+	decodeResponse(t, activitiesRecorder, &response)
+
+	if len(response.Data) != 3 {
+		t.Fatalf("expected 3 activities, got %d", len(response.Data))
+	}
+
+	if response.Data[0].Action != "ticket_created" {
+		t.Fatalf("expected first activity ticket_created, got %q", response.Data[0].Action)
+	}
+
+	if response.Data[1].Action != "status_changed" {
+		t.Fatalf("expected second activity status_changed, got %q", response.Data[1].Action)
+	}
+
+	if response.Data[2].Action != "comment_added" {
+		t.Fatalf("expected third activity comment_added, got %q", response.Data[2].Action)
 	}
 }
 

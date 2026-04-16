@@ -28,24 +28,24 @@ type TicketRepository struct {
 }
 
 type ticketItem struct {
-	ID             string         `dynamodbav:"id"`
-	Title          string         `dynamodbav:"title"`
-	Description    string         `dynamodbav:"description"`
-	Status         string         `dynamodbav:"status"`
-	Priority       string         `dynamodbav:"priority"`
-	CreatedBy      string         `dynamodbav:"createdBy"`
-	CreatedByName  string         `dynamodbav:"createdByName"`
-	CreatedByEmail string         `dynamodbav:"createdByEmail"`
-	ReporterID     string         `dynamodbav:"reporterId"`
-	ReporterName   string         `dynamodbav:"reporterName"`
-	ReporterEmail  string         `dynamodbav:"reporterEmail"`
-	AssigneeID     string         `dynamodbav:"assigneeId"`
-	AssigneeName   string         `dynamodbav:"assigneeName"`
-	AssignedAt     string         `dynamodbav:"assignedAt"`
-	Comments       []commentItem  `dynamodbav:"comments"`
+	ID             string        `dynamodbav:"id"`
+	Title          string        `dynamodbav:"title"`
+	Description    string        `dynamodbav:"description"`
+	Status         string        `dynamodbav:"status"`
+	Priority       string        `dynamodbav:"priority"`
+	CreatedBy      string        `dynamodbav:"createdBy"`
+	CreatedByName  string        `dynamodbav:"createdByName"`
+	CreatedByEmail string        `dynamodbav:"createdByEmail"`
+	ReporterID     string        `dynamodbav:"reporterId"`
+	ReporterName   string        `dynamodbav:"reporterName"`
+	ReporterEmail  string        `dynamodbav:"reporterEmail"`
+	AssigneeID     string        `dynamodbav:"assigneeId"`
+	AssigneeName   string        `dynamodbav:"assigneeName"`
+	AssignedAt     string        `dynamodbav:"assignedAt"`
+	Comments       []commentItem `dynamodbav:"comments"`
 	Activities     []activityItem `dynamodbav:"activities"`
-	CreatedAt      string         `dynamodbav:"createdAt"`
-	UpdatedAt      string         `dynamodbav:"updatedAt"`
+	CreatedAt      string        `dynamodbav:"createdAt"`
+	UpdatedAt      string        `dynamodbav:"updatedAt"`
 }
 
 type commentItem struct {

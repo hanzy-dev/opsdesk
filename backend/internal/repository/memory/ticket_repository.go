@@ -90,6 +90,21 @@ func cloneTicket(ticket domain.Ticket) domain.Ticket {
 	if ticket.Comments != nil {
 		cloned.Comments = append([]domain.Comment(nil), ticket.Comments...)
 	}
+	if ticket.Activities != nil {
+		cloned.Activities = append([]domain.ActivityEntry(nil), ticket.Activities...)
+		for index, activity := range cloned.Activities {
+			if activity.Metadata == nil {
+				continue
+			}
+
+			metadata := make(map[string]string, len(activity.Metadata))
+			for key, value := range activity.Metadata {
+				metadata[key] = value
+			}
+
+			cloned.Activities[index].Metadata = metadata
+		}
+	}
 
 	return cloned
 }

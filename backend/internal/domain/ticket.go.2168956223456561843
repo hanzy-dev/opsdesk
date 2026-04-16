@@ -51,9 +51,9 @@ type Comment struct {
 type TicketActivityAction string
 
 const (
-	TicketActivityCreated           TicketActivityAction = "ticket_created"
-	TicketActivityStatusChanged     TicketActivityAction = "status_changed"
-	TicketActivityCommentAdded      TicketActivityAction = "comment_added"
+	TicketActivityCreated          TicketActivityAction = "ticket_created"
+	TicketActivityStatusChanged    TicketActivityAction = "status_changed"
+	TicketActivityCommentAdded     TicketActivityAction = "comment_added"
 	TicketActivityAssignmentChanged TicketActivityAction = "assignment_changed"
 )
 

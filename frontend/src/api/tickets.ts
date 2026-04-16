@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { AssignTicketInput, Comment, CreateTicketInput, NewCommentInput, Ticket, TicketStatus } from "../types/ticket";
+import type { AssignTicketInput, Comment, CreateTicketInput, NewCommentInput, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 
 export function listTickets(options?: { assignedToMe?: boolean }) {
   const query = options?.assignedToMe ? "?assignedToMe=true" : "";
@@ -8,6 +8,10 @@ export function listTickets(options?: { assignedToMe?: boolean }) {
 
 export function getTicket(ticketId: string) {
   return apiRequest<Ticket>(`/tickets/${ticketId}`);
+}
+
+export function getTicketActivities(ticketId: string) {
+  return apiRequest<TicketActivity[]>(`/tickets/${ticketId}/activities`);
 }
 
 export function createTicket(input: CreateTicketInput) {

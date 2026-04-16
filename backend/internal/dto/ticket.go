@@ -26,6 +26,18 @@ type AssignTicketRequest struct {
 	AssigneeID string `json:"assigneeId,omitempty"`
 }
 
+type TicketActivityResponse struct {
+	ID        string            `json:"id"`
+	TicketID  string            `json:"ticketId"`
+	ActorID   string            `json:"actorId,omitempty"`
+	ActorName string            `json:"actorName,omitempty"`
+	ActorRole string            `json:"actorRole,omitempty"`
+	Action    string            `json:"action"`
+	Summary   string            `json:"summary"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+	Timestamp string            `json:"timestamp"`
+}
+
 type TicketResponse struct {
 	ID             string            `json:"id"`
 	Title          string            `json:"title"`

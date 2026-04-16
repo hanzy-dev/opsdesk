@@ -68,17 +68,17 @@ type TicketService interface {
 }
 
 type ticketService struct {
-	repo              repository.TicketRepository
-	ticketIDFactory   *idFactory
-	commentIDFactory  *idFactory
+	repo             repository.TicketRepository
+	ticketIDFactory  *idFactory
+	commentIDFactory *idFactory
 	activityIDFactory *idFactory
 }
 
 func NewTicketService(repo repository.TicketRepository) TicketService {
 	return &ticketService{
-		repo:              repo,
-		ticketIDFactory:   newIDFactory("TCK"),
-		commentIDFactory:  newIDFactory("CMT"),
+		repo:             repo,
+		ticketIDFactory:  newIDFactory("TCK"),
+		commentIDFactory: newIDFactory("CMT"),
 		activityIDFactory: newIDFactory("ACT"),
 	}
 }
@@ -102,6 +102,7 @@ func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInpu
 				"",
 				strings.TrimSpace(input.CreatedBy),
 				strings.TrimSpace(input.CreatedByName),
+				"",
 				strings.TrimSpace(input.CreatedByRole),
 				domain.TicketActivityCreated,
 				"Tiket dibuat",
@@ -112,8 +113,8 @@ func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInpu
 				now,
 			),
 		},
-		CreatedAt: now,
-		UpdatedAt: now,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 	ticket.Activities[0].TicketID = ticket.ID
 

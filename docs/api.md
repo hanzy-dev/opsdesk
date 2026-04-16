@@ -11,6 +11,7 @@ OpsDesk exposes a small HTTP API for a serverless helpdesk workflow. The current
 - ticket detail lookup
 - ticket ownership and assignee metadata
 - ticket assignment
+- ticket activity history
 - ticket status updates
 - ticket comments
 
@@ -71,6 +72,8 @@ Recommended quick checks:
    Assign the ticket to the authenticated operator.
 7. `POST /tickets/{id}/comments`
    Add one comment and verify the detail response includes it.
+8. `GET /tickets/{id}/activities`
+   Confirm the activity timeline contains create/update/comment/assignment events.
 
 ## Notes
 
@@ -79,4 +82,5 @@ Recommended quick checks:
 - Backend reads RBAC from Cognito groups `reporter`, `agent`, and `admin`.
 - Forbidden actions return `403` even if the frontend hides the action.
 - Assignment policy in this batch is intentionally simple: `agent` and `admin` may assign or reassign a ticket to themselves.
+- Activity history is append-only and stored with the current ticket record for simplicity.
 - The deployment baseline uses the `dev` backend environment.

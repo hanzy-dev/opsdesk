@@ -1,18 +1,20 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { addComment, assignTicket, getTicket, updateTicketStatus } from "../api/tickets";
+import { addComment, assignTicket, getTicket, getTicketActivities, updateTicketStatus } from "../api/tickets";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { StatusBadge } from "../components/tickets/StatusBadge";
+import { getRoleLabel } from "../modules/auth/roles";
 import { useAuth } from "../modules/auth/AuthContext";
-import type { Ticket, TicketStatus } from "../types/ticket";
+import type { Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 
 export function TicketDetailPage() {
   const { session, permissions } = useAuth();
   const { ticketId = "" } = useParams();
   const [ticket, setTicket] = useState<Ticket | null>(null);
+  const [activities, setActivities] = useState<TicketActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -38,9 +40,10 @@ export function TicketDetailPage() {
     setPageError(null);
 
     try {
-      const data = await getTicket(ticketId);
-      setTicket(data);
-      setSelectedStatus(data.status);
+      const [ticketData, activityData] = await Promise.all([getTicket(ticketId), getTicketActivities(ticketId)]);
+      setTicket(ticketData);
+      setActivities(activityData);
+      setSelectedStatus(ticketData.status);
     } catch (error) {
       setPageError(error instanceof Error ? error.message : "Detail tiket belum bisa dimuat.");
     } finally {
@@ -292,6 +295,78 @@ export function TicketDetailPage() {
           </form>
         </article>
       </div>
+
+      <article className="panel stack-md">
+        <div>
+          <p className="section-eyebrow">Riwayat</p>
+          <h3>Aktivitas tiket</h3>
+        </div>
+
+        {activities.length === 0 ? (
+          <EmptyState
+            title="Belum ada aktivitas"
+            description="Riwayat aktivitas tiket akan muncul setelah ada perubahan pada tiket ini."
+          />
+        ) : (
+          <div className="comment-list">
+            {activities.map((activity) => (
+              <article className="comment-card" key={activity.id}>
+                <div className="comment-card__header">
+                  <strong>{activity.summary}</strong>
+                  <span>{formatDateTime(activity.timestamp)}</span>
+                </div>
+                <p>{formatActivityActor(activity)}</p>
+                {renderActivityMetadata(activity)}
+              </article>
+            ))}
+          </div>
+        )}
+      </article>
     </section>
   );
+}
+
+function formatActivityActor(activity: TicketActivity) {
+  if (!activity.actorName) {
+    return "Sistem OpsDesk";
+  }
+
+  if (!activity.actorRole) {
+    return activity.actorName;
+  }
+
+  return `${activity.actorName} (${getRoleLabel(activity.actorRole)})`;
+}
+
+function renderActivityMetadata(activity: TicketActivity) {
+  if (!activity.metadata) {
+    return null;
+  }
+
+  if (activity.action === "status_changed") {
+    return (
+      <p>
+        {formatStatusLabel(activity.metadata.beforeStatus)} menjadi {formatStatusLabel(activity.metadata.afterStatus)}
+      </p>
+    );
+  }
+
+  if (activity.action === "assignment_changed") {
+    return <p>{activity.metadata.afterAssigneeName || "Petugas belum ditentukan"}</p>;
+  }
+
+  return null;
+}
+
+function formatStatusLabel(status?: string) {
+  switch (status) {
+    case "open":
+      return "Terbuka";
+    case "in_progress":
+      return "Sedang Ditangani";
+    case "resolved":
+      return "Selesai";
+    default:
+      return "Status tidak diketahui";
+  }
 }

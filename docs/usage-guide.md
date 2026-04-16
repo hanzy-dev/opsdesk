@@ -18,6 +18,7 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 6. Jika akun Anda bertipe pelapor atau admin, buat tiket baru dari halaman "Buat Tiket".
 7. Buka detail tiket untuk menambahkan komentar, dan jika akun Anda petugas atau admin, ubah status tiket.
 8. Jika akun Anda petugas atau admin, gunakan tombol penugasan untuk mengambil tanggung jawab tiket ke akun Anda.
+9. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
 
 ## Jalur Verifikasi Cepat
 
@@ -29,6 +30,7 @@ Jika hanya punya waktu singkat:
 4. Jika login sebagai petugas, ubah status tiket pada halaman detail.
 5. Jika login sebagai petugas, klik "Tugaskan ke Saya" dan pastikan nama petugas tampil di detail tiket.
 6. Tambahkan satu komentar dan pastikan tampil pada detail tiket.
+7. Pastikan timeline aktivitas menampilkan entri pembuatan, perubahan status, komentar, dan penugasan.
 
 ## Catatan Operasional
 
@@ -36,6 +38,7 @@ Jika hanya punya waktu singkat:
 - Login sekarang memakai Amazon Cognito dan bearer token JWT.
 - RBAC sederhana memakai Cognito group `reporter`, `agent`, dan `admin`.
 - Ownership tiket mengikuti identitas login, dan assignment operator masih memakai kebijakan sederhana "tugaskan ke saya".
+- Aktivitas tiket dicatat append-only dan ditampilkan pada halaman detail.
 
 ## Screenshot
 

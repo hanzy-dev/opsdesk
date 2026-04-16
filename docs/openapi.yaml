@@ -12,6 +12,7 @@ info:
     - ticket listing
     - ticket detail lookup
     - ticket ownership and assignment
+    - ticket activity history
     - ticket status updates
     - ticket comments
 
@@ -306,6 +307,36 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /tickets/{id}/activities:
+    get:
+      tags:
+        - Tickets
+      summary: Get ticket activity history
+      operationId: listTicketActivities
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: Ticket activity returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketActivityListSuccessResponse"
+        "403":
+          description: Authenticated but not allowed to view this ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Ticket was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /tickets/{id}/comments:
     post:
       tags:
@@ -511,6 +542,50 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Timestamp"
 
+    TicketActivity:
+      type: object
+      required:
+        - id
+        - ticketId
+        - action
+        - summary
+        - timestamp
+      properties:
+        id:
+          type: string
+          example: ACT-0001
+        ticketId:
+          type: string
+          example: TCK-0001
+        actorId:
+          type: string
+          example: user-123
+        actorName:
+          type: string
+          example: OpsDesk User
+        actorRole:
+          type: string
+          enum:
+            - reporter
+            - agent
+            - admin
+        action:
+          type: string
+          enum:
+            - ticket_created
+            - status_changed
+            - comment_added
+            - assignment_changed
+        summary:
+          type: string
+          example: Status diubah
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+
     Ticket:
       type: object
       required:
@@ -668,3 +743,13 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Comment"
+
+    TicketActivityListSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketActivity"

@@ -211,9 +211,8 @@ Karena backend CORS dikunci ke domain production final, jangan arahkan deploymen
 
 ## Release Notes For This Batch
 
-Batch ini menambahkan ownership dan assignment sederhana:
+Batch ini menambahkan audit trail aktivitas tiket:
 
-- backend menyimpan creator, reporter, dan assignee pada tiket
-- endpoint baru `PATCH /tickets/{id}/assignment` tersedia untuk assignment
-- frontend menampilkan informasi owner dan petugas penanggung jawab
-- filter ringan "Ditugaskan kepada saya" tersedia untuk petugas dan admin
+- backend menyimpan riwayat aktivitas append-only pada record tiket
+- endpoint baru `GET /tickets/{id}/activities` tersedia untuk membaca riwayat
+- frontend menampilkan timeline "Riwayat Aktivitas" pada detail tiket

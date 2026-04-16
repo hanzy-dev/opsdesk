@@ -32,6 +32,8 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
    agent atau admin dapat menekan "Tugaskan ke Saya" dan informasi petugas tersimpan.
 8. Verifikasi aksi sesuai role:
    admin memiliki akses penuh.
+9. Verifikasi timeline aktivitas:
+   detail tiket menampilkan entri saat tiket dibuat, status diubah, komentar ditambahkan, dan tiket ditugaskan.
 
 ## Verifikasi Backend
 
@@ -47,6 +49,5 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
 
 ## Yang Sengaja Belum Dicentang Pada Batch Ini
 
-- audit trail
 - attachment
 - observability lanjutan
