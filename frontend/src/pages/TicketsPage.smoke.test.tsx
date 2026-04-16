@@ -14,7 +14,7 @@ const useAuthMock = vi.fn(() => ({
 }));
 
 vi.mock("../api/tickets", () => ({
-  listTickets: () => listTicketsMock(),
+  listTickets: (options?: unknown) => listTicketsMock(options),
 }));
 
 vi.mock("../modules/auth/AuthContext", () => ({
@@ -36,32 +36,41 @@ describe("TicketsPage smoke tests", () => {
   });
 
   it("renders ticket data and supports search plus status filter", async () => {
-    listTicketsMock.mockResolvedValue([
-      {
-        id: "TCK-1001",
-        title: "Gangguan login SSO",
-        description: "Mahasiswa tidak dapat masuk ke portal",
-        status: "open",
-        priority: "high",
-        reporterName: "Rina",
-        reporterEmail: "rina@example.com",
-        comments: [],
-        createdAt: "2026-04-15T12:00:00Z",
-        updatedAt: "2026-04-15T12:00:00Z",
+    listTicketsMock.mockResolvedValue({
+      items: [
+        {
+          id: "TCK-1001",
+          title: "Gangguan login SSO",
+          description: "Mahasiswa tidak dapat masuk ke portal",
+          status: "open",
+          priority: "high",
+          reporterName: "Rina",
+          reporterEmail: "rina@example.com",
+          comments: [],
+          createdAt: "2026-04-15T12:00:00Z",
+          updatedAt: "2026-04-15T12:00:00Z",
+        },
+        {
+          id: "TCK-1002",
+          title: "Reset akses printer lab",
+          description: "Perlu akses ulang untuk printer lantai 2",
+          status: "resolved",
+          priority: "low",
+          reporterName: "Bagus",
+          reporterEmail: "bagus@example.com",
+          comments: [],
+          createdAt: "2026-04-14T08:00:00Z",
+          updatedAt: "2026-04-15T08:30:00Z",
+        },
+      ],
+      pagination: {
+        page: 1,
+        page_size: 10,
+        total_items: 2,
+        total_pages: 1,
+        has_next: false,
       },
-      {
-        id: "TCK-1002",
-        title: "Reset akses printer lab",
-        description: "Perlu akses ulang untuk printer lantai 2",
-        status: "resolved",
-        priority: "low",
-        reporterName: "Bagus",
-        reporterEmail: "bagus@example.com",
-        comments: [],
-        createdAt: "2026-04-14T08:00:00Z",
-        updatedAt: "2026-04-15T08:30:00Z",
-      },
-    ]);
+    });
 
     render(
       <MemoryRouter>
@@ -75,14 +84,15 @@ describe("TicketsPage smoke tests", () => {
     fireEvent.change(screen.getByPlaceholderText("Cari ID tiket, judul, atau nama pelapor"), {
       target: { value: "Rina" },
     });
+    fireEvent.click(screen.getByRole("button", { name: "Cari" }));
 
     await waitFor(() => {
-      expect(screen.getByText("Gangguan login SSO")).toBeInTheDocument();
-      expect(screen.queryByText("Reset akses printer lab")).not.toBeInTheDocument();
-    });
-
-    fireEvent.change(screen.getByPlaceholderText("Cari ID tiket, judul, atau nama pelapor"), {
-      target: { value: "" },
+      expect(listTicketsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          q: "Rina",
+          page: 1,
+        }),
+      );
     });
 
     fireEvent.change(screen.getByDisplayValue("Semua status"), {
@@ -90,8 +100,11 @@ describe("TicketsPage smoke tests", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText("Reset akses printer lab")).toBeInTheDocument();
-      expect(screen.queryByText("Gangguan login SSO")).not.toBeInTheDocument();
+      expect(listTicketsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          status: "resolved",
+        }),
+      );
     });
   });
 
@@ -104,7 +117,16 @@ describe("TicketsPage smoke tests", () => {
         canViewOperationalTickets: true,
       },
     });
-    listTicketsMock.mockResolvedValue([]);
+    listTicketsMock.mockResolvedValue({
+      items: [],
+      pagination: {
+        page: 1,
+        page_size: 10,
+        total_items: 0,
+        total_pages: 0,
+        has_next: false,
+      },
+    });
 
     render(
       <MemoryRouter>

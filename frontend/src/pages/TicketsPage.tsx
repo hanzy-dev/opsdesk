@@ -11,19 +11,47 @@ import type { Ticket } from "../types/ticket";
 export function TicketsPage() {
   const { permissions } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 10,
+    totalItems: 0,
+    totalPages: 0,
+    hasNext: false,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
-  const [showAssignedToMe, setShowAssignedToMe] = useState(false);
+  const [priorityFilter, setPriorityFilter] = useState<"all" | Ticket["priority"]>("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<"all" | "me" | "unassigned">("all");
+  const [sortBy, setSortBy] = useState<"updated_at" | "created_at" | "priority" | "status">("updated_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
 
   async function loadTickets() {
     setLoading(true);
     setError(null);
 
     try {
-      const data = await listTickets({ assignedToMe: showAssignedToMe });
-      setTickets(data);
+      const data = await listTickets({
+        q: submittedQuery,
+        status: statusFilter,
+        priority: priorityFilter,
+        assignee: assigneeFilter,
+        page,
+        pageSize: pagination.pageSize,
+        sortBy,
+        sortOrder,
+      });
+      setTickets(data.items);
+      setPagination({
+        page: data.pagination.page,
+        pageSize: data.pagination.page_size,
+        totalItems: data.pagination.total_items,
+        totalPages: data.pagination.total_pages,
+        hasNext: data.pagination.has_next,
+      });
     } catch (error) {
       setError(error instanceof Error ? error.message : "Daftar tiket belum bisa dimuat.");
     } finally {
@@ -33,7 +61,7 @@ export function TicketsPage() {
 
   useEffect(() => {
     void loadTickets();
-  }, [showAssignedToMe]);
+  }, [submittedQuery, statusFilter, priorityFilter, assigneeFilter, page, sortBy, sortOrder]);
 
   const stats = useMemo(
     () => ({
@@ -43,23 +71,6 @@ export function TicketsPage() {
     }),
     [tickets],
   );
-
-  const filteredTickets = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    return tickets.filter((ticket) => {
-      const matchesStatus = statusFilter === "all" ? true : ticket.status === statusFilter;
-      const matchesQuery =
-        normalizedQuery === ""
-          ? true
-          : [ticket.id, ticket.title, ticket.reporterName, ticket.reporterEmail, ticket.assigneeName, ticket.description]
-              .join(" ")
-              .toLowerCase()
-              .includes(normalizedQuery);
-
-      return matchesStatus && matchesQuery;
-    });
-  }, [searchQuery, statusFilter, tickets]);
 
   if (loading) {
     return <LoadingState label="Memuat daftar tiket operasional..." />;
@@ -111,7 +122,7 @@ export function TicketsPage() {
             <h3>Temukan tiket lebih cepat untuk verifikasi operasional</h3>
           </div>
           <p className="filter-summary">
-            Menampilkan {filteredTickets.length} dari {tickets.length} tiket
+            Menampilkan {tickets.length} dari {pagination.totalItems} tiket
           </p>
         </div>
 
@@ -129,7 +140,10 @@ export function TicketsPage() {
             <span>Filter status</span>
             <select
               value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as "all" | Ticket["status"])}
+              onChange={(event) => {
+                setStatusFilter(event.target.value as "all" | Ticket["status"]);
+                setPage(1);
+              }}
             >
               <option value="all">Semua status</option>
               <option value="open">Terbuka</option>
@@ -138,22 +152,101 @@ export function TicketsPage() {
             </select>
           </label>
 
+          <label className="field">
+            <span>Filter prioritas</span>
+            <select
+              value={priorityFilter}
+              onChange={(event) => {
+                setPriorityFilter(event.target.value as "all" | Ticket["priority"]);
+                setPage(1);
+              }}
+            >
+              <option value="all">Semua prioritas</option>
+              <option value="high">Tinggi</option>
+              <option value="medium">Sedang</option>
+              <option value="low">Rendah</option>
+            </select>
+          </label>
+
           {permissions.canAssignTickets ? (
             <label className="field">
               <span>Penugasan</span>
               <select
-                value={showAssignedToMe ? "assigned" : "all"}
-                onChange={(event) => setShowAssignedToMe(event.target.value === "assigned")}
+                value={assigneeFilter}
+                onChange={(event) => {
+                  setAssigneeFilter(event.target.value as "all" | "me" | "unassigned");
+                  setPage(1);
+                }}
               >
                 <option value="all">Semua tiket</option>
-                <option value="assigned">Ditugaskan kepada saya</option>
+                <option value="me">Ditugaskan kepada saya</option>
+                <option value="unassigned">Belum ditugaskan</option>
               </select>
             </label>
           ) : null}
+
+          <label className="field">
+            <span>Urutkan berdasarkan</span>
+            <select
+              value={sortBy}
+              onChange={(event) => {
+                setSortBy(event.target.value as "updated_at" | "created_at" | "priority" | "status");
+                setPage(1);
+              }}
+            >
+              <option value="updated_at">Terakhir diperbarui</option>
+              <option value="created_at">Tanggal dibuat</option>
+              <option value="priority">Prioritas</option>
+              <option value="status">Status</option>
+            </select>
+          </label>
+
+          <label className="field">
+            <span>Arah urutan</span>
+            <select
+              value={sortOrder}
+              onChange={(event) => {
+                setSortOrder(event.target.value as "asc" | "desc");
+                setPage(1);
+              }}
+            >
+              <option value="desc">Menurun</option>
+              <option value="asc">Menaik</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="form-actions">
+          <button
+            className="button button--secondary"
+            onClick={() => {
+              setPage(1);
+              setSubmittedQuery(searchQuery.trim());
+            }}
+            type="button"
+          >
+            Cari
+          </button>
+          <button
+            className="button button--secondary"
+            onClick={() => {
+              setSearchQuery("");
+              setSubmittedQuery("");
+              setStatusFilter("all");
+              setPriorityFilter("all");
+              setAssigneeFilter("all");
+              setSortBy("updated_at");
+              setSortOrder("desc");
+              setPage(1);
+            }}
+            type="button"
+          >
+            Reset Filter
+          </button>
         </div>
       </div>
 
-      {tickets.length === 0 ? (
+      {pagination.totalItems === 0 ? (
         <EmptyState
           title="Belum ada tiket yang tercatat"
           description={
@@ -167,18 +260,51 @@ export function TicketsPage() {
             </Link>
           ) : undefined}
         />
-      ) : filteredTickets.length === 0 ? (
+      ) : tickets.length === 0 ? (
         <EmptyState
           title="Tidak ada tiket yang cocok"
-          description="Coba ubah kata kunci pencarian atau pilih status lain agar hasil lebih luas."
+          description="Coba ubah kata kunci, filter, atau urutan agar hasil lebih luas."
         />
       ) : (
-        <TicketTable
-          tickets={filteredTickets}
-          title="Daftar tiket"
-          eyebrow="Operasional"
-          helperText="Gunakan pencarian dan filter status untuk memeriksa tiket aktif dengan lebih cepat."
-        />
+        <div className="stack-md">
+          <TicketTable
+            tickets={tickets}
+            title="Daftar tiket"
+            eyebrow="Operasional"
+            helperText="Explorer tiket ini memakai pencarian, filter, urutan, dan pagination dari server."
+          />
+
+          <div className="panel">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Navigasi halaman</p>
+                <h3>
+                  Halaman {pagination.page} dari {Math.max(pagination.totalPages, 1)}
+                </h3>
+              </div>
+              <p className="filter-summary">{pagination.totalItems} tiket ditemukan</p>
+            </div>
+
+            <div className="form-actions">
+              <button
+                className="button button--secondary"
+                disabled={pagination.page <= 1}
+                onClick={() => setPage((current) => Math.max(1, current - 1))}
+                type="button"
+              >
+                Sebelumnya
+              </button>
+              <button
+                className="button button--secondary"
+                disabled={!pagination.hasNext}
+                onClick={() => setPage((current) => current + 1)}
+                type="button"
+              >
+                Berikutnya
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );

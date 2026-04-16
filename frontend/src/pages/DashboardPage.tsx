@@ -20,8 +20,13 @@ export function DashboardPage() {
     setError(null);
 
     try {
-      const data = await listTickets();
-      setTickets(data);
+      const data = await listTickets({
+        page: 1,
+        pageSize: 5,
+        sortBy: "updated_at",
+        sortOrder: "desc",
+      });
+      setTickets(data.items);
     } catch (error) {
       setError(error instanceof Error ? error.message : "Data dashboard belum bisa dimuat.");
     } finally {

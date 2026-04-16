@@ -1,9 +1,43 @@
 import { apiRequest } from "./client";
+import type { PaginatedResult } from "../types/api";
 import type { AssignTicketInput, Comment, CreateTicketInput, NewCommentInput, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 
-export function listTickets(options?: { assignedToMe?: boolean }) {
-  const query = options?.assignedToMe ? "?assignedToMe=true" : "";
-  return apiRequest<Ticket[]>(`/tickets${query}`);
+type ListTicketsOptions = {
+  q?: string;
+  status?: "all" | Ticket["status"];
+  priority?: "all" | Ticket["priority"];
+  assignee?: "all" | "me" | "unassigned";
+  page?: number;
+  pageSize?: number;
+  sortBy?: "updated_at" | "created_at" | "priority" | "status";
+  sortOrder?: "asc" | "desc";
+};
+
+export function listTickets(options?: ListTicketsOptions) {
+  const query = new URLSearchParams();
+
+  if (options?.q?.trim()) {
+    query.set("q", options.q.trim());
+  }
+
+  if (options?.status && options.status !== "all") {
+    query.set("status", options.status);
+  }
+
+  if (options?.priority && options.priority !== "all") {
+    query.set("priority", options.priority);
+  }
+
+  if (options?.assignee && options.assignee !== "all") {
+    query.set("assignee", options.assignee);
+  }
+
+  query.set("page", String(options?.page ?? 1));
+  query.set("page_size", String(options?.pageSize ?? 10));
+  query.set("sort_by", options?.sortBy ?? "updated_at");
+  query.set("sort_order", options?.sortOrder ?? "desc");
+
+  return apiRequest<PaginatedResult<Ticket>>(`/tickets?${query.toString()}`);
 }
 
 export function getTicket(ticketId: string) {

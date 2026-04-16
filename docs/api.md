@@ -65,7 +65,7 @@ Recommended quick checks:
 3. `POST /tickets`
    Create one ticket with a small JSON payload.
 4. `GET /tickets`
-   Confirm the created ticket appears in the list.
+   Confirm the created ticket appears in the list and test `q`, `status`, `priority`, `assignee`, `page`, `page_size`, `sort_by`, and `sort_order`.
 5. `PATCH /tickets/{id}/status`
    Change the status to `in_progress` or `resolved`.
 6. `PATCH /tickets/{id}/assignment`
@@ -83,4 +83,14 @@ Recommended quick checks:
 - Forbidden actions return `403` even if the frontend hides the action.
 - Assignment policy in this batch is intentionally simple: `agent` and `admin` may assign or reassign a ticket to themselves.
 - Activity history is append-only and stored with the current ticket record for simplicity.
+- Ticket explorer uses server-side query handling for search, filter, sorting, and pagination.
+- `GET /tickets` supports `assignee=me` and `assignee=unassigned`.
+- `GET /tickets` still accepts `assignedToMe=true` as a lightweight backward-compatible alias.
+- Paginated ticket responses now return:
+  - `data.items`
+  - `data.pagination.page`
+  - `data.pagination.page_size`
+  - `data.pagination.total_items`
+  - `data.pagination.total_pages`
+  - `data.pagination.has_next`
 - The deployment baseline uses the `dev` backend environment.

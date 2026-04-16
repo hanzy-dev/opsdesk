@@ -76,16 +76,16 @@ func TestListTicketsReturnsNewestFirst(t *testing.T) {
 		t.Fatalf("ListTickets() error = %v", err)
 	}
 
-	if len(tickets) != 2 {
-		t.Fatalf("expected 2 tickets, got %d", len(tickets))
+	if len(tickets.Items) != 2 {
+		t.Fatalf("expected 2 tickets, got %d", len(tickets.Items))
 	}
 
-	if tickets[0].ID != second.ID {
-		t.Fatalf("expected newest ticket first, got %q", tickets[0].ID)
+	if tickets.Items[0].ID != second.ID {
+		t.Fatalf("expected newest ticket first, got %q", tickets.Items[0].ID)
 	}
 
-	if tickets[1].ID != first.ID {
-		t.Fatalf("expected oldest ticket second, got %q", tickets[1].ID)
+	if tickets.Items[1].ID != first.ID {
+		t.Fatalf("expected oldest ticket second, got %q", tickets.Items[1].ID)
 	}
 }
 

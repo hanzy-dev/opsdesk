@@ -391,15 +391,90 @@ func TestReporterSeesOnlyOwnTickets(t *testing.T) {
 		t.Fatalf("expected status 200, got %d", listRecorder.Code)
 	}
 
-	var response dto.SuccessResponse[[]dto.TicketResponse]
+	var response dto.SuccessResponse[dto.TicketListResponse]
 	decodeResponse(t, listRecorder, &response)
 
-	if len(response.Data) != 1 {
-		t.Fatalf("expected exactly 1 reporter ticket, got %d", len(response.Data))
+	if len(response.Data.Items) != 1 {
+		t.Fatalf("expected exactly 1 reporter ticket, got %d", len(response.Data.Items))
 	}
 
-	if response.Data[0].ReporterEmail != "opsdesk.user@example.com" {
-		t.Fatalf("expected own reporter email, got %q", response.Data[0].ReporterEmail)
+	if response.Data.Items[0].ReporterEmail != "opsdesk.user@example.com" {
+		t.Fatalf("expected own reporter email, got %q", response.Data.Items[0].ReporterEmail)
+	}
+}
+
+func TestListTicketsSupportsSearchSortingAndPagination(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	adminRouter := newTestRouterWithRepository(testAdminIdentity(), repo)
+
+	for _, ticket := range []domain.Ticket{
+		{
+			ID:            "TCK-1001",
+			Title:         "Gangguan login SSO",
+			Description:   "Masalah login mahasiswa",
+			Status:        domain.TicketStatusOpen,
+			Priority:      domain.TicketPriorityHigh,
+			ReporterName:  "Rina",
+			ReporterEmail: "rina@example.com",
+			CreatedAt:     time.Now().UTC().Add(-3 * time.Hour),
+			UpdatedAt:     time.Now().UTC().Add(-3 * time.Hour),
+		},
+		{
+			ID:            "TCK-1002",
+			Title:         "Reset akses printer",
+			Description:   "Reset printer lab",
+			Status:        domain.TicketStatusResolved,
+			Priority:      domain.TicketPriorityLow,
+			ReporterName:  "Bagus",
+			ReporterEmail: "bagus@example.com",
+			CreatedAt:     time.Now().UTC().Add(-2 * time.Hour),
+			UpdatedAt:     time.Now().UTC().Add(-2 * time.Hour),
+		},
+		{
+			ID:            "TCK-1003",
+			Title:         "Login gagal di portal",
+			Description:   "Mahasiswa tidak bisa masuk",
+			Status:        domain.TicketStatusInProgress,
+			Priority:      domain.TicketPriorityMedium,
+			ReporterName:  "Sinta",
+			ReporterEmail: "sinta@example.com",
+			CreatedAt:     time.Now().UTC().Add(-1 * time.Hour),
+			UpdatedAt:     time.Now().UTC().Add(-1 * time.Hour),
+		},
+	} {
+		if err := repo.CreateTicket(context.Background(), ticket); err != nil {
+			t.Fatalf("expected seeded ticket, got error %v", err)
+		}
+	}
+
+	recorder := performRequest(t, adminRouter, http.MethodGet, "/v1/tickets?q=login&sort_by=created_at&sort_order=asc&page=1&page_size=1", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.TicketListResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.Pagination.TotalItems != 2 {
+		t.Fatalf("expected total_items 2, got %d", response.Data.Pagination.TotalItems)
+	}
+
+	if response.Data.Pagination.TotalPages != 2 {
+		t.Fatalf("expected total_pages 2, got %d", response.Data.Pagination.TotalPages)
+	}
+
+	if !response.Data.Pagination.HasNext {
+		t.Fatal("expected has_next true")
+	}
+
+	if len(response.Data.Items) != 1 {
+		t.Fatalf("expected 1 item on first page, got %d", len(response.Data.Items))
+	}
+
+	if response.Data.Items[0].ID != "TCK-1001" {
+		t.Fatalf("expected oldest login ticket TCK-1001, got %q", response.Data.Items[0].ID)
 	}
 }
 

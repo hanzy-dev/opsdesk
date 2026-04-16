@@ -24,15 +24,17 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
 2. Masuk menggunakan akun Cognito yang valid.
 3. Pastikan user berada di group Cognito yang benar: `reporter`, `agent`, atau `admin`.
 4. Buka dashboard dan daftar tiket.
-5. Verifikasi aksi sesuai role:
-   reporter dapat membuat tiket dan hanya melihat tiket miliknya.
+5. Verifikasi ticket explorer:
+   pencarian, filter status, filter prioritas, sortir, dan pagination memanggil data server-side dengan benar.
 6. Verifikasi aksi sesuai role:
+   reporter dapat membuat tiket dan hanya melihat tiket miliknya.
+7. Verifikasi aksi sesuai role:
    agent dapat melihat tiket operasional, memperbarui status, dan menambah komentar.
-7. Verifikasi assignment:
+8. Verifikasi assignment:
    agent atau admin dapat menekan "Tugaskan ke Saya" dan informasi petugas tersimpan.
-8. Verifikasi aksi sesuai role:
+9. Verifikasi aksi sesuai role:
    admin memiliki akses penuh.
-9. Verifikasi timeline aktivitas:
+10. Verifikasi timeline aktivitas:
    detail tiket menampilkan entri saat tiket dibuat, status diubah, komentar ditambahkan, dan tiket ditugaskan.
 
 ## Verifikasi Backend

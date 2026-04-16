@@ -29,10 +29,25 @@ type CreateTicketInput struct {
 }
 
 type ListTicketsInput struct {
-	Status        domain.TicketStatus
-	Priority      domain.TicketPriority
-	ReporterEmail string
-	AssigneeID    string
+	Query          string
+	Status         domain.TicketStatus
+	Priority       domain.TicketPriority
+	ReporterEmail  string
+	AssigneeID     string
+	UnassignedOnly bool
+	Page           int
+	PageSize       int
+	SortBy         string
+	SortOrder      string
+}
+
+type ListTicketsResult struct {
+	Items      []domain.Ticket
+	Page       int
+	PageSize   int
+	TotalItems int
+	TotalPages int
+	HasNext    bool
 }
 
 type UpdateTicketStatusInput struct {
@@ -59,7 +74,7 @@ type AssignTicketInput struct {
 
 type TicketService interface {
 	CreateTicket(ctx context.Context, input CreateTicketInput) (domain.Ticket, error)
-	ListTickets(ctx context.Context, input ListTicketsInput) ([]domain.Ticket, error)
+	ListTickets(ctx context.Context, input ListTicketsInput) (ListTicketsResult, error)
 	GetTicket(ctx context.Context, ticketID string) (domain.Ticket, error)
 	ListTicketActivities(ctx context.Context, ticketID string) ([]domain.ActivityEntry, error)
 	UpdateTicketStatus(ctx context.Context, ticketID string, input UpdateTicketStatusInput) (domain.Ticket, error)
@@ -124,13 +139,36 @@ func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInpu
 	return ticket, nil
 }
 
-func (s *ticketService) ListTickets(ctx context.Context, input ListTicketsInput) ([]domain.Ticket, error) {
-	return s.repo.ListTickets(ctx, repository.ListTicketsFilter{
-		Status:        input.Status,
-		Priority:      input.Priority,
-		ReporterEmail: strings.TrimSpace(input.ReporterEmail),
-		AssigneeID:    strings.TrimSpace(input.AssigneeID),
+func (s *ticketService) ListTickets(ctx context.Context, input ListTicketsInput) (ListTicketsResult, error) {
+	result, err := s.repo.ListTickets(ctx, repository.ListTicketsFilter{
+		Query:          strings.TrimSpace(input.Query),
+		Status:         input.Status,
+		Priority:       input.Priority,
+		ReporterEmail:  strings.TrimSpace(input.ReporterEmail),
+		AssigneeID:     strings.TrimSpace(input.AssigneeID),
+		UnassignedOnly: input.UnassignedOnly,
+		Page:           input.Page,
+		PageSize:       input.PageSize,
+		SortBy:         strings.TrimSpace(input.SortBy),
+		SortOrder:      strings.TrimSpace(input.SortOrder),
 	})
+	if err != nil {
+		return ListTicketsResult{}, err
+	}
+
+	totalPages := 0
+	if result.PageSize > 0 {
+		totalPages = (result.TotalItems + result.PageSize - 1) / result.PageSize
+	}
+
+	return ListTicketsResult{
+		Items:      result.Items,
+		Page:       result.Page,
+		PageSize:   result.PageSize,
+		TotalItems: result.TotalItems,
+		TotalPages: totalPages,
+		HasNext:    result.Page < totalPages,
+	}, nil
 }
 
 func (s *ticketService) GetTicket(ctx context.Context, ticketID string) (domain.Ticket, error) {

@@ -104,13 +104,13 @@ func (r *TicketRepository) UpdateTicket(ctx context.Context, ticket domain.Ticke
 	return mapConditionalWriteError(err)
 }
 
-func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.ListTicketsFilter) ([]domain.Ticket, error) {
+func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.ListTicketsFilter) (repository.ListTicketsResult, error) {
 	input := &dynamodb.ScanInput{
 		TableName: aws.String(r.tableName),
 	}
 
 	expressionValues := map[string]types.AttributeValue{}
-	filterExpressions := make([]string, 0, 4)
+	filterExpressions := make([]string, 0, 5)
 
 	if filter.Status != "" {
 		filterExpressions = append(filterExpressions, "#status = :status")
@@ -132,6 +132,11 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 		expressionValues[":assigneeId"] = &types.AttributeValueMemberS{Value: strings.TrimSpace(filter.AssigneeID)}
 	}
 
+	if filter.UnassignedOnly {
+		filterExpressions = append(filterExpressions, "(attribute_not_exists(#assigneeId) OR #assigneeId = :emptyAssigneeId)")
+		expressionValues[":emptyAssigneeId"] = &types.AttributeValueMemberS{Value: ""}
+	}
+
 	if len(filterExpressions) > 0 {
 		input.FilterExpression = aws.String(joinFilterExpressions(filterExpressions))
 		input.ExpressionAttributeNames = map[string]string{
@@ -145,29 +150,54 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 
 	output, err := r.client.Scan(ctx, input)
 	if err != nil {
-		return nil, err
+		return repository.ListTicketsResult{}, err
 	}
 
 	var items []ticketItem
 	if err := attributevalue.UnmarshalListOfMaps(output.Items, &items); err != nil {
-		return nil, err
+		return repository.ListTicketsResult{}, err
 	}
 
 	tickets := make([]domain.Ticket, 0, len(items))
 	for _, item := range items {
 		ticket, err := toDomainTicket(item)
 		if err != nil {
-			return nil, err
+			return repository.ListTicketsResult{}, err
+		}
+
+		if !matchesSearchQuery(ticket, filter.Query) {
+			continue
 		}
 
 		tickets = append(tickets, ticket)
 	}
 
-	sort.Slice(tickets, func(i, j int) bool {
-		return tickets[i].CreatedAt.After(tickets[j].CreatedAt)
-	})
+	sortTickets(tickets, filter.SortBy, filter.SortOrder)
 
-	return tickets, nil
+	totalItems := len(tickets)
+	page := normalizePositive(filter.Page, 1)
+	pageSize := normalizePositive(filter.PageSize, 10)
+	start := (page - 1) * pageSize
+	if start >= totalItems {
+		return repository.ListTicketsResult{
+			Items:      []domain.Ticket{},
+			TotalItems: totalItems,
+			Page:       page,
+			PageSize:   pageSize,
+		}, nil
+	}
+
+	end := start + pageSize
+	if end > totalItems {
+		end = totalItems
+	}
+
+	return repository.ListTicketsResult{
+		Items:      tickets[start:end],
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
 }
 
 func (r *TicketRepository) GetTicketByID(ctx context.Context, ticketID string) (domain.Ticket, error) {
@@ -350,6 +380,105 @@ func formatOptionalTimestamp(value time.Time) string {
 
 func joinFilterExpressions(expressions []string) string {
 	return strings.Join(expressions, " AND ")
+}
+
+func matchesSearchQuery(ticket domain.Ticket, query string) bool {
+	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
+	if normalizedQuery == "" {
+		return true
+	}
+
+	return strings.Contains(strings.ToLower(strings.Join([]string{
+		ticket.ID,
+		ticket.Title,
+		ticket.Description,
+		ticket.ReporterName,
+		ticket.ReporterEmail,
+		ticket.AssigneeName,
+	}, " ")), normalizedQuery)
+}
+
+func sortTickets(tickets []domain.Ticket, sortBy, sortOrder string) {
+	normalizedSortBy := strings.TrimSpace(strings.ToLower(sortBy))
+	if normalizedSortBy == "" {
+		normalizedSortBy = "updated_at"
+	}
+
+	descending := !strings.EqualFold(strings.TrimSpace(sortOrder), "asc")
+
+	sort.Slice(tickets, func(i, j int) bool {
+		left := tickets[i]
+		right := tickets[j]
+
+		switch normalizedSortBy {
+		case "created_at":
+			if descending {
+				return left.CreatedAt.After(right.CreatedAt)
+			}
+			return left.CreatedAt.Before(right.CreatedAt)
+		case "priority":
+			leftRank := priorityRank(left.Priority)
+			rightRank := priorityRank(right.Priority)
+			if leftRank == rightRank {
+				if descending {
+					return left.UpdatedAt.After(right.UpdatedAt)
+				}
+				return left.UpdatedAt.Before(right.UpdatedAt)
+			}
+			if descending {
+				return leftRank > rightRank
+			}
+			return leftRank < rightRank
+		case "status":
+			leftRank := statusRank(left.Status)
+			rightRank := statusRank(right.Status)
+			if leftRank == rightRank {
+				if descending {
+					return left.UpdatedAt.After(right.UpdatedAt)
+				}
+				return left.UpdatedAt.Before(right.UpdatedAt)
+			}
+			if descending {
+				return leftRank > rightRank
+			}
+			return leftRank < rightRank
+		default:
+			if descending {
+				return left.UpdatedAt.After(right.UpdatedAt)
+			}
+			return left.UpdatedAt.Before(right.UpdatedAt)
+		}
+	})
+}
+
+func priorityRank(priority domain.TicketPriority) int {
+	switch priority {
+	case domain.TicketPriorityHigh:
+		return 3
+	case domain.TicketPriorityMedium:
+		return 2
+	default:
+		return 1
+	}
+}
+
+func statusRank(status domain.TicketStatus) int {
+	switch status {
+	case domain.TicketStatusOpen:
+		return 3
+	case domain.TicketStatusInProgress:
+		return 2
+	default:
+		return 1
+	}
+}
+
+func normalizePositive(value, fallback int) int {
+	if value <= 0 {
+		return fallback
+	}
+
+	return value
 }
 
 func mapConditionalWriteError(err error) error {

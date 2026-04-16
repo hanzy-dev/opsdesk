@@ -67,6 +67,40 @@ func (v *Validator) ValidateAssignTicketRequest(_ dto.AssignTicketRequest) []dto
 	return nil
 }
 
+func (v *Validator) ValidateListTicketsQuery(input dto.ListTicketsQuery) []dto.FieldError {
+	var errs []dto.FieldError
+
+	if input.Status != "" && !isValidStatus(input.Status) {
+		errs = append(errs, dto.FieldError{Field: "status", Message: "status must be one of: open, in_progress, resolved"})
+	}
+
+	if input.Priority != "" && !isValidPriority(input.Priority) {
+		errs = append(errs, dto.FieldError{Field: "priority", Message: "priority must be one of: low, medium, high"})
+	}
+
+	switch input.SortBy {
+	case "", "created_at", "updated_at", "priority", "status":
+	default:
+		errs = append(errs, dto.FieldError{Field: "sort_by", Message: "sort_by must be one of: created_at, updated_at, priority, status"})
+	}
+
+	switch input.SortOrder {
+	case "", "asc", "desc":
+	default:
+		errs = append(errs, dto.FieldError{Field: "sort_order", Message: "sort_order must be one of: asc, desc"})
+	}
+
+	if input.Page < 1 {
+		errs = append(errs, dto.FieldError{Field: "page", Message: "page must be at least 1"})
+	}
+
+	if input.PageSize < 1 || input.PageSize > 100 {
+		errs = append(errs, dto.FieldError{Field: "page_size", Message: "page_size must be between 1 and 100"})
+	}
+
+	return errs
+}
+
 func isValidPriority(value string) bool {
 	switch domain.TicketPriority(value) {
 	case domain.TicketPriorityLow, domain.TicketPriorityMedium, domain.TicketPriorityHigh:

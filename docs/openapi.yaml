@@ -83,6 +83,12 @@ paths:
         - bearerAuth: []
       parameters:
         - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+          description: Optional server-side search across ticket ID, title, description, reporter, and assignee fields.
+        - in: query
           name: status
           required: false
           schema:
@@ -95,11 +101,57 @@ paths:
             $ref: "#/components/schemas/TicketPriority"
           description: Optional priority filter.
         - in: query
+          name: assignee
+          required: false
+          schema:
+            type: string
+            example: me
+          description: Optional assignee filter. Supported values are `me`, `unassigned`, or a concrete assignee ID.
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number, starting from 1.
+        - in: query
+          name: page_size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Number of tickets returned per page.
+        - in: query
+          name: sort_by
+          required: false
+          schema:
+            type: string
+            enum:
+              - updated_at
+              - created_at
+              - priority
+              - status
+            default: updated_at
+          description: Field used for server-side sorting.
+        - in: query
+          name: sort_order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+          description: Sort direction for the selected field.
+        - in: query
           name: assignedToMe
           required: false
           schema:
             type: boolean
-          description: Optional lightweight filter for the authenticated operator.
+          description: Backward-compatible alias for assignee=me.
       responses:
         "200":
           description: Ticket list returned successfully
@@ -109,29 +161,36 @@ paths:
                 $ref: "#/components/schemas/TicketListSuccessResponse"
               example:
                 data:
-                  - id: TCK-0002
-                    title: API Gateway timeout
-                    description: Investigate repeated timeout errors
-                    status: in_progress
-                    priority: high
-                    createdBy: user-123
-                    createdByName: Cloud Lab
-                    createdByEmail: lab@example.com
-                    reporterId: user-123
-                    reporterName: Cloud Lab
-                    reporterEmail: lab@example.com
-                    assigneeId: agent-123
-                    assigneeName: Support Engineer
-                    assignedAt: "2026-04-14T09:10:00Z"
-                    comments:
-                      - id: CMT-0001
-                        ticketId: TCK-0002
-                        message: Initial triage started
-                        authorName: Support Engineer
-                        createdAt: "2026-04-14T09:15:00Z"
-                        updatedAt: "2026-04-14T09:15:00Z"
-                    createdAt: "2026-04-14T09:00:00Z"
-                    updatedAt: "2026-04-14T09:15:00Z"
+                  items:
+                    - id: TCK-0002
+                      title: API Gateway timeout
+                      description: Investigate repeated timeout errors
+                      status: in_progress
+                      priority: high
+                      createdBy: user-123
+                      createdByName: Cloud Lab
+                      createdByEmail: lab@example.com
+                      reporterId: user-123
+                      reporterName: Cloud Lab
+                      reporterEmail: lab@example.com
+                      assigneeId: agent-123
+                      assigneeName: Support Engineer
+                      assignedAt: "2026-04-14T09:10:00Z"
+                      comments:
+                        - id: CMT-0001
+                          ticketId: TCK-0002
+                          message: Initial triage started
+                          authorName: Support Engineer
+                          createdAt: "2026-04-14T09:15:00Z"
+                          updatedAt: "2026-04-14T09:15:00Z"
+                      createdAt: "2026-04-14T09:00:00Z"
+                      updatedAt: "2026-04-14T09:15:00Z"
+                  pagination:
+                    page: 1
+                    page_size: 10
+                    total_items: 24
+                    total_pages: 3
+                    has_next: true
     post:
       tags:
         - Tickets
@@ -732,9 +791,45 @@ components:
         - data
       properties:
         data:
+          $ref: "#/components/schemas/TicketList"
+
+    TicketList:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
           type: array
           items:
             $ref: "#/components/schemas/Ticket"
+        pagination:
+          $ref: "#/components/schemas/TicketListPagination"
+
+    TicketListPagination:
+      type: object
+      required:
+        - page
+        - page_size
+        - total_items
+        - total_pages
+        - has_next
+      properties:
+        page:
+          type: integer
+          example: 1
+        page_size:
+          type: integer
+          example: 10
+        total_items:
+          type: integer
+          example: 24
+        total_pages:
+          type: integer
+          example: 3
+        has_next:
+          type: boolean
+          example: true
 
     CommentSuccessResponse:
       type: object

@@ -41,7 +41,7 @@ func (r *TicketRepository) UpdateTicket(_ context.Context, ticket domain.Ticket)
 	return nil
 }
 
-func (r *TicketRepository) ListTickets(_ context.Context, filter repository.ListTicketsFilter) ([]domain.Ticket, error) {
+func (r *TicketRepository) ListTickets(_ context.Context, filter repository.ListTicketsFilter) (repository.ListTicketsResult, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -63,14 +63,43 @@ func (r *TicketRepository) ListTickets(_ context.Context, filter repository.List
 			continue
 		}
 
+		if filter.UnassignedOnly && strings.TrimSpace(ticket.AssigneeID) != "" {
+			continue
+		}
+
+		if !matchesMemorySearchQuery(ticket, filter.Query) {
+			continue
+		}
+
 		tickets = append(tickets, cloneTicket(ticket))
 	}
 
-	sort.Slice(tickets, func(i, j int) bool {
-		return tickets[i].CreatedAt.After(tickets[j].CreatedAt)
-	})
+	sortMemoryTickets(tickets, filter.SortBy, filter.SortOrder)
 
-	return tickets, nil
+	totalItems := len(tickets)
+	page := normalizePositiveInt(filter.Page, 1)
+	pageSize := normalizePositiveInt(filter.PageSize, 10)
+	start := (page - 1) * pageSize
+	if start >= totalItems {
+		return repository.ListTicketsResult{
+			Items:      []domain.Ticket{},
+			TotalItems: totalItems,
+			Page:       page,
+			PageSize:   pageSize,
+		}, nil
+	}
+
+	end := start + pageSize
+	if end > totalItems {
+		end = totalItems
+	}
+
+	return repository.ListTicketsResult{
+		Items:      tickets[start:end],
+		TotalItems: totalItems,
+		Page:       page,
+		PageSize:   pageSize,
+	}, nil
 }
 
 func (r *TicketRepository) GetTicketByID(_ context.Context, ticketID string) (domain.Ticket, error) {
@@ -107,4 +136,103 @@ func cloneTicket(ticket domain.Ticket) domain.Ticket {
 	}
 
 	return cloned
+}
+
+func matchesMemorySearchQuery(ticket domain.Ticket, query string) bool {
+	normalizedQuery := strings.TrimSpace(strings.ToLower(query))
+	if normalizedQuery == "" {
+		return true
+	}
+
+	return strings.Contains(strings.ToLower(strings.Join([]string{
+		ticket.ID,
+		ticket.Title,
+		ticket.Description,
+		ticket.ReporterName,
+		ticket.ReporterEmail,
+		ticket.AssigneeName,
+	}, " ")), normalizedQuery)
+}
+
+func sortMemoryTickets(tickets []domain.Ticket, sortBy, sortOrder string) {
+	normalizedSortBy := strings.TrimSpace(strings.ToLower(sortBy))
+	if normalizedSortBy == "" {
+		normalizedSortBy = "updated_at"
+	}
+
+	descending := !strings.EqualFold(strings.TrimSpace(sortOrder), "asc")
+
+	sort.Slice(tickets, func(i, j int) bool {
+		left := tickets[i]
+		right := tickets[j]
+
+		switch normalizedSortBy {
+		case "created_at":
+			if descending {
+				return left.CreatedAt.After(right.CreatedAt)
+			}
+			return left.CreatedAt.Before(right.CreatedAt)
+		case "priority":
+			leftRank := priorityRank(left.Priority)
+			rightRank := priorityRank(right.Priority)
+			if leftRank == rightRank {
+				if descending {
+					return left.UpdatedAt.After(right.UpdatedAt)
+				}
+				return left.UpdatedAt.Before(right.UpdatedAt)
+			}
+			if descending {
+				return leftRank > rightRank
+			}
+			return leftRank < rightRank
+		case "status":
+			leftRank := statusRank(left.Status)
+			rightRank := statusRank(right.Status)
+			if leftRank == rightRank {
+				if descending {
+					return left.UpdatedAt.After(right.UpdatedAt)
+				}
+				return left.UpdatedAt.Before(right.UpdatedAt)
+			}
+			if descending {
+				return leftRank > rightRank
+			}
+			return leftRank < rightRank
+		default:
+			if descending {
+				return left.UpdatedAt.After(right.UpdatedAt)
+			}
+			return left.UpdatedAt.Before(right.UpdatedAt)
+		}
+	})
+}
+
+func priorityRank(priority domain.TicketPriority) int {
+	switch priority {
+	case domain.TicketPriorityHigh:
+		return 3
+	case domain.TicketPriorityMedium:
+		return 2
+	default:
+		return 1
+	}
+}
+
+func statusRank(status domain.TicketStatus) int {
+	switch status {
+	case domain.TicketStatusOpen:
+		return 3
+	case domain.TicketStatusInProgress:
+		return 2
+	default:
+		return 1
+	}
+}
+
+func normalizePositiveInt(value, fallback int) int {
+	if value <= 0 {
+		return fallback
+	}
+
+	return value
 }

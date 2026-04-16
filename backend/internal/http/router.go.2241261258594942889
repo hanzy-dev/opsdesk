@@ -233,7 +233,7 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 		Query:          query.Q,
 		Status:         domain.TicketStatus(query.Status),
 		Priority:       domain.TicketPriority(query.Priority),
-		ReporterEmail:  reporterEmail,
+		ReporterEmail: reporterEmail,
 		AssigneeID:     assigneeID,
 		UnassignedOnly: unassignedOnly,
 		Page:           query.Page,

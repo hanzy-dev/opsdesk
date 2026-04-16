@@ -2,7 +2,7 @@
 
 OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch 5 menambahkan audit trail append-only untuk aktivitas tiket dan menampilkannya sebagai timeline pada detail tiket.
+Batch 6 meningkatkan daftar tiket menjadi ticket explorer dengan pencarian, filter, sortir, dan pagination yang ditangani server-side.
 
 ## Deployment Tetap
 
@@ -23,6 +23,7 @@ OpsDesk saat ini mendukung:
 - ownership tiket berbasis pengguna terautentikasi
 - assignment dan reassignment sederhana ke operator yang sedang login
 - audit trail aktivitas tiket
+- ticket explorer server-side dengan search, filter, sorting, dan pagination
 - pembaruan status tiket
 - komentar tiket
 - health endpoint
@@ -170,15 +171,14 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 5
+## Catatan Batch 6
 
-Batch ini menambahkan audit trail append-only:
+Batch ini menambahkan ticket explorer server-side:
 
-- aktivitas dicatat saat tiket dibuat
-- aktivitas dicatat saat status diubah
-- aktivitas dicatat saat komentar ditambahkan
-- aktivitas dicatat saat assignment berubah
-- timeline aktivitas tampil di halaman detail tiket
+- `GET /v1/tickets` sekarang mendukung query `q`, `status`, `priority`, `assignee`, `page`, `page_size`, `sort_by`, dan `sort_order`
+- daftar tiket mengembalikan `items` dan metadata `pagination`
+- UI daftar tiket sekarang memakai pencarian, filter, sortir, dan pagination yang diproses backend
+- workflow lama `assignedToMe=true` tetap dibaca untuk kompatibilitas ringan
 
 Kebijakan assignment tetap:
 

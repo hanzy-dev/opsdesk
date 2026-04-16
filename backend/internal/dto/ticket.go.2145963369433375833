@@ -9,14 +9,14 @@ type CreateTicketRequest struct {
 }
 
 type ListTicketsQuery struct {
-	Q            string
-	Status       string
-	Priority     string
-	Assignee     string
-	Page         int
-	PageSize     int
-	SortBy       string
-	SortOrder    string
+	Q          string
+	Status     string
+	Priority   string
+	Assignee   string
+	Page       int
+	PageSize   int
+	SortBy     string
+	SortOrder  string
 	AssignedToMe bool
 }
 
