@@ -54,3 +54,6 @@ backend/.gomodcache/
 
 # Tool/editor backup files
 *.go.[0-9]*
+
+# Tool/editor backup files
+*.go.[0-9]*
