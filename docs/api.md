@@ -2,19 +2,17 @@
 
 ## Overview
 
-OpsDesk exposes a small HTTP API for a serverless helpdesk workflow. The current implementation supports:
+OpsDesk mengekspos HTTP API kecil yang mengikuti implementasi backend saat ini. API ini mencakup:
 
-- health checks
-- authenticated identity lookup
-- ticket creation
-- ticket listing
-- ticket detail lookup
-- ticket ownership and assignee metadata
-- ticket assignment
-- ticket activity history
-- secure ticket attachments
-- ticket status updates
-- ticket comments
+- health check
+- lookup identitas login
+- create/list/detail tiket
+- update status tiket
+- assignment tiket ke operator yang sedang login
+- komentar tiket
+- timeline aktivitas tiket
+- presigned upload URL dan presigned download URL untuk lampiran
+- structured error response dengan `requestId`
 
 The authoritative machine-readable contract is in [openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml).
 
@@ -22,11 +20,11 @@ The authoritative machine-readable contract is in [openapi.yaml](/d:/Semester%20
 
 The OpenAPI file is written in OpenAPI 3.0.3 YAML format.
 
-Key sections:
+Bagian penting:
 
 - `paths`: available endpoints and methods
 - `components/schemas`: request and response models
-- `servers`: example local and deployed base URLs
+- `servers`: base URL deployed yang dipakai repository ini
 - `components/parameters`: reusable path parameters such as ticket ID
 
 The spec follows the current backend implementation instead of proposing a redesigned API.
@@ -45,7 +43,25 @@ Final deployed API Gateway base URL:
 https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 ```
 
-## Quick Lecturer Review Guide
+## Ringkasan Kontrak
+
+- Semua endpoint selain `GET /health` membutuhkan bearer token JWT Cognito.
+- RBAC dibaca dari group Cognito `reporter`, `agent`, dan `admin`.
+- Semua timestamp memakai UTC RFC3339 / ISO 8601.
+- Error backend memakai bentuk:
+
+```json
+{
+  "error": {
+    "code": "validation_failed",
+    "message": "request validation failed",
+    "requestId": "req-abc123",
+    "details": []
+  }
+}
+```
+
+## Quick Review Guide
 
 Fast inspection path:
 
@@ -53,7 +69,7 @@ Fast inspection path:
 2. Review the `paths` section for the supported endpoints.
 3. Check `TicketStatus` to see the allowed status values:
    `open`, `in_progress`, `resolved`
-4. Check `ErrorResponse` to understand the JSON error shape used by the backend.
+4. Check `ErrorResponse` untuk bentuk JSON error, termasuk `requestId`.
 
 ## Quick Testing Suggestions
 
@@ -82,23 +98,10 @@ Recommended quick checks:
 
 ## Notes
 
-- Timestamps are documented as UTC RFC3339 / ISO 8601 strings.
-- All endpoints except `GET /health` require a valid Cognito JWT bearer token.
-- Backend reads RBAC from Cognito groups `reporter`, `agent`, and `admin`.
-- Forbidden actions return `403` even if the frontend hides the action.
-- Assignment policy in this batch is intentionally simple: `agent` and `admin` may assign or reassign a ticket to themselves.
-- Activity history is append-only and stored with the current ticket record for simplicity.
-- Attachments use a private S3 bucket with presigned PUT for upload and presigned GET for open/download.
-- Attachment metadata is stored inside the existing ticket record.
-- Attachment upload validation currently allows PDF, JPG, PNG, TXT, CSV, and DOCX up to 10 MB.
-- Ticket explorer uses server-side query handling for search, filter, sorting, and pagination.
-- `GET /tickets` supports `assignee=me` and `assignee=unassigned`.
-- `GET /tickets` still accepts `assignedToMe=true` as a lightweight backward-compatible alias.
-- Paginated ticket responses now return:
-  - `data.items`
-  - `data.pagination.page`
-  - `data.pagination.page_size`
-  - `data.pagination.total_items`
-  - `data.pagination.total_pages`
-  - `data.pagination.has_next`
-- The deployment baseline uses the `dev` backend environment.
+- Forbidden action tetap mengembalikan `403` walaupun aksi disembunyikan di frontend.
+- Assignment saat ini memang sederhana: `agent` dan `admin` hanya bisa assign ke dirinya sendiri.
+- Aktivitas tiket disimpan append-only di record tiket yang sama.
+- Lampiran memakai bucket S3 private dengan presigned PUT dan presigned GET.
+- Validasi lampiran saat ini mengizinkan PDF, JPG, PNG, TXT, CSV, dan DOCX sampai 10 MB.
+- `GET /tickets` mendukung `assignee=me`, `assignee=unassigned`, dan alias backward-compatible `assignedToMe=true`.
+- Baseline deploy yang dipakai repository ini tetap environment `dev`.

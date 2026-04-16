@@ -13,6 +13,15 @@ const useAuthMock = vi.fn(() => ({
   },
 }));
 
+vi.mock("../config/env", () => ({
+  env: {
+    apiBaseUrl: "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1",
+    cognitoRegion: "ap-southeast-1",
+    cognitoUserPoolId: "ap-southeast-1_example",
+    cognitoClientId: "exampleclientid123456789",
+  },
+}));
+
 vi.mock("../api/tickets", () => ({
   listTickets: (options?: unknown) => listTicketsMock(options),
 }));

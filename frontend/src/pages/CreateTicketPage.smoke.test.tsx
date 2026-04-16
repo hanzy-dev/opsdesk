@@ -1,9 +1,19 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { ApiError } from "../api/client";
 import { CreateTicketPage } from "./CreateTicketPage";
 
 const createTicketMock = vi.fn();
 const navigateMock = vi.fn();
+
+vi.mock("../config/env", () => ({
+  env: {
+    apiBaseUrl: "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1",
+    cognitoRegion: "ap-southeast-1",
+    cognitoUserPoolId: "ap-southeast-1_example",
+    cognitoClientId: "exampleclientid123456789",
+  },
+}));
 
 vi.mock("../api/tickets", () => ({
   createTicket: (input: unknown) => createTicketMock(input),
@@ -71,5 +81,25 @@ describe("CreateTicketPage smoke tests", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/tickets/TCK-2001");
     });
+  });
+
+  it("shows backend reference code when ticket creation fails", async () => {
+    createTicketMock.mockRejectedValueOnce(
+      new ApiError(
+        "Permintaan belum valid. Periksa kembali data yang diisi.",
+        400,
+        "validation_failed",
+        [{ field: "title", message: "Judul tiket wajib diisi." }],
+        "req-create-123",
+      ),
+    );
+
+    render(<CreateTicketPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Simpan Tiket" }));
+
+    expect(await screen.findByText("Permintaan belum valid. Periksa kembali data yang diisi.")).toBeInTheDocument();
+    expect(screen.getByText("Kode referensi: req-create-123")).toBeInTheDocument();
+    expect(screen.getByText("Judul tiket wajib diisi.")).toBeInTheDocument();
   });
 });

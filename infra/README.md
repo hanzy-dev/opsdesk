@@ -1,12 +1,12 @@
 # Infrastructure
 
-This directory contains the AWS SAM foundation for the OpsDesk backend deployment.
+This directory contains the AWS SAM configuration for the OpsDesk backend deployment.
 
 ## Scope
 
 Current infrastructure scope is intentionally small:
 
-- one Go-based AWS Lambda function
+- one Go-based AWS Lambda function packaged as a container image
 - one API Gateway HTTP API
 - one DynamoDB table for ticket persistence
 - one private S3 bucket for ticket attachments
@@ -25,14 +25,14 @@ Current infrastructure scope is intentionally small:
 
 ## Deployment Boundary
 
-This batch includes the minimum persistence infrastructure needed for the current backend workflow. It still does not include:
+The infrastructure stays intentionally small. It still does not include:
 
 - custom domains
 - alarms, WAF, VPC networking, or advanced production hardening
 
 ## Build Assumption
 
-The SAM template builds the backend Lambda image from [backend/Dockerfile.lambda](/d:/Semester%206/Cloud%20Computing/opsdesk/backend/Dockerfile.lambda). The Dockerfile compiles `backend/cmd/lambda` into a `bootstrap` binary and places it into the AWS Lambda `provided.al2023` base image for ARM64.
+The SAM template builds the backend Lambda image from [backend/Dockerfile.lambda](/d:/Semester%206/Cloud%20Computing/opsdesk/backend/Dockerfile.lambda). The Dockerfile compiles `backend/cmd/lambda` into a `bootstrap` binary and places it into the AWS Lambda `provided.al2023` base image for `x86_64`.
 
 ## Parameters
 
@@ -45,7 +45,7 @@ Key deploy-time parameters:
 - `FrontendOrigin`
 - `LogLevel`
 
-Current production-oriented defaults in this repository:
+Current defaults in this repository:
 
 - `StageName=dev`
 - `AppEnv=dev`
@@ -104,10 +104,12 @@ Useful stack outputs after deployment:
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
 - `AttachmentsBucketName`
+- `BackendFunctionName`
+- `CognitoUserPoolId`
+- `CognitoUserPoolClientId`
 
-## Deferred Work
+## Current Hardening Notes
 
-Later batches should add:
-
-- deployment environments beyond the dev baseline
-- CI/CD workflow integration
+- API Gateway CORS is intentionally locked to the final frontend domain.
+- Lambda and API Gateway logs both use 7-day retention.
+- The stack keeps a small AWS-native footprint to stay maintainable for this project.

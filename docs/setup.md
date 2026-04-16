@@ -14,7 +14,7 @@ Lokasi file:
 
 - `frontend/.env`
 
-Variable yang dipakai:
+Environment variable yang dipakai frontend:
 
 - `VITE_API_BASE_URL`
 - `VITE_COGNITO_REGION`
@@ -34,6 +34,7 @@ Catatan:
 
 - Frontend tidak lagi memiliki fallback otomatis ke `localhost`.
 - Untuk run lokal, isi `VITE_API_BASE_URL` secara eksplisit sesuai backend yang sedang dipakai.
+- Jangan arahkan verifikasi utama ke preview domain, karena CORS backend dikunci ke domain production final.
 
 ## Backend Runtime Environment
 
@@ -111,7 +112,7 @@ FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 LogLevel=info
 ```
 
-CORS harus tetap menunjuk hanya ke frontend production di atas.
+CORS harus tetap menunjuk hanya ke frontend production final di atas.
 
 ## Cognito Setup Minimum
 
@@ -169,7 +170,18 @@ sam build --template-file template.yaml
 sam deploy --config-file samconfig.toml --resolve-image-repos
 ```
 
-Lambda dibangun sebagai container image dari `backend/Dockerfile.lambda`, jadi Docker perlu aktif saat `sam build`.
+Lambda dibangun sebagai container image dari `backend/Dockerfile.lambda`, jadi Docker harus aktif saat `sam build`.
+
+## Verify Final Deployment Assumptions
+
+Pastikan asumsi berikut benar sebelum rilis:
+
+1. Frontend production tetap `https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+2. Backend tetap environment `dev`
+3. API base URL tetap `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
+4. SAM parameter `FrontendOrigin` masih sama dengan domain frontend final
+5. Tidak ada dokumen utama yang mengarahkan reviewer ke preview domain
+6. Environment variable frontend di Vercel cocok dengan output stack Cognito terbaru
 
 ## Verify Deployed Backend
 
@@ -177,7 +189,7 @@ Contoh verifikasi:
 
 ```bash
 curl https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
-curl https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/tickets
+curl -H "Authorization: Bearer <id-token>" https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/auth/me
 ```
 
 Output stack yang penting:
@@ -208,13 +220,14 @@ VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
 VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
 ```
 
-Karena backend CORS dikunci ke domain production final, jangan arahkan deployment ini ke preview domain untuk verifikasi utama batch ini.
+Karena backend CORS dikunci ke domain production final, jangan arahkan verifikasi utama ke preview domain.
 
-## Release Notes For This Batch
+## Catatan Akhir Batch 9
 
-Batch ini menambahkan lampiran tiket aman:
+Batch ini tidak menambah fitur produk baru. Fokusnya adalah:
 
-- backend membuat presigned upload URL dan presigned download URL
-- upload file dilakukan langsung dari frontend ke S3 private
-- metadata lampiran disimpan di record tiket
-- penambahan lampiran menambah entri aktivitas `attachment_added`
+- finalisasi dokumentasi
+- refresh OpenAPI
+- hardening test
+- hardening deployment guidance
+- repo hygiene ringan

@@ -2,7 +2,7 @@
 
 ## Overview
 
-OpsDesk is a small serverless helpdesk and incident ticketing application. The system is kept intentionally focused so it remains maintainable, reviewable, and suitable for an internal operational workflow.
+OpsDesk adalah aplikasi helpdesk internal kecil dengan arsitektur serverless AWS yang sengaja dijaga tetap sederhana. Fokusnya adalah alur tiket operasional yang rapi, bisa dideploy, mudah diverifikasi, dan cukup production-oriented tanpa masuk ke kompleksitas enterprise.
 
 ## Monorepo Layout
 
@@ -11,76 +11,69 @@ OpsDesk is a small serverless helpdesk and incident ticketing application. The s
 - `infra/`: Infrastructure-as-code for AWS resources and deployment configuration
 - `docs/`: Project documentation, architecture notes, and delivery roadmap
 
-## MVP Scope
-
-The MVP should support a focused helpdesk workflow:
-
-- Create a ticket
-- View a ticket list
-- View ticket details
-- Update ticket status
-- Add internal progress notes if they remain simple text entries
-- Show basic operational status through CloudWatch-backed logs and metrics
-
-## Non-Goals
-
-The following items are explicitly out of scope for the MVP:
-
-- File attachments
-- Email notifications
-- Realtime updates
-- Analytics dashboards
-- Role-based access control beyond simple application assumptions
-- Advanced SLA engines, automation rules, or escalation workflows
-- Multi-tenant support
-- Full-text search
-- Offline support
-
-## Planned Architecture
+## Current Architecture
 
 ### Frontend
 
 - React + Vite + TypeScript
-- Deployed on Vercel
+- deployed di Vercel
 - User-facing text will be written in Bahasa Indonesia
 - Timestamps will be displayed in Asia/Jakarta time
 
 ### Backend
 
-- Go application deployed to AWS Lambda
-- API exposed through API Gateway HTTP API
-- Thin handlers delegating to application services
-- Request validation before business processing or persistence
-- Timestamps stored and returned in UTC using RFC3339 / ISO 8601
+- Go application yang berjalan sebagai Lambda container image
+- API dipublikasikan melalui API Gateway HTTP API
+- handler tetap tipis dan mendorong logika ke service layer
+- validasi request dilakukan sebelum proses bisnis
+- error response konsisten dan membawa `requestId`
 
 ### Data Layer
 
-- DynamoDB as the primary data store
-- Single-table or simple-table design should stay pragmatic and assignment-friendly
-- Data model should prioritize tickets first, with note history only if needed for the MVP
+- DynamoDB sebagai primary data store tiket
+- satu record tiket menyimpan komentar, aktivitas, dan metadata lampiran
+- S3 private bucket untuk file lampiran
+- presigned PUT dipakai untuk upload dan presigned GET untuk open/download
+### Identity and Access
 
-### Monitoring
+- Amazon Cognito User Pool untuk autentikasi
+- group RBAC:
+  - `reporter`
+  - `agent`
+  - `admin`
+- assignment tiket saat ini hanya ke operator yang sedang login
 
-- CloudWatch Logs for Lambda and API visibility
-- Basic metrics and error visibility sufficient for the current operational baseline
+### Observability
 
-### Delivery
-
-- GitHub Actions for focused CI checks where useful
-- Incremental batches to keep each push reviewable
+- structured JSON logs di backend
+- request ID per request
+- API Gateway access log ke CloudWatch
+- Lambda application logs ke CloudWatch
 
 ## High-Level Request Flow
 
-1. A user interacts with the React frontend on Vercel.
-2. The frontend sends HTTP requests to API Gateway.
-3. API Gateway invokes Go-based AWS Lambda handlers.
-4. Lambda services validate input and execute business logic.
-5. Repositories persist and fetch ticket data from DynamoDB.
-6. Logs and operational signals flow to CloudWatch.
+1. Pengguna membuka frontend production di Vercel.
+2. Frontend mengirim request ke API Gateway HTTP API pada base URL final.
+3. API Gateway memanggil Lambda backend.
+4. Adapter Lambda mengubah event API Gateway menjadi request HTTP internal.
+5. Middleware backend menambahkan request ID, structured logging, dan error handling operasional.
+6. Router melakukan autentikasi JWT Cognito dan RBAC.
+7. Service menjalankan logika tiket, activity, assignment, komentar, dan attachment.
+8. Repository membaca atau menulis DynamoDB, dan storage layer menangani S3 presigned URL.
+9. Response JSON dikembalikan ke frontend dengan format sukses atau error yang konsisten.
 
 ## Design Principles
 
-- Keep the MVP small and clear
-- Prefer modular structure over premature abstraction
-- Stay free-tier-conscious
-- Keep documentation easy to extend in later batches
+- incremental dan maintainable
+- RESTful API yang kecil dan stabil
+- AWS-native bila sudah cukup
+- production-oriented untuk aplikasi internal kecil
+- menghindari microservices, queue, WAF, atau kompleksitas enterprise yang belum dibutuhkan
+
+## Known Limitations
+
+- belum ada malware scanning attachment
+- belum ada distributed tracing atau alerting lanjutan
+- belum ada assignment ke operator lain
+- belum ada email notification atau automation workflow
+- belum ada multi-tenant support

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: OpsDesk API
-  version: 0.1.0
+  version: 1.0.0
   description: |
     OpenAPI specification for the current OpsDesk backend implementation.
 
@@ -19,6 +19,7 @@ info:
 
     All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
     RBAC is enforced from Cognito groups reporter, agent, and admin.
+    Error responses may include requestId for operational troubleshooting.
 
 servers:
   - url: https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
@@ -73,6 +74,7 @@ paths:
                 error:
                   code: invalid_token
                   message: authentication token is invalid or expired
+                  requestId: req-1a2b3c4d
 
   /tickets:
     get:
@@ -230,11 +232,13 @@ paths:
                     error:
                       code: invalid_json
                       message: request body must be valid JSON
+                      requestId: req-1a2b3c4d
                 validationFailed:
                   value:
                     error:
                       code: validation_failed
                       message: request validation failed
+                      requestId: req-1a2b3c4d
                       details:
                         - field: priority
                           message: priority must be one of: low, medium, high
@@ -272,6 +276,7 @@ paths:
                 error:
                   code: ticket_not_found
                   message: ticket not found
+                  requestId: req-1a2b3c4d
         "403":
           description: Authenticated but not allowed to view this ticket
           content:
@@ -314,6 +319,7 @@ paths:
                 error:
                   code: validation_failed
                   message: request validation failed
+                  requestId: req-1a2b3c4d
                   details:
                     - field: status
                       message: status must be one of: open, in_progress, resolved
@@ -550,6 +556,7 @@ paths:
                 error:
                   code: validation_failed
                   message: request validation failed
+                  requestId: req-1a2b3c4d
                   details:
                     - field: message
                       message: message is required
@@ -630,6 +637,10 @@ components:
         message:
           type: string
           example: request validation failed
+        requestId:
+          type: string
+          description: Request identifier returned when available for troubleshooting.
+          example: req-1a2b3c4d
         details:
           type: array
           items:
@@ -910,7 +921,7 @@ components:
       properties:
         assigneeId:
           type: string
-          description: Reserved for future extension. Current implementation assigns to the authenticated operator.
+          description: Optional field retained for compatibility. Current implementation still assigns the ticket to the authenticated operator.
 
     AddCommentRequest:
       type: object

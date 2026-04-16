@@ -234,6 +234,22 @@ func TestGetTicketsRequiresAuthentication(t *testing.T) {
 	}
 }
 
+func TestGetTicketsPreservesIncomingRequestID(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	req := httptest.NewRequest(http.MethodGet, "/v1/tickets", nil)
+	req.Header.Set("Authorization", "Bearer "+testIDToken)
+	req.Header.Set("X-Request-Id", "external-ref-123")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	if recorder.Header().Get("X-Request-Id") != "external-ref-123" {
+		t.Fatalf("expected X-Request-Id to be preserved, got %q", recorder.Header().Get("X-Request-Id"))
+	}
+}
+
 func TestGetAuthMeReturnsIdentity(t *testing.T) {
 	t.Parallel()
 
