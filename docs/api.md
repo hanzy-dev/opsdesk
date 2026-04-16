@@ -12,6 +12,7 @@ OpsDesk exposes a small HTTP API for a serverless helpdesk workflow. The current
 - ticket ownership and assignee metadata
 - ticket assignment
 - ticket activity history
+- secure ticket attachments
 - ticket status updates
 - ticket comments
 
@@ -73,7 +74,11 @@ Recommended quick checks:
 7. `POST /tickets/{id}/comments`
    Add one comment and verify the detail response includes it.
 8. `GET /tickets/{id}/activities`
-   Confirm the activity timeline contains create/update/comment/assignment events.
+   Confirm the activity timeline contains create/update/comment/assignment/attachment events.
+9. `POST /tickets/{id}/attachments/upload-url` then `POST /tickets/{id}/attachments`
+   Confirm the upload URL is returned, upload succeeds to S3, and attachment metadata appears in ticket detail.
+10. `GET /tickets/{id}/attachments/{attachmentId}/download`
+   Confirm a short-lived download/open URL is returned for an accessible ticket.
 
 ## Notes
 
@@ -83,6 +88,9 @@ Recommended quick checks:
 - Forbidden actions return `403` even if the frontend hides the action.
 - Assignment policy in this batch is intentionally simple: `agent` and `admin` may assign or reassign a ticket to themselves.
 - Activity history is append-only and stored with the current ticket record for simplicity.
+- Attachments use a private S3 bucket with presigned PUT for upload and presigned GET for open/download.
+- Attachment metadata is stored inside the existing ticket record.
+- Attachment upload validation currently allows PDF, JPG, PNG, TXT, CSV, and DOCX up to 10 MB.
 - Ticket explorer uses server-side query handling for search, filter, sorting, and pagination.
 - `GET /tickets` supports `assignee=me` and `assignee=unassigned`.
 - `GET /tickets` still accepts `assignedToMe=true` as a lightweight backward-compatible alias.

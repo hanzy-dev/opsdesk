@@ -73,24 +73,24 @@ type TicketActivityResponse struct {
 }
 
 type TicketResponse struct {
-	ID             string               `json:"id"`
-	Title          string               `json:"title"`
-	Description    string               `json:"description"`
-	Status         string               `json:"status"`
-	Priority       string               `json:"priority"`
-	CreatedBy      string               `json:"createdBy,omitempty"`
-	CreatedByName  string               `json:"createdByName,omitempty"`
-	CreatedByEmail string               `json:"createdByEmail,omitempty"`
-	ReporterID     string               `json:"reporterId,omitempty"`
-	ReporterName   string               `json:"reporterName"`
-	ReporterEmail  string               `json:"reporterEmail"`
-	AssigneeID     string               `json:"assigneeId,omitempty"`
-	AssigneeName   string               `json:"assigneeName,omitempty"`
-	AssignedAt     string               `json:"assignedAt,omitempty"`
+	ID             string            `json:"id"`
+	Title          string            `json:"title"`
+	Description    string            `json:"description"`
+	Status         string            `json:"status"`
+	Priority       string            `json:"priority"`
+	CreatedBy      string            `json:"createdBy,omitempty"`
+	CreatedByName  string            `json:"createdByName,omitempty"`
+	CreatedByEmail string            `json:"createdByEmail,omitempty"`
+	ReporterID     string            `json:"reporterId,omitempty"`
+	ReporterName   string            `json:"reporterName"`
+	ReporterEmail  string            `json:"reporterEmail"`
+	AssigneeID     string            `json:"assigneeId,omitempty"`
+	AssigneeName   string            `json:"assigneeName,omitempty"`
+	AssignedAt     string            `json:"assignedAt,omitempty"`
 	Comments       []CommentResponse    `json:"comments"`
 	Attachments    []AttachmentResponse `json:"attachments"`
-	CreatedAt      string               `json:"createdAt"`
-	UpdatedAt      string               `json:"updatedAt"`
+	CreatedAt      string            `json:"createdAt"`
+	UpdatedAt      string            `json:"updatedAt"`
 }
 
 type TicketListPagination struct {

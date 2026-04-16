@@ -1,6 +1,19 @@
-import { apiRequest } from "./client";
+import { ApiError, apiRequest } from "./client";
 import type { PaginatedResult } from "../types/api";
-import type { AssignTicketInput, Comment, CreateTicketInput, NewCommentInput, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
+import type {
+  AssignTicketInput,
+  Attachment,
+  AttachmentDownloadTarget,
+  AttachmentUploadTarget,
+  Comment,
+  CreateTicketInput,
+  NewCommentInput,
+  RequestAttachmentUploadUrlInput,
+  SaveAttachmentInput,
+  Ticket,
+  TicketActivity,
+  TicketStatus,
+} from "../types/ticket";
 
 type ListTicketsOptions = {
   q?: string;
@@ -73,5 +86,62 @@ export function assignTicket(ticketId: string, input: AssignTicketInput = {}) {
   return apiRequest<Ticket>(`/tickets/${ticketId}/assignment`, {
     method: "PATCH",
     body: JSON.stringify(input),
+  });
+}
+
+export function requestAttachmentUploadUrl(ticketId: string, input: RequestAttachmentUploadUrlInput) {
+  return apiRequest<AttachmentUploadTarget>(`/tickets/${ticketId}/attachments/upload-url`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function saveAttachment(ticketId: string, input: SaveAttachmentInput) {
+  return apiRequest<Attachment>(`/tickets/${ticketId}/attachments`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getAttachmentDownloadUrl(ticketId: string, attachmentId: string) {
+  return apiRequest<AttachmentDownloadTarget>(`/tickets/${ticketId}/attachments/${attachmentId}/download`);
+}
+
+export function uploadAttachmentFile(
+  target: AttachmentUploadTarget,
+  file: File,
+  onProgress?: (progress: number) => void,
+) {
+  return new Promise<void>((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open(target.uploadMethod || "PUT", target.uploadUrl);
+
+    Object.entries(target.uploadHeaders ?? {}).forEach(([header, value]) => {
+      request.setRequestHeader(header, value);
+    });
+
+    request.upload.onprogress = (event) => {
+      if (!event.lengthComputable) {
+        return;
+      }
+
+      onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+
+    request.onerror = () => {
+      reject(new ApiError("Upload lampiran ke penyimpanan belum berhasil.", 0, "attachment_upload_failed"));
+    };
+
+    request.onload = () => {
+      if (request.status >= 200 && request.status < 300) {
+        onProgress?.(100);
+        resolve();
+        return;
+      }
+
+      reject(new ApiError("Upload lampiran ke penyimpanan belum berhasil.", request.status, "attachment_upload_failed"));
+    };
+
+    request.send(file);
   });
 }

@@ -43,6 +43,7 @@ Backend membaca environment variable berikut:
 - `API_BASE_PATH`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
+- `ATTACHMENT_BUCKET_NAME`
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
 - `COGNITO_APP_CLIENT_ID`
@@ -55,7 +56,7 @@ API_BASE_PATH=/v1
 LOG_LEVEL=info
 ```
 
-`TICKET_TABLE_NAME`, `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, dan `COGNITO_APP_CLIENT_ID` diisi otomatis oleh stack SAM saat deploy.
+`TICKET_TABLE_NAME`, `ATTACHMENT_BUCKET_NAME`, `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, dan `COGNITO_APP_CLIENT_ID` diisi otomatis oleh stack SAM saat deploy.
 
 ## Local Backend Run
 
@@ -211,8 +212,9 @@ Karena backend CORS dikunci ke domain production final, jangan arahkan deploymen
 
 ## Release Notes For This Batch
 
-Batch ini menambahkan audit trail aktivitas tiket:
+Batch ini menambahkan lampiran tiket aman:
 
-- backend menyimpan riwayat aktivitas append-only pada record tiket
-- endpoint baru `GET /tickets/{id}/activities` tersedia untuk membaca riwayat
-- frontend menampilkan timeline "Riwayat Aktivitas" pada detail tiket
+- backend membuat presigned upload URL dan presigned download URL
+- upload file dilakukan langsung dari frontend ke S3 private
+- metadata lampiran disimpan di record tiket
+- penambahan lampiran menambah entri aktivitas `attachment_added`

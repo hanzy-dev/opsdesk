@@ -34,8 +34,12 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
    agent atau admin dapat menekan "Tugaskan ke Saya" dan informasi petugas tersimpan.
 9. Verifikasi aksi sesuai role:
    admin memiliki akses penuh.
-10. Verifikasi timeline aktivitas:
-   detail tiket menampilkan entri saat tiket dibuat, status diubah, komentar ditambahkan, dan tiket ditugaskan.
+10. Verifikasi lampiran:
+   unggah file PDF/JPG/PNG/TXT/CSV/DOCX di bawah 10 MB, lalu pastikan lampiran muncul pada detail tiket.
+11. Verifikasi buka lampiran:
+   klik tombol buka dan pastikan URL presigned berhasil membuka file tanpa membuat bucket menjadi publik.
+12. Verifikasi timeline aktivitas:
+   detail tiket menampilkan entri saat tiket dibuat, status diubah, komentar ditambahkan, tiket ditugaskan, dan lampiran ditambahkan.
 
 ## Verifikasi Backend
 
@@ -51,5 +55,5 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
 
 ## Yang Sengaja Belum Dicentang Pada Batch Ini
 
-- attachment
+- malware scanning
 - observability lanjutan

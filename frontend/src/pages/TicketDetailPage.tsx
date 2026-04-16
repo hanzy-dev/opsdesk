@@ -1,14 +1,35 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { addComment, assignTicket, getTicket, getTicketActivities, updateTicketStatus } from "../api/tickets";
+import {
+  addComment,
+  assignTicket,
+  getAttachmentDownloadUrl,
+  getTicket,
+  getTicketActivities,
+  requestAttachmentUploadUrl,
+  saveAttachment,
+  updateTicketStatus,
+  uploadAttachmentFile,
+} from "../api/tickets";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { StatusBadge } from "../components/tickets/StatusBadge";
 import { getRoleLabel } from "../modules/auth/roles";
 import { useAuth } from "../modules/auth/AuthContext";
-import type { Ticket, TicketActivity, TicketStatus } from "../types/ticket";
+import type { Attachment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
+
+const allowedAttachmentTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "text/plain",
+  "text/csv",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+const maxAttachmentSizeBytes = 10 * 1024 * 1024;
 
 export function TicketDetailPage() {
   const { session, permissions } = useAuth();
@@ -31,6 +52,12 @@ export function TicketDetailPage() {
   const [assignmentMessage, setAssignmentMessage] = useState<string | null>(null);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
   const [isSavingAssignment, setIsSavingAssignment] = useState(false);
+  const [attachmentMessage, setAttachmentMessage] = useState<string | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<string | null>(null);
 
   async function loadTicket(options?: { preserveView?: boolean }) {
     if (!options?.preserveView) {
@@ -112,6 +139,68 @@ export function TicketDetailPage() {
       setAssignmentError(error instanceof Error ? error.message : "Penugasan tiket belum berhasil.");
     } finally {
       setIsSavingAssignment(false);
+    }
+  }
+
+  async function handleAttachmentSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAttachmentMessage(null);
+    setAttachmentError(null);
+
+    if (!selectedFile) {
+      setAttachmentError("Pilih file lampiran terlebih dahulu.");
+      return;
+    }
+
+    if (!allowedAttachmentTypes.includes(selectedFile.type)) {
+      setAttachmentError("Tipe file belum didukung. Gunakan PDF, JPG, PNG, TXT, CSV, atau DOCX.");
+      return;
+    }
+
+    if (selectedFile.size > maxAttachmentSizeBytes) {
+      setAttachmentError("Ukuran file melebihi batas 10 MB.");
+      return;
+    }
+
+    setIsUploadingAttachment(true);
+    setUploadProgress(0);
+
+    try {
+      const uploadTarget = await requestAttachmentUploadUrl(ticketId, {
+        fileName: selectedFile.name,
+        contentType: selectedFile.type,
+        sizeBytes: selectedFile.size,
+      });
+
+      await uploadAttachmentFile(uploadTarget, selectedFile, setUploadProgress);
+
+      await saveAttachment(ticketId, {
+        attachmentId: uploadTarget.attachmentId,
+        objectKey: uploadTarget.objectKey,
+        fileName: selectedFile.name,
+      });
+
+      setSelectedFile(null);
+      await loadTicket({ preserveView: true });
+      setAttachmentMessage("Lampiran berhasil ditambahkan ke tiket.");
+    } catch (error) {
+      setAttachmentError(error instanceof Error ? error.message : "Lampiran belum berhasil diunggah.");
+    } finally {
+      setIsUploadingAttachment(false);
+    }
+  }
+
+  async function handleOpenAttachment(attachment: Attachment) {
+    setDownloadingAttachmentId(attachment.id);
+    setAttachmentError(null);
+
+    try {
+      const downloadTarget = await getAttachmentDownloadUrl(ticketId, attachment.id);
+      window.open(downloadTarget.downloadUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setAttachmentError(error instanceof Error ? error.message : "Lampiran belum bisa dibuka.");
+    } finally {
+      setDownloadingAttachmentId(null);
     }
   }
 
@@ -239,6 +328,67 @@ export function TicketDetailPage() {
       <div className="detail-grid">
         <article className="panel stack-md">
           <div>
+            <p className="section-eyebrow">Lampiran</p>
+            <h3>File tiket</h3>
+            <p className="form-hint">Unggah PDF, JPG, PNG, TXT, CSV, atau DOCX dengan ukuran maksimal 10 MB.</p>
+          </div>
+
+          {ticket.attachments.length === 0 ? (
+            <EmptyState
+              title="Belum ada lampiran"
+              description="Tambahkan file pendukung agar penanganan tiket lebih lengkap."
+            />
+          ) : (
+            <div className="comment-list">
+              {ticket.attachments.map((attachment) => (
+                <article className="comment-card" key={attachment.id}>
+                  <div className="comment-card__header">
+                    <strong>{attachment.fileName}</strong>
+                    <span>{formatDateTime(attachment.createdAt)}</span>
+                  </div>
+                  <p>
+                    {formatFileSize(attachment.sizeBytes)} • {attachment.uploadedByName || "Pengguna OpsDesk"}
+                  </p>
+                  <button
+                    className="button button--secondary"
+                    disabled={downloadingAttachmentId === attachment.id}
+                    onClick={() => void handleOpenAttachment(attachment)}
+                    type="button"
+                  >
+                    {downloadingAttachmentId === attachment.id ? "Membuka lampiran..." : "Buka Lampiran"}
+                  </button>
+                </article>
+              ))}
+            </div>
+          )}
+        </article>
+
+        <article className="panel">
+          <p className="section-eyebrow">Tambah lampiran</p>
+          <h3>Unggah file pendukung</h3>
+          <form className="stack-md" onSubmit={handleAttachmentSubmit}>
+            <label className="field">
+              <span>Pilih file</span>
+              <input
+                accept=".pdf,.jpg,.jpeg,.png,.txt,.csv,.docx"
+                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+            </label>
+
+            {selectedFile ? <p className="form-hint">{selectedFile.name} • {formatFileSize(selectedFile.size)}</p> : null}
+            {isUploadingAttachment ? <p className="form-hint">Progres upload: {uploadProgress}%</p> : null}
+            {attachmentError ? <p className="form-error">{attachmentError}</p> : null}
+            {attachmentMessage ? <p className="form-success">{attachmentMessage}</p> : null}
+
+            <button className="button button--primary" disabled={isUploadingAttachment} type="submit">
+              {isUploadingAttachment ? "Mengunggah lampiran..." : "Unggah Lampiran"}
+            </button>
+          </form>
+        </article>
+
+        <article className="panel stack-md">
+          <div>
             <p className="section-eyebrow">Kolaborasi</p>
             <h3>Komentar tiket</h3>
           </div>
@@ -355,6 +505,10 @@ function renderActivityMetadata(activity: TicketActivity) {
     return <p>{activity.metadata.afterAssigneeName || "Petugas belum ditentukan"}</p>;
   }
 
+  if (activity.action === "attachment_added") {
+    return <p>{activity.metadata.fileName || "Lampiran baru"}</p>;
+  }
+
   return null;
 }
 
@@ -369,4 +523,16 @@ function formatStatusLabel(status?: string) {
     default:
       return "Status tidak diketahui";
   }
+}
+
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes >= 1024 * 1024) {
+    return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  if (sizeBytes >= 1024) {
+    return `${Math.round(sizeBytes / 1024)} KB`;
+  }
+
+  return `${sizeBytes} B`;
 }

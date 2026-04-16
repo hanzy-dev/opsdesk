@@ -13,6 +13,11 @@ func toTicketResponse(ticket domain.Ticket) dto.TicketResponse {
 		comments = append(comments, toCommentResponse(comment))
 	}
 
+	attachments := make([]dto.AttachmentResponse, 0, len(ticket.Attachments))
+	for _, attachment := range ticket.Attachments {
+		attachments = append(attachments, toAttachmentResponse(attachment))
+	}
+
 	return dto.TicketResponse{
 		ID:             ticket.ID,
 		Title:          ticket.Title,
@@ -29,6 +34,7 @@ func toTicketResponse(ticket domain.Ticket) dto.TicketResponse {
 		AssigneeName:   ticket.AssigneeName,
 		AssignedAt:     formatOptionalTimestamp(ticket.AssignedAt),
 		Comments:       comments,
+		Attachments:    attachments,
 		CreatedAt:      domain.FormatTimestamp(ticket.CreatedAt),
 		UpdatedAt:      domain.FormatTimestamp(ticket.UpdatedAt),
 	}
@@ -42,6 +48,20 @@ func toCommentResponse(comment domain.Comment) dto.CommentResponse {
 		AuthorName: comment.AuthorName,
 		CreatedAt:  domain.FormatTimestamp(comment.CreatedAt),
 		UpdatedAt:  domain.FormatTimestamp(comment.UpdatedAt),
+	}
+}
+
+func toAttachmentResponse(attachment domain.Attachment) dto.AttachmentResponse {
+	return dto.AttachmentResponse{
+		ID:             attachment.ID,
+		TicketID:       attachment.TicketID,
+		FileName:       attachment.FileName,
+		ContentType:    attachment.ContentType,
+		SizeBytes:      attachment.SizeBytes,
+		UploadedByID:   attachment.UploadedByID,
+		UploadedByName: attachment.UploadedByName,
+		UploadedByRole: attachment.UploadedByRole,
+		CreatedAt:      domain.FormatTimestamp(attachment.CreatedAt),
 	}
 }
 

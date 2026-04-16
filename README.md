@@ -2,7 +2,7 @@
 
 OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch 6 meningkatkan daftar tiket menjadi ticket explorer dengan pencarian, filter, sortir, dan pagination yang ditangani server-side.
+Batch 7 menambahkan lampiran tiket yang aman dengan Amazon S3 private, presigned upload URL, dan presigned download URL.
 
 ## Deployment Tetap
 
@@ -24,6 +24,7 @@ OpsDesk saat ini mendukung:
 - assignment dan reassignment sederhana ke operator yang sedang login
 - audit trail aktivitas tiket
 - ticket explorer server-side dengan search, filter, sorting, dan pagination
+- lampiran tiket aman berbasis Amazon S3 private
 - pembaruan status tiket
 - komentar tiket
 - health endpoint
@@ -32,7 +33,7 @@ OpsDesk saat ini mendukung:
 
 ## Batasan Yang Masih Berlaku
 
-- belum ada attachment atau observability lanjutan
+- belum ada malware scanning, pemrosesan file lanjutan, atau observability lanjutan
 - scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
 ## Arsitektur Singkat
@@ -167,18 +168,22 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 - `GET /v1/tickets`
 - `GET /v1/tickets/{id}`
 - `GET /v1/tickets/{id}/activities`
+- `POST /v1/tickets/{id}/attachments/upload-url`
+- `POST /v1/tickets/{id}/attachments`
+- `GET /v1/tickets/{id}/attachments/{attachmentId}/download`
 - `PATCH /v1/tickets/{id}/assignment`
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 6
+## Catatan Batch 7
 
-Batch ini menambahkan ticket explorer server-side:
+Batch ini menambahkan lampiran tiket yang aman:
 
-- `GET /v1/tickets` sekarang mendukung query `q`, `status`, `priority`, `assignee`, `page`, `page_size`, `sort_by`, dan `sort_order`
-- daftar tiket mengembalikan `items` dan metadata `pagination`
-- UI daftar tiket sekarang memakai pencarian, filter, sortir, dan pagination yang diproses backend
-- workflow lama `assignedToMe=true` tetap dibaca untuk kompatibilitas ringan
+- backend membuat presigned upload URL untuk S3 private
+- frontend mengunggah file langsung ke S3
+- metadata lampiran disimpan pada record tiket yang sama
+- detail tiket menampilkan daftar lampiran dan tombol buka dengan presigned download URL
+- penambahan lampiran dicatat ke riwayat aktivitas tiket
 
 Kebijakan assignment tetap:
 
@@ -193,7 +198,8 @@ Kompatibilitas tiket lama:
 
 Yang sengaja belum dikerjakan:
 
-- attachment
+- malware scanning
+- pemrosesan file lanjutan
 - observability lanjutan
 
 ## Dokumentasi Tambahan

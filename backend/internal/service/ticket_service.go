@@ -10,6 +10,7 @@ import (
 
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/repository"
+	"opsdesk/backend/internal/storage"
 )
 
 var ErrNotImplemented = errors.New("not implemented")
@@ -77,24 +78,36 @@ type TicketService interface {
 	ListTickets(ctx context.Context, input ListTicketsInput) (ListTicketsResult, error)
 	GetTicket(ctx context.Context, ticketID string) (domain.Ticket, error)
 	ListTicketActivities(ctx context.Context, ticketID string) ([]domain.ActivityEntry, error)
+	CreateAttachmentUploadURL(ctx context.Context, ticketID string, input AttachmentUploadURLInput) (AttachmentUploadURLResult, error)
+	SaveAttachment(ctx context.Context, ticketID string, input SaveAttachmentInput) (domain.Attachment, error)
+	CreateAttachmentDownloadURL(ctx context.Context, ticketID string, attachmentID string) (AttachmentDownloadURLResult, error)
 	UpdateTicketStatus(ctx context.Context, ticketID string, input UpdateTicketStatusInput) (domain.Ticket, error)
 	AddComment(ctx context.Context, ticketID string, input AddCommentInput) (domain.Comment, error)
 	AssignTicket(ctx context.Context, ticketID string, input AssignTicketInput) (domain.Ticket, error)
 }
 
 type ticketService struct {
-	repo              repository.TicketRepository
-	ticketIDFactory   *idFactory
-	commentIDFactory  *idFactory
-	activityIDFactory *idFactory
+	repo                repository.TicketRepository
+	ticketIDFactory     *idFactory
+	commentIDFactory    *idFactory
+	attachmentIDFactory *idFactory
+	activityIDFactory   *idFactory
+	attachmentStorage   storage.AttachmentStorage
 }
 
-func NewTicketService(repo repository.TicketRepository) TicketService {
+func NewTicketService(repo repository.TicketRepository, attachmentStorages ...storage.AttachmentStorage) TicketService {
+	var attachmentStorage storage.AttachmentStorage
+	if len(attachmentStorages) > 0 {
+		attachmentStorage = attachmentStorages[0]
+	}
+
 	return &ticketService{
-		repo:              repo,
-		ticketIDFactory:   newIDFactory("TCK"),
-		commentIDFactory:  newIDFactory("CMT"),
-		activityIDFactory: newIDFactory("ACT"),
+		repo:                repo,
+		ticketIDFactory:     newIDFactory("TCK"),
+		commentIDFactory:    newIDFactory("CMT"),
+		attachmentIDFactory: newIDFactory("ATT"),
+		activityIDFactory:   newIDFactory("ACT"),
+		attachmentStorage:   attachmentStorage,
 	}
 }
 

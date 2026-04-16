@@ -9,6 +9,7 @@ Current infrastructure scope is intentionally small:
 - one Go-based AWS Lambda function
 - one API Gateway HTTP API
 - one DynamoDB table for ticket persistence
+- one private S3 bucket for ticket attachments
 - one Cognito User Pool and app client for authentication
 - three Cognito groups for RBAC: `reporter`, `agent`, and `admin`
 - CloudWatch-friendly log retention defaults
@@ -26,7 +27,6 @@ Current infrastructure scope is intentionally small:
 
 This batch includes the minimum persistence infrastructure needed for the current backend workflow. It still does not include:
 
-- S3, file storage, or attachments
 - custom domains
 - alarms, WAF, VPC networking, or advanced production hardening
 
@@ -58,6 +58,7 @@ Backend runtime environment variables wired by SAM:
 - `API_BASE_PATH`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
+- `ATTACHMENT_BUCKET_NAME`
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
 - `COGNITO_APP_CLIENT_ID`
@@ -102,6 +103,7 @@ Useful stack outputs after deployment:
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
+- `AttachmentsBucketName`
 
 ## Deferred Work
 

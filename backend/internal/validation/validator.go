@@ -67,6 +67,42 @@ func (v *Validator) ValidateAssignTicketRequest(_ dto.AssignTicketRequest) []dto
 	return nil
 }
 
+func (v *Validator) ValidateRequestAttachmentUploadURLRequest(input dto.RequestAttachmentUploadURLRequest) []dto.FieldError {
+	var errs []dto.FieldError
+
+	if strings.TrimSpace(input.FileName) == "" {
+		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName is required"})
+	}
+
+	if strings.TrimSpace(input.ContentType) == "" {
+		errs = append(errs, dto.FieldError{Field: "contentType", Message: "contentType is required"})
+	}
+
+	if input.SizeBytes <= 0 {
+		errs = append(errs, dto.FieldError{Field: "sizeBytes", Message: "sizeBytes must be greater than 0"})
+	}
+
+	return errs
+}
+
+func (v *Validator) ValidateSaveAttachmentRequest(input dto.SaveAttachmentRequest) []dto.FieldError {
+	var errs []dto.FieldError
+
+	if strings.TrimSpace(input.AttachmentID) == "" {
+		errs = append(errs, dto.FieldError{Field: "attachmentId", Message: "attachmentId is required"})
+	}
+
+	if strings.TrimSpace(input.ObjectKey) == "" {
+		errs = append(errs, dto.FieldError{Field: "objectKey", Message: "objectKey is required"})
+	}
+
+	if strings.TrimSpace(input.FileName) == "" {
+		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName is required"})
+	}
+
+	return errs
+}
+
 func (v *Validator) ValidateListTicketsQuery(input dto.ListTicketsQuery) []dto.FieldError {
 	var errs []dto.FieldError
 

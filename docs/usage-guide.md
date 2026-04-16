@@ -18,7 +18,8 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 6. Jika akun Anda bertipe pelapor atau admin, buat tiket baru dari halaman "Buat Tiket".
 7. Buka detail tiket untuk menambahkan komentar, dan jika akun Anda petugas atau admin, ubah status tiket.
 8. Jika akun Anda petugas atau admin, gunakan tombol penugasan untuk mengambil tanggung jawab tiket ke akun Anda.
-9. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
+9. Gunakan bagian "Lampiran" pada detail tiket untuk mengunggah atau membuka file pendukung.
+10. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
 
 ## Jalur Verifikasi Cepat
 
@@ -35,7 +36,9 @@ Jika hanya punya waktu singkat:
 9. Jika login sebagai petugas, ubah status tiket pada halaman detail.
 10. Jika login sebagai petugas, klik "Tugaskan ke Saya" dan pastikan nama petugas tampil di detail tiket.
 11. Tambahkan satu komentar dan pastikan tampil pada detail tiket.
-12. Pastikan timeline aktivitas menampilkan entri pembuatan, perubahan status, komentar, dan penugasan.
+12. Unggah satu lampiran yang valid dan pastikan daftar lampiran bertambah.
+13. Buka lampiran dari detail tiket dan pastikan file terbuka lewat URL sementara.
+14. Pastikan timeline aktivitas menampilkan entri pembuatan, perubahan status, komentar, penugasan, dan lampiran.
 
 ## Catatan Operasional
 
@@ -45,6 +48,7 @@ Jika hanya punya waktu singkat:
 - Ownership tiket mengikuti identitas login, dan assignment operator masih memakai kebijakan sederhana "tugaskan ke saya".
 - Aktivitas tiket dicatat append-only dan ditampilkan pada halaman detail.
 - Daftar tiket sekarang memakai query server-side agar pencarian dan pagination tetap konsisten untuk data yang lebih besar.
+- Lampiran memakai S3 private dan diakses melalui URL presigned yang berlaku sementara.
 
 ## Screenshot
 

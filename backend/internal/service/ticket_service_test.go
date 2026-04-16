@@ -7,6 +7,7 @@ import (
 
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/repository/memory"
+	"opsdesk/backend/internal/storage"
 )
 
 func TestCreateTicketSetsDefaultsAndUTCFields(t *testing.T) {
@@ -231,4 +232,76 @@ func TestAddCommentReturnsNotFound(t *testing.T) {
 	if err != ErrTicketNotFound {
 		t.Fatalf("expected ErrTicketNotFound, got %v", err)
 	}
+}
+
+func TestSaveAttachmentAppendsAttachmentAndActivity(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	svc := NewTicketService(repo, staticAttachmentStorage{
+		headMetadata: storage.ObjectMetadata{
+			ContentType: "application/pdf",
+			SizeBytes:   2048,
+		},
+	})
+
+	ticket, err := svc.CreateTicket(context.Background(), CreateTicketInput{
+		Title:         "Upload evidence",
+		Description:   "Need supporting PDF",
+		Priority:      domain.TicketPriorityMedium,
+		ReporterName:  "Ops Team",
+		ReporterEmail: "ops@example.com",
+	})
+	if err != nil {
+		t.Fatalf("CreateTicket() error = %v", err)
+	}
+
+	attachment, err := svc.SaveAttachment(context.Background(), ticket.ID, SaveAttachmentInput{
+		AttachmentID: "ATT-0001",
+		ObjectKey:    buildAttachmentObjectKey(ticket.ID, "ATT-0001", "evidence.pdf"),
+		FileName:     "evidence.pdf",
+		ActorID:      "user-123",
+		ActorName:    "Ops User",
+		ActorRole:    "reporter",
+	})
+	if err != nil {
+		t.Fatalf("SaveAttachment() error = %v", err)
+	}
+
+	if attachment.ContentType != "application/pdf" {
+		t.Fatalf("expected content type application/pdf, got %q", attachment.ContentType)
+	}
+
+	stored, err := svc.GetTicket(context.Background(), ticket.ID)
+	if err != nil {
+		t.Fatalf("GetTicket() error = %v", err)
+	}
+
+	if len(stored.Attachments) != 1 {
+		t.Fatalf("expected 1 attachment, got %d", len(stored.Attachments))
+	}
+
+	if len(stored.Activities) != 2 {
+		t.Fatalf("expected 2 activities, got %d", len(stored.Activities))
+	}
+
+	if stored.Activities[1].Action != domain.TicketActivityAttachmentAdded {
+		t.Fatalf("expected attachment_added activity, got %q", stored.Activities[1].Action)
+	}
+}
+
+type staticAttachmentStorage struct {
+	headMetadata storage.ObjectMetadata
+}
+
+func (s staticAttachmentStorage) CreateUploadURL(context.Context, string, string) (storage.PresignedUpload, error) {
+	return storage.PresignedUpload{}, nil
+}
+
+func (s staticAttachmentStorage) CreateDownloadURL(context.Context, string, string) (storage.PresignedDownload, error) {
+	return storage.PresignedDownload{}, nil
+}
+
+func (s staticAttachmentStorage) HeadObject(context.Context, string) (storage.ObjectMetadata, error) {
+	return s.headMetadata, nil
 }

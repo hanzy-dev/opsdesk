@@ -34,6 +34,7 @@ type Ticket struct {
 	AssigneeName   string
 	AssignedAt     time.Time
 	Comments       []Comment
+	Attachments    []Attachment
 	Activities     []ActivityEntry
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -48,6 +49,19 @@ type Comment struct {
 	UpdatedAt  time.Time
 }
 
+type Attachment struct {
+	ID             string
+	TicketID       string
+	FileName       string
+	ContentType    string
+	SizeBytes      int64
+	ObjectKey      string
+	UploadedByID   string
+	UploadedByName string
+	UploadedByRole string
+	CreatedAt      time.Time
+}
+
 type TicketActivityAction string
 
 const (
@@ -55,6 +69,7 @@ const (
 	TicketActivityStatusChanged     TicketActivityAction = "status_changed"
 	TicketActivityCommentAdded      TicketActivityAction = "comment_added"
 	TicketActivityAssignmentChanged TicketActivityAction = "assignment_changed"
+	TicketActivityAttachmentAdded   TicketActivityAction = "attachment_added"
 )
 
 type ActivityEntry struct {

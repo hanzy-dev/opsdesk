@@ -15,6 +15,7 @@ info:
     - ticket activity history
     - ticket status updates
     - ticket comments
+    - secure ticket attachments
 
     All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
     RBAC is enforced from Cognito groups reporter, agent, and admin.
@@ -396,6 +397,123 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /tickets/{id}/attachments/upload-url:
+    post:
+      tags:
+        - Tickets
+      summary: Create a presigned upload URL for a ticket attachment
+      operationId: createTicketAttachmentUploadUrl
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestAttachmentUploadUrlRequest"
+            example:
+              fileName: bukti-error.pdf
+              contentType: application/pdf
+              sizeBytes: 2048
+      responses:
+        "200":
+          description: Presigned upload URL returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentUploadUrlSuccessResponse"
+        "400":
+          description: Invalid request or unsupported attachment metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated but not allowed to add attachments to this ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tickets/{id}/attachments:
+    post:
+      tags:
+        - Tickets
+      summary: Save ticket attachment metadata after direct S3 upload
+      operationId: saveTicketAttachment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveAttachmentRequest"
+            example:
+              attachmentId: ATT-0001
+              objectKey: tickets/TCK-0001/attachments/ATT-0001/bukti-error.pdf
+              fileName: bukti-error.pdf
+      responses:
+        "201":
+          description: Attachment metadata saved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentSuccessResponse"
+        "400":
+          description: Invalid metadata or uploaded object not found in S3
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated but not allowed to add attachments to this ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /tickets/{id}/attachments/{attachmentId}/download:
+    get:
+      tags:
+        - Tickets
+      summary: Create a presigned download URL for a ticket attachment
+      operationId: createTicketAttachmentDownloadUrl
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - in: path
+          name: attachmentId
+          required: true
+          description: Attachment identifier.
+          schema:
+            type: string
+            example: ATT-0001
+      responses:
+        "200":
+          description: Presigned download URL returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentDownloadUrlSuccessResponse"
+        "403":
+          description: Authenticated but not allowed to view this ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Ticket or attachment was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /tickets/{id}/comments:
     post:
       tags:
@@ -601,6 +719,47 @@ components:
         updatedAt:
           $ref: "#/components/schemas/Timestamp"
 
+    Attachment:
+      type: object
+      required:
+        - id
+        - ticketId
+        - fileName
+        - contentType
+        - sizeBytes
+        - createdAt
+      properties:
+        id:
+          type: string
+          example: ATT-0001
+        ticketId:
+          type: string
+          example: TCK-0001
+        fileName:
+          type: string
+          example: bukti-error.pdf
+        contentType:
+          type: string
+          example: application/pdf
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 2048
+        uploadedById:
+          type: string
+          example: user-123
+        uploadedByName:
+          type: string
+          example: OpsDesk User
+        uploadedByRole:
+          type: string
+          enum:
+            - reporter
+            - agent
+            - admin
+        createdAt:
+          $ref: "#/components/schemas/Timestamp"
+
     TicketActivity:
       type: object
       required:
@@ -635,6 +794,7 @@ components:
             - status_changed
             - comment_added
             - assignment_changed
+            - attachment_added
         summary:
           type: string
           example: Status diubah
@@ -703,6 +863,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Comment"
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Attachment"
         createdAt:
           $ref: "#/components/schemas/Timestamp"
         updatedAt:
@@ -760,6 +924,41 @@ components:
         authorName:
           type: string
           example: Support Engineer
+
+    RequestAttachmentUploadUrlRequest:
+      type: object
+      required:
+        - fileName
+        - contentType
+        - sizeBytes
+      properties:
+        fileName:
+          type: string
+          example: bukti-error.pdf
+        contentType:
+          type: string
+          example: application/pdf
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 2048
+
+    SaveAttachmentRequest:
+      type: object
+      required:
+        - attachmentId
+        - objectKey
+        - fileName
+      properties:
+        attachmentId:
+          type: string
+          example: ATT-0001
+        objectKey:
+          type: string
+          example: tickets/TCK-0001/attachments/ATT-0001/bukti-error.pdf
+        fileName:
+          type: string
+          example: bukti-error.pdf
 
     HealthSuccessResponse:
       type: object
@@ -838,6 +1037,75 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Comment"
+
+    AttachmentSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Attachment"
+
+    AttachmentUploadUrlSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/AttachmentUploadUrl"
+
+    AttachmentUploadUrl:
+      type: object
+      required:
+        - attachmentId
+        - objectKey
+        - uploadUrl
+        - uploadMethod
+        - uploadHeaders
+        - expiresAt
+      properties:
+        attachmentId:
+          type: string
+          example: ATT-0001
+        objectKey:
+          type: string
+          example: tickets/TCK-0001/attachments/ATT-0001/bukti-error.pdf
+        uploadUrl:
+          type: string
+          example: https://opsdesk-dev-attachments.s3.amazonaws.com/...
+        uploadMethod:
+          type: string
+          example: PUT
+        uploadHeaders:
+          type: object
+          additionalProperties:
+            type: string
+        expiresAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    AttachmentDownloadUrlSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/AttachmentDownloadUrl"
+
+    AttachmentDownloadUrl:
+      type: object
+      required:
+        - fileName
+        - downloadUrl
+        - expiresAt
+      properties:
+        fileName:
+          type: string
+          example: bukti-error.pdf
+        downloadUrl:
+          type: string
+          example: https://opsdesk-dev-attachments.s3.amazonaws.com/...
+        expiresAt:
+          $ref: "#/components/schemas/Timestamp"
 
     TicketActivityListSuccessResponse:
       type: object

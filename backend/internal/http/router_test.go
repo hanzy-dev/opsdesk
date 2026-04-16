@@ -15,6 +15,7 @@ import (
 	"opsdesk/backend/internal/dto"
 	"opsdesk/backend/internal/repository/memory"
 	"opsdesk/backend/internal/service"
+	"opsdesk/backend/internal/storage"
 	"opsdesk/backend/internal/validation"
 )
 
@@ -496,20 +497,108 @@ func TestAgentCannotCreateTicket(t *testing.T) {
 	}
 }
 
+func TestReporterCanUploadAndOpenAttachment(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	attachmentStorage := staticAttachmentStorage{
+		presignedUpload: storage.PresignedUpload{
+			ObjectKey: "tickets/TCK-0001/attachments/ATT-0001/evidence.pdf",
+			URL:       "https://example-upload-url",
+			Method:    "PUT",
+			Headers:   map[string]string{"Content-Type": "application/pdf"},
+			ExpiresAt: time.Date(2026, 4, 16, 10, 0, 0, 0, time.UTC),
+		},
+		presignedDownload: storage.PresignedDownload{
+			URL:       "https://example-download-url",
+			ExpiresAt: time.Date(2026, 4, 16, 10, 5, 0, 0, time.UTC),
+		},
+		headMetadata: storage.ObjectMetadata{
+			ContentType: "application/pdf",
+			SizeBytes:   4096,
+		},
+	}
+
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo, attachmentStorage)
+	ticket := createTestTicket(t, reporterRouter)
+
+	uploadURLRecorder := performRequest(t, reporterRouter, http.MethodPost, "/v1/tickets/"+ticket.ID+"/attachments/upload-url", dto.RequestAttachmentUploadURLRequest{
+		FileName:    "evidence.pdf",
+		ContentType: "application/pdf",
+		SizeBytes:   4096,
+	})
+	if uploadURLRecorder.Code != http.StatusOK {
+		t.Fatalf("expected upload-url status 200, got %d", uploadURLRecorder.Code)
+	}
+
+	var uploadURLResponse dto.SuccessResponse[dto.RequestAttachmentUploadURLResponse]
+	decodeResponse(t, uploadURLRecorder, &uploadURLResponse)
+
+	saveRecorder := performRequest(t, reporterRouter, http.MethodPost, "/v1/tickets/"+ticket.ID+"/attachments", dto.SaveAttachmentRequest{
+		AttachmentID: uploadURLResponse.Data.AttachmentID,
+		ObjectKey:    uploadURLResponse.Data.ObjectKey,
+		FileName:     "evidence.pdf",
+	})
+	if saveRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected save attachment status 201, got %d", saveRecorder.Code)
+	}
+
+	detailRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets/"+ticket.ID, nil)
+	if detailRecorder.Code != http.StatusOK {
+		t.Fatalf("expected detail status 200, got %d", detailRecorder.Code)
+	}
+
+	var detailResponse dto.SuccessResponse[dto.TicketResponse]
+	decodeResponse(t, detailRecorder, &detailResponse)
+
+	if len(detailResponse.Data.Attachments) != 1 {
+		t.Fatalf("expected 1 attachment, got %d", len(detailResponse.Data.Attachments))
+	}
+
+	downloadRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets/"+ticket.ID+"/attachments/"+detailResponse.Data.Attachments[0].ID+"/download", nil)
+	if downloadRecorder.Code != http.StatusOK {
+		t.Fatalf("expected download status 200, got %d", downloadRecorder.Code)
+	}
+
+	var downloadResponse dto.SuccessResponse[dto.AttachmentDownloadURLResponse]
+	decodeResponse(t, downloadRecorder, &downloadResponse)
+
+	if downloadResponse.Data.DownloadURL != "https://example-download-url" {
+		t.Fatalf("expected presigned download url, got %q", downloadResponse.Data.DownloadURL)
+	}
+
+	activityRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets/"+ticket.ID+"/activities", nil)
+	if activityRecorder.Code != http.StatusOK {
+		t.Fatalf("expected activity status 200, got %d", activityRecorder.Code)
+	}
+
+	var activityResponse dto.SuccessResponse[[]dto.TicketActivityResponse]
+	decodeResponse(t, activityRecorder, &activityResponse)
+
+	if len(activityResponse.Data) != 2 {
+		t.Fatalf("expected 2 activity entries, got %d", len(activityResponse.Data))
+	}
+
+	if activityResponse.Data[1].Action != "attachment_added" {
+		t.Fatalf("expected attachment_added activity, got %q", activityResponse.Data[1].Action)
+	}
+}
+
 func newTestRouter(identity auth.Identity) http.Handler {
 	return newTestRouterWithRepository(identity, memory.NewTicketRepository())
 }
 
-func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepository) http.Handler {
+func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepository, attachmentStorages ...storage.AttachmentStorage) http.Handler {
 	cfg := config.Config{
-		AppEnv:      "test",
-		APIBasePath: "/v1",
+		AppEnv:               "test",
+		APIBasePath:          "/v1",
+		AttachmentBucketName: "opsdesk-test-attachments",
 	}
 
 	return NewRouter(
 		cfg,
 		validation.New(),
-		service.NewTicketService(repo),
+		service.NewTicketService(repo, attachmentStorages...),
 		staticVerifier{identity: identity},
 	)
 }
@@ -619,4 +708,22 @@ func testAdminIdentity() auth.Identity {
 		Role:     auth.RoleAdmin,
 		Groups:   []string{"admin"},
 	}
+}
+
+type staticAttachmentStorage struct {
+	presignedUpload   storage.PresignedUpload
+	presignedDownload storage.PresignedDownload
+	headMetadata      storage.ObjectMetadata
+}
+
+func (s staticAttachmentStorage) CreateUploadURL(context.Context, string, string) (storage.PresignedUpload, error) {
+	return s.presignedUpload, nil
+}
+
+func (s staticAttachmentStorage) CreateDownloadURL(context.Context, string, string) (storage.PresignedDownload, error) {
+	return s.presignedDownload, nil
+}
+
+func (s staticAttachmentStorage) HeadObject(context.Context, string) (storage.ObjectMetadata, error) {
+	return s.headMetadata, nil
 }

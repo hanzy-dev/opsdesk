@@ -150,6 +150,21 @@ func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if len(parts) == 2 && parts[1] == "attachments" && req.Method == http.MethodPost {
+		r.handleSaveAttachment(w, req, ticketID)
+		return
+	}
+
+	if len(parts) == 3 && parts[1] == "attachments" && parts[2] == "upload-url" && req.Method == http.MethodPost {
+		r.handleCreateAttachmentUploadURL(w, req, ticketID)
+		return
+	}
+
+	if len(parts) == 4 && parts[1] == "attachments" && parts[3] == "download" && req.Method == http.MethodGet {
+		r.handleCreateAttachmentDownloadURL(w, req, ticketID, parts[2])
+		return
+	}
+
 	writeMethodNotAllowed(w)
 }
 
@@ -451,6 +466,137 @@ func (r *Router) handleListTicketActivities(w http.ResponseWriter, req *http.Req
 	})
 }
 
+func (r *Router) handleCreateAttachmentUploadURL(w http.ResponseWriter, req *http.Request, ticketID string) {
+	var payload dto.RequestAttachmentUploadURLRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateRequestAttachmentUploadURLRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, "unauthorized", "authentication is required")
+		return
+	}
+
+	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	if !canAddComment(identity, ticket) {
+		writeForbidden(w, "forbidden", "you do not have permission to add attachments to this ticket")
+		return
+	}
+
+	upload, err := r.ticketSvc.CreateAttachmentUploadURL(req.Context(), ticketID, service.AttachmentUploadURLInput{
+		FileName:    strings.TrimSpace(payload.FileName),
+		ContentType: strings.TrimSpace(payload.ContentType),
+		SizeBytes:   payload.SizeBytes,
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.RequestAttachmentUploadURLResponse]{
+		Data: dto.RequestAttachmentUploadURLResponse{
+			AttachmentID:  upload.AttachmentID,
+			ObjectKey:     upload.ObjectKey,
+			UploadURL:     upload.UploadURL,
+			UploadMethod:  upload.UploadMethod,
+			UploadHeaders: upload.UploadHeaders,
+			ExpiresAt:     upload.ExpiresAt,
+		},
+	})
+}
+
+func (r *Router) handleSaveAttachment(w http.ResponseWriter, req *http.Request, ticketID string) {
+	var payload dto.SaveAttachmentRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateSaveAttachmentRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, "unauthorized", "authentication is required")
+		return
+	}
+
+	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	if !canAddComment(identity, ticket) {
+		writeForbidden(w, "forbidden", "you do not have permission to add attachments to this ticket")
+		return
+	}
+
+	attachment, err := r.ticketSvc.SaveAttachment(req.Context(), ticketID, service.SaveAttachmentInput{
+		AttachmentID: strings.TrimSpace(payload.AttachmentID),
+		ObjectKey:    strings.TrimSpace(payload.ObjectKey),
+		FileName:     strings.TrimSpace(payload.FileName),
+		ActorID:      identity.Subject,
+		ActorName:    displayNameFor(identity),
+		ActorRole:    string(identity.Role),
+	})
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.AttachmentResponse]{
+		Data: toAttachmentResponse(attachment),
+	})
+}
+
+func (r *Router) handleCreateAttachmentDownloadURL(w http.ResponseWriter, req *http.Request, ticketID string, attachmentID string) {
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, "unauthorized", "authentication is required")
+		return
+	}
+
+	ticket, err := r.ticketSvc.GetTicket(req.Context(), ticketID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	if !canViewTicket(identity, ticket) {
+		writeForbidden(w, "forbidden", "you do not have permission to view this ticket")
+		return
+	}
+
+	download, err := r.ticketSvc.CreateAttachmentDownloadURL(req.Context(), ticketID, attachmentID)
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.AttachmentDownloadURLResponse]{
+		Data: dto.AttachmentDownloadURLResponse{
+			FileName:    download.FileName,
+			DownloadURL: download.DownloadURL,
+			ExpiresAt:   download.ExpiresAt,
+		},
+	})
+}
+
 func decodeJSON(req *http.Request, target any) error {
 	decoder := json.NewDecoder(req.Body)
 	decoder.DisallowUnknownFields()
@@ -528,6 +674,48 @@ func writeServiceError(w http.ResponseWriter, err error) {
 			Error: dto.ErrorBody{
 				Code:    "not_implemented",
 				Message: "feature is not implemented yet",
+			},
+		})
+	case errors.Is(err, service.ErrAttachmentNotFound):
+		writeJSON(w, http.StatusNotFound, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "attachment_not_found",
+				Message: "attachment not found",
+			},
+		})
+	case errors.Is(err, service.ErrAttachmentInvalid):
+		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "invalid_attachment",
+				Message: "attachment request is invalid",
+			},
+		})
+	case errors.Is(err, service.ErrAttachmentTooLarge):
+		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "attachment_too_large",
+				Message: "attachment exceeds the allowed size limit",
+			},
+		})
+	case errors.Is(err, service.ErrAttachmentContentTypeNotAllowed):
+		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "attachment_content_type_not_allowed",
+				Message: "attachment content type is not allowed",
+			},
+		})
+	case errors.Is(err, service.ErrAttachmentUploadMissing):
+		writeJSON(w, http.StatusBadRequest, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "attachment_upload_missing",
+				Message: "attachment upload was not found in storage",
+			},
+		})
+	case errors.Is(err, service.ErrAttachmentStorageUnavailable):
+		writeJSON(w, http.StatusInternalServerError, dto.ErrorResponse{
+			Error: dto.ErrorBody{
+				Code:    "attachment_storage_unavailable",
+				Message: "attachment storage is not configured",
 			},
 		})
 	default:

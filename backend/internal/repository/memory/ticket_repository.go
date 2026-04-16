@@ -119,6 +119,9 @@ func cloneTicket(ticket domain.Ticket) domain.Ticket {
 	if ticket.Comments != nil {
 		cloned.Comments = append([]domain.Comment(nil), ticket.Comments...)
 	}
+	if ticket.Attachments != nil {
+		cloned.Attachments = append([]domain.Attachment(nil), ticket.Attachments...)
+	}
 	if ticket.Activities != nil {
 		cloned.Activities = append([]domain.ActivityEntry(nil), ticket.Activities...)
 		for index, activity := range cloned.Activities {
