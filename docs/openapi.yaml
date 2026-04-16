@@ -16,17 +16,8 @@ info:
     All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
 
 servers:
-  - url: http://localhost:8080/v1
-    description: Local development
-  - url: https://{apiId}.execute-api.{region}.amazonaws.com/{stage}/v1
-    description: Example deployed API Gateway URL
-    variables:
-      apiId:
-        default: your-api-id
-      region:
-        default: ap-southeast-1
-      stage:
-        default: dev
+  - url: https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+    description: Deployed API Gateway URL for the OpsDesk dev environment
 
 tags:
   - name: System
@@ -49,7 +40,7 @@ paths:
               example:
                 data:
                   status: ok
-                  env: development
+                  env: dev
 
   /tickets:
     get:
@@ -336,7 +327,7 @@ components:
           example: ok
         env:
           type: string
-          example: development
+          example: dev
 
     Comment:
       type: object

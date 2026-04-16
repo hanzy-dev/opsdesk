@@ -19,8 +19,8 @@ template_file = "template.yaml"
 parameter_overrides = [
   "ProjectName=opsdesk",
   "StageName=dev",
-  "AppEnv=development",
+  "AppEnv=dev",
   "ApiBasePath=/v1",
-  "FrontendOrigin=http://localhost:5173",
+  "FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app",
   "LogLevel=info"
 ]

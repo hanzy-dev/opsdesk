@@ -14,10 +14,10 @@ Current infrastructure scope is intentionally small:
 
 ## Design Choices
 
-- **AWS SAM** is used to keep the infrastructure approachable for a university assignment.
+- **AWS SAM** is used to keep the infrastructure approachable and incremental.
 - **Lambda packaging** uses a Lambda-compatible container image built by SAM from `backend/Dockerfile.lambda`.
 - **API Gateway HTTP API** is used instead of REST API to keep cost and complexity lower.
-- **ARM64** is the default Lambda architecture to stay cost-conscious.
+- **x86_64** is the current Lambda architecture configured in the template.
 - **CloudWatch log retention** is limited to 7 days to avoid unnecessary log storage growth.
 
 ## Deployment Boundary
@@ -43,6 +43,13 @@ Key deploy-time parameters:
 - `ApiBasePath`
 - `FrontendOrigin`
 - `LogLevel`
+
+Current production-oriented defaults in this repository:
+
+- `StageName=dev`
+- `AppEnv=dev`
+- `FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+- API base URL output expected after deploy: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 
 Backend runtime environment variables wired by SAM:
 

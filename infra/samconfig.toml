@@ -16,7 +16,7 @@ resolve_image_repos = true
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 template_file = "template.yaml"
-parameter_overrides = "ProjectName=\"opsdesk\" StageName=\"dev\" AppEnv=\"development\" ApiBasePath=\"/v1\" FrontendOrigin=\"http://localhost:5173\" LogLevel=\"info\""
+parameter_overrides = "ProjectName=\"opsdesk\" StageName=\"dev\" AppEnv=\"dev\" ApiBasePath=\"/v1\" FrontendOrigin=\"https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app\" LogLevel=\"info\""
 s3_prefix = "opsdesk-dev"
 image_repositories = []
 

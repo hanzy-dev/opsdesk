@@ -1,88 +1,62 @@
 # OpsDesk
 
-OpsDesk adalah aplikasi helpdesk dan incident ticketing serverless yang dibuat untuk tugas mata kuliah cloud computing, sekaligus dipoles agar layak tampil sebagai proyek portofolio GitHub.
+OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, dan infrastruktur AWS SAM.
 
-Fokus proyek ini adalah menunjukkan implementasi full-stack yang rapi, realistis, dan mudah direview: frontend modern, backend Go, arsitektur serverless di AWS, dokumentasi API OpenAPI, serta workflow CI yang ringan.
+Batch ini merapikan baseline agar tidak lagi berorientasi demo. Fitur inti tetap sama, tetapi dokumentasi, konfigurasi deployment, dan placeholder login sekarang memakai framing yang lebih netral dan siap dipelihara.
 
-## Ringkasan Proyek
+## Deployment Tetap
 
-Dalam banyak tugas akademik, aplikasi sering selesai di level CRUD lokal tanpa konteks deployment cloud yang jelas. OpsDesk menyelesaikan masalah itu dengan contoh aplikasi helpdesk sederhana yang:
+- Frontend production: `https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+- Backend environment: `dev`
+- Backend API base URL: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 
-- memiliki alur tiket yang nyata dan mudah dipahami
-- berjalan pada arsitektur serverless yang relevan untuk pembelajaran cloud
-- tetap cukup kecil untuk direview cepat oleh dosen atau recruiter
+## Cakupan Saat Ini
 
-## Mulai Dari Mana
+OpsDesk saat ini mendukung:
 
-Jika Anda membuka repo ini untuk pertama kali, urutan tercepat untuk memahami proyek adalah:
-
-1. Buka [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md) untuk melihat alur klik utama.
-2. Lihat [docs/reviewer-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/reviewer-checklist.md) untuk jalur review singkat.
-3. Cek [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml) jika ingin meninjau kontrak API.
-4. Lihat folder [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md) untuk placeholder aset portfolio final.
-
-## Masalah Yang Diselesaikan
-
-OpsDesk memodelkan kebutuhan dasar operasional support:
-
-- mencatat tiket insiden atau permintaan bantuan
-- memantau status tiket
-- menambahkan komentar progres penanganan
-- memisahkan frontend, backend, dan infrastruktur dengan struktur monorepo yang jelas
-
-## Fitur Utama
-
-- dashboard frontend untuk melihat ringkasan tiket
-- daftar tiket dan detail tiket
-- pembuatan tiket baru
+- dashboard ringkasan tiket
+- daftar tiket
+- pembuatan tiket
+- detail tiket
 - pembaruan status tiket
-- penambahan komentar pada tiket
-- backend Go dengan API HTTP yang terdokumentasi
-- persistence menggunakan DynamoDB
-- deployment backend berbasis AWS Lambda + API Gateway HTTP API
-- dokumentasi OpenAPI untuk inspeksi API
-- workflow GitHub Actions ringan untuk test/build backend dan readiness SAM
+- komentar tiket
+- health endpoint
+- dokumentasi OpenAPI
+- frontend smoke tests
+
+## Batasan Yang Masih Berlaku
+
+- autentikasi nyata belum diimplementasikan
+- layar masuk masih memakai placeholder sesi internal
+- belum ada RBAC, assignment, audit trail, attachment, atau observability lanjutan
+- scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
 ## Arsitektur Singkat
 
-Arsitektur OpsDesk saat ini:
-
-- `frontend/`: React + Vite + TypeScript
-- `backend/`: Go application dengan router HTTP yang dipakai untuk local server dan Lambda adapter
+- `frontend/`: React + Vite + TypeScript, dideploy ke Vercel
+- `backend/`: Go HTTP application yang dipakai untuk local run dan Lambda entrypoint
 - `infra/`: AWS SAM template untuk Lambda, API Gateway HTTP API, dan DynamoDB
-- `docs/`: dokumentasi arsitektur, API, setup, dan roadmap
+- `docs/`: dokumentasi arsitektur, API, penggunaan, verifikasi, dan setup
 
-Alur data singkat:
+Alur data:
 
-1. Frontend memanggil backend melalui HTTP API.
-2. Backend memproses request di Go.
+1. Frontend memanggil backend melalui API Gateway HTTP API.
+2. Backend Go memproses request dan validasi.
 3. Data tiket disimpan di DynamoDB.
-4. Backend mengembalikan respons JSON yang konsisten ke frontend.
+4. Respons JSON dikembalikan ke frontend.
 
-## Teknologi Yang Digunakan
+## Dokumen Utama
 
-- React
-- Vite
-- TypeScript
-- Go
-- AWS Lambda
-- API Gateway HTTP API
-- DynamoDB
-- AWS SAM
-- GitHub Actions
-- OpenAPI 3
+Urutan paling cepat untuk memahami proyek:
 
-## Struktur Repository
+1. Baca [docs/usage-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/usage-guide.md) untuk alur penggunaan aplikasi.
+2. Baca [docs/release-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/release-checklist.md) untuk verifikasi rilis dan deployment.
+3. Baca [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md) atau [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml) untuk kontrak API.
+4. Baca [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md) untuk run lokal dan deploy.
 
-- `frontend/` aplikasi client React + Vite + TypeScript
-- `backend/` aplikasi backend Go dan entrypoint Lambda/local
-- `infra/` template AWS SAM dan file pendukung deployment
-- `docs/` dokumentasi API, setup, arsitektur, dan roadmap
-- `.github/workflows/` workflow CI/CD ringan berbasis GitHub Actions
+## Menjalankan Frontend
 
-## Cara Menjalankan Frontend
-
-Masuk ke folder `frontend/`, lalu:
+Masuk ke folder `frontend/`:
 
 ```bash
 npm install
@@ -90,34 +64,34 @@ npm run dev
 npm run test
 ```
 
-Buat file `.env` berdasarkan `frontend/.env.example`:
+Buat `frontend/.env` dari [frontend/.env.example](/d:/Semester%206/Cloud%20Computing/opsdesk/frontend/.env.example), lalu isi `VITE_API_BASE_URL` secara eksplisit. Repository ini mencontohkan API deployment aktif:
 
 ```text
-VITE_API_BASE_URL=http://localhost:8080/v1
+VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 ```
 
-## Cara Menjalankan Backend
+Frontend tidak lagi memakai fallback diam-diam ke `localhost`, jadi environment variable harus selalu diset dengan jelas.
 
-Masuk ke folder `backend/`, lalu:
+## Menjalankan Backend
+
+Masuk ke folder `backend/`:
 
 ```bash
 go test ./...
 go run ./cmd/local
 ```
 
-Contoh base URL backend lokal:
+Untuk local run, backend tetap memakai base path:
 
 ```text
 http://localhost:8080/v1
 ```
 
-Backend saat ini membutuhkan `TICKET_TABLE_NAME` yang mengarah ke tabel DynamoDB yang dapat diakses.
+Backend membutuhkan `TICKET_TABLE_NAME` yang mengarah ke tabel DynamoDB yang dapat diakses. Saat dideploy melalui SAM, nilai ini di-wire otomatis oleh stack.
 
-Saat dideploy ke AWS melalui SAM, nilai `TICKET_TABLE_NAME` di-wire otomatis oleh stack.
+## Deploy Backend Dengan AWS SAM
 
-## Cara Deploy Backend Dengan SAM
-
-Masuk ke folder `infra/`, lalu:
+Masuk ke folder `infra/`:
 
 ```bash
 sam validate --template-file template.yaml
@@ -125,41 +99,46 @@ sam build --template-file template.yaml
 sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
 ```
 
-Batch deployment ini memakai Lambda container image yang dibangun dari `backend/Dockerfile.lambda`, jadi Docker Desktop perlu aktif saat menjalankan `sam build`.
+Parameter deploy default repository ini sudah distandarkan ke:
 
-Parameter deploy utama sudah dicontohkan di:
+```text
+ProjectName=opsdesk
+StageName=dev
+AppEnv=dev
+ApiBasePath=/v1
+FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
+LogLevel=info
+```
 
-- [infra/template.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/template.yaml)
-- [infra/samconfig.toml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/samconfig.toml)
-- [infra/samconfig.example.toml](/d:/Semester%206/Cloud%20Computing/opsdesk/infra/samconfig.example.toml)
-
-Output stack yang paling penting setelah deploy:
+Output stack yang paling penting:
 
 - `HttpApiUrl`
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
 
-## Cara Menyiapkan Frontend Untuk Vercel
+## Deploy Frontend Ke Vercel
 
-Frontend sudah disiapkan agar mudah dihubungkan ke Vercel berbasis GitHub.
-
-Konfigurasi yang direkomendasikan:
+Konfigurasi yang dipakai:
 
 - Root directory: `frontend`
 - Framework preset: `Vite`
 - Build command: `npm run build`
 - Output directory: `dist`
 
-Environment variable yang dibutuhkan di Vercel:
+Environment variable yang harus dipasang di Vercel:
 
 ```text
-VITE_API_BASE_URL=https://your-api-id.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 ```
 
-## Ringkasan Endpoint API
+Frontend production yang ditetapkan untuk repository ini adalah:
 
-Endpoint backend saat ini:
+```text
+https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
+```
+
+## Endpoint Yang Tersedia
 
 - `GET /v1/health`
 - `POST /v1/tickets`
@@ -168,47 +147,30 @@ Endpoint backend saat ini:
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Lokasi Dokumentasi OpenAPI
+## Catatan Batch 1
 
-Dokumentasi API tersedia di:
+Batch ini hanya mencakup cleanup baseline production-oriented:
 
-- [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml)
-- [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md)
+- wording demo diganti menjadi wording netral
+- dokumen demo/reviewer diganti menjadi panduan penggunaan dan checklist rilis
+- domain frontend final dan API base URL final distandarkan
+- konfigurasi CORS diarahkan ke frontend final saja
+- fallback frontend ke `localhost` dihapus
 
-## Alur Review Cepat Untuk Dosen
+Yang sengaja belum dikerjakan:
 
-Urutan review yang disarankan:
-
-1. Baca [docs/reviewer-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/reviewer-checklist.md)
-2. Ikuti [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md) untuk tahu apa yang perlu diklik lebih dulu
-3. Lihat [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md) dan [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml)
-4. Lihat [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md) untuk setup dan deployment
-5. Tinjau struktur `frontend/`, `backend/`, dan `infra/`
-6. Jika perlu, jalankan frontend, backend, dan smoke test frontend secara lokal
-
-## Keputusan Teknis Utama
-
-- memilih serverless AWS agar sesuai konteks mata kuliah cloud computing
-- menggunakan Go di backend untuk implementasi yang ringkas dan performa baik di Lambda
-- menggunakan API Gateway HTTP API agar biaya dan kompleksitas lebih rendah dibanding REST API klasik
-- menggunakan DynamoDB dengan model data sederhana agar mudah dipahami reviewer
-- menggunakan React + Vite + TypeScript untuk frontend modern yang tetap ringan
-- menambahkan OpenAPI agar kontrak API mudah diinspeksi tanpa membaca kode backend terlebih dahulu
-- menjaga CI sederhana dengan GitHub Actions yang fokus pada test, build, dan readiness check
-
-## Known Limitations / Batasan Saat Ini
-
-- autentikasi belum diimplementasikan; halaman login masih berupa demo UI
-- belum ada upload file atau attachment
-- belum ada observability lanjutan seperti alarm, dashboard metrik, atau tracing mendalam
-- filtering dan pencarian tiket di frontend masih sederhana
-- deployment frontend ke Vercel sudah siap secara struktur, tetapi belum dilengkapi file konfigurasi khusus karena belum benar-benar dibutuhkan
-- proyek ini sengaja menjaga scope tetap kecil agar fokus pada kualitas implementasi inti
+- autentikasi nyata
+- RBAC
+- assignment tiket
+- audit trail
+- attachment
+- observability lanjutan
 
 ## Dokumentasi Tambahan
 
 - [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md)
 - [docs/architecture.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/architecture.md)
+- [docs/usage-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/usage-guide.md)
+- [docs/release-checklist.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/release-checklist.md)
 - [docs/roadmap.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/roadmap.md)
-- [docs/demo-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/demo-guide.md)
 - [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md)

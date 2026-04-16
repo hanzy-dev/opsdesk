@@ -20,8 +20,8 @@ export function Topbar({ title }: TopbarProps) {
         <div className="topbar__identity">
           <span className="topbar__avatar">{session?.displayName.slice(0, 1) ?? "D"}</span>
           <div>
-            <strong>{session?.displayName ?? "Pengguna Demo"}</strong>
-            <p>Akses simulasi</p>
+            <strong>{session?.displayName ?? "Pengguna OpsDesk"}</strong>
+            <p>Sesi placeholder</p>
           </div>
         </div>
         <button

@@ -46,3 +46,7 @@ Thumbs.db
 # Misc
 tmp/
 temp/
+
+# Local Go caches
+backend/.gocache/
+backend/.gomodcache/

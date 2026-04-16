@@ -5,7 +5,7 @@ import "os"
 const (
 	defaultPort        = "8080"
 	defaultAPIBasePath = "/v1"
-	defaultAppEnv      = "development"
+	defaultAppEnv      = "dev"
 	defaultLogLevel    = "info"
 )
 

@@ -17,9 +17,9 @@ Parameters:
 
   AppEnv:
     Type: String
-    Default: development
+    Default: dev
     AllowedValues:
-      - development
+      - dev
       - staging
       - production
     Description: Backend application environment.
@@ -31,8 +31,8 @@ Parameters:
 
   FrontendOrigin:
     Type: String
-    Default: http://localhost:5173
-    Description: Allowed CORS origin for local frontend development.
+    Default: https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
+    Description: Allowed CORS origin for the deployed OpsDesk frontend.
 
   LogLevel:
     Type: String

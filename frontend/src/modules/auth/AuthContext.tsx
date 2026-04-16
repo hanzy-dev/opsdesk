@@ -1,23 +1,23 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-type DemoSession = {
+type UserSession = {
   displayName: string;
 };
 
 type AuthContextValue = {
   isAuthenticated: boolean;
-  session: DemoSession | null;
-  loginDemo: (displayName: string) => void;
+  session: UserSession | null;
+  startSession: (displayName: string) => void;
   logout: () => void;
 };
 
-const storageKey = "opsdesk.demo.session";
+const storageKey = "opsdesk.session";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<DemoSession | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
 
   useEffect(() => {
     const rawValue = window.localStorage.getItem(storageKey);
@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const parsed = JSON.parse(rawValue) as DemoSession;
+      const parsed = JSON.parse(rawValue) as UserSession;
       setSession(parsed);
     } catch {
       window.localStorage.removeItem(storageKey);
@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       isAuthenticated: session !== null,
       session,
-      loginDemo: (displayName: string) => {
+      startSession: (displayName: string) => {
         const nextSession = { displayName };
         setSession(nextSession);
         window.localStorage.setItem(storageKey, JSON.stringify(nextSession));

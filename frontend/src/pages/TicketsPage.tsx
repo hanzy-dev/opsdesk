@@ -103,7 +103,7 @@ export function TicketsPage() {
         <div className="section-heading">
           <div>
             <p className="section-eyebrow">Pencarian cepat</p>
-            <h3>Temukan tiket lebih cepat saat demo</h3>
+            <h3>Temukan tiket lebih cepat untuk verifikasi operasional</h3>
           </div>
           <p className="filter-summary">
             Menampilkan {filteredTickets.length} dari {tickets.length} tiket
@@ -155,7 +155,7 @@ export function TicketsPage() {
           tickets={filteredTickets}
           title="Daftar tiket"
           eyebrow="Operasional"
-          helperText="Gunakan pencarian dan filter status untuk menyiapkan demo atau review lebih cepat."
+          helperText="Gunakan pencarian dan filter status untuk memeriksa tiket aktif dengan lebih cepat."
         />
       )}
     </section>

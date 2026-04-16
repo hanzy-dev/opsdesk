@@ -1,5 +1,3 @@
-const fallbackApiBaseUrl = "http://localhost:8080/v1";
-
 function normalizeApiBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
@@ -10,11 +8,7 @@ function resolveApiBaseUrl(): string {
     return normalizeApiBaseUrl(configuredApiBaseUrl);
   }
 
-  if (import.meta.env.DEV) {
-    return fallbackApiBaseUrl;
-  }
-
-  throw new Error("Missing VITE_API_BASE_URL. Set it in the Vercel project environment variables.");
+  throw new Error("Missing VITE_API_BASE_URL. Set it in the frontend environment configuration before running OpsDesk.");
 }
 
 export const env = {

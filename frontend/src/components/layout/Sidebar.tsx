@@ -13,7 +13,7 @@ export function Sidebar() {
         <div className="sidebar__brand-mark">OD</div>
         <div>
           <p className="sidebar__brand-title">OpsDesk</p>
-          <p className="sidebar__brand-subtitle">Cloud Helpdesk Demo</p>
+          <p className="sidebar__brand-subtitle">Cloud Helpdesk Internal</p>
         </div>
       </div>
 

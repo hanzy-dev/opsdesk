@@ -28,16 +28,16 @@ The spec follows the current backend implementation instead of proposing a redes
 
 ## Example Base URLs
 
-Local example:
+Final deployed frontend:
 
 ```text
-http://localhost:8080/v1
+https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 ```
 
-Deployed API Gateway placeholder:
+Final deployed API Gateway base URL:
 
 ```text
-https://your-api-id.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 ```
 
 ## Quick Lecturer Review Guide
@@ -69,4 +69,4 @@ Recommended quick checks:
 
 - Timestamps are documented as UTC RFC3339 / ISO 8601 strings.
 - There is currently no authentication layer.
-- The documentation is intentionally small and lecturer-friendly for the current project scope.
+- The deployment baseline uses the `dev` backend environment.

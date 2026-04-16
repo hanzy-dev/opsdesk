@@ -4,12 +4,12 @@ import { useAuth } from "../modules/auth/AuthContext";
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const { loginDemo } = useAuth();
-  const [displayName, setDisplayName] = useState("Operator Demo");
+  const { startSession } = useAuth();
+  const [displayName, setDisplayName] = useState("Operator OpsDesk");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    loginDemo(displayName.trim() || "Operator Demo");
+    startSession(displayName.trim() || "Operator OpsDesk");
     navigate("/dashboard");
   }
 
@@ -20,8 +20,8 @@ export function LoginPage() {
           <p className="section-eyebrow">OpsDesk</p>
           <h1>Masuk ke panel operasional</h1>
           <p>
-            Halaman ini adalah simulasi login untuk kebutuhan demo frontend. Otentikasi asli akan ditambahkan pada batch
-            berikutnya.
+            Akses masuk saat ini masih menggunakan placeholder sesi internal. Integrasi otentikasi nyata belum
+            diimplementasikan pada batch ini.
           </p>
         </div>
 
@@ -32,7 +32,7 @@ export function LoginPage() {
           </label>
 
           <button className="button button--primary button--wide" type="submit">
-            Masuk sebagai Demo
+            Masuk ke Aplikasi
           </button>
         </form>
       </section>

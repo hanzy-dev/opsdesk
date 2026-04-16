@@ -2,7 +2,7 @@
 
 ## Overview
 
-OpsDesk is planned as a small serverless helpdesk and incident ticketing application. The system is intentionally scoped for a university assignment while remaining structured enough for portfolio review.
+OpsDesk is a small serverless helpdesk and incident ticketing application. The system is kept intentionally focused so it remains maintainable, reviewable, and suitable for an internal operational workflow.
 
 ## Monorepo Layout
 
@@ -62,8 +62,8 @@ The following items are explicitly out of scope for the MVP:
 
 ### Monitoring
 
-- CloudWatch Logs for Lambda and API observability
-- Basic metrics and error visibility sufficient for demos and debugging
+- CloudWatch Logs for Lambda and API visibility
+- Basic metrics and error visibility sufficient for the current operational baseline
 
 ### Delivery
 
