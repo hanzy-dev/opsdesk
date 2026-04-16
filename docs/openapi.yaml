@@ -7,6 +7,7 @@ info:
 
     The API provides a simple serverless helpdesk workflow for:
     - health checks
+    - authenticated identity lookup
     - ticket creation
     - ticket listing
     - ticket detail lookup
@@ -21,6 +22,7 @@ servers:
 
 tags:
   - name: System
+  - name: Auth
   - name: Tickets
 
 paths:
@@ -42,12 +44,40 @@ paths:
                   status: ok
                   env: dev
 
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get authenticated identity
+      operationId: getAuthenticatedIdentity
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Authenticated identity returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthIdentitySuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error:
+                  code: invalid_token
+                  message: authentication token is invalid or expired
+
   /tickets:
     get:
       tags:
         - Tickets
       summary: List tickets
       operationId: listTickets
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: status
@@ -91,6 +121,8 @@ paths:
         - Tickets
       summary: Create a ticket
       operationId: createTicket
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -137,6 +169,8 @@ paths:
         - Tickets
       summary: Get ticket detail
       operationId: getTicket
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TicketId"
       responses:
@@ -163,6 +197,8 @@ paths:
         - Tickets
       summary: Update ticket status
       operationId: updateTicketStatus
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TicketId"
       requestBody:
@@ -206,6 +242,8 @@ paths:
         - Tickets
       summary: Add a comment to a ticket
       operationId: addTicketComment
+      security:
+        - bearerAuth: []
       parameters:
         - $ref: "#/components/parameters/TicketId"
       requestBody:
@@ -245,6 +283,11 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   parameters:
     TicketId:
       in: path
@@ -328,6 +371,27 @@ components:
         env:
           type: string
           example: dev
+
+    AuthIdentity:
+      type: object
+      required:
+        - subject
+        - username
+        - tokenUse
+      properties:
+        subject:
+          type: string
+          example: 9b0dc1d7-2f5c-40ff-97b5-0201ee2fe2a7
+        username:
+          type: string
+          example: user@example.com
+        tokenUse:
+          type: string
+          example: access
+        groups:
+          type: array
+          items:
+            type: string
 
     Comment:
       type: object
@@ -451,6 +515,14 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Health"
+
+    AuthIdentitySuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/AuthIdentity"
 
     TicketSuccessResponse:
       type: object

@@ -17,11 +17,17 @@ Lokasi file:
 Variable yang dipakai:
 
 - `VITE_API_BASE_URL`
+- `VITE_COGNITO_REGION`
+- `VITE_COGNITO_USER_POOL_ID`
+- `VITE_COGNITO_CLIENT_ID`
 
 Nilai yang distandarkan untuk deployment aktif:
 
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+VITE_COGNITO_REGION=ap-southeast-1
+VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
+VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
 ```
 
 Catatan:
@@ -37,6 +43,9 @@ Backend membaca environment variable berikut:
 - `API_BASE_PATH`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
+- `COGNITO_REGION`
+- `COGNITO_USER_POOL_ID`
+- `COGNITO_APP_CLIENT_ID`
 
 Nilai deploy yang dipakai repository ini:
 
@@ -46,7 +55,7 @@ API_BASE_PATH=/v1
 LOG_LEVEL=info
 ```
 
-`TICKET_TABLE_NAME` diisi otomatis oleh stack SAM saat deploy.
+`TICKET_TABLE_NAME`, `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, dan `COGNITO_APP_CLIENT_ID` diisi otomatis oleh stack SAM saat deploy.
 
 ## Local Backend Run
 
@@ -103,6 +112,27 @@ LogLevel=info
 
 CORS harus tetap menunjuk hanya ke frontend production di atas.
 
+## Cognito Setup Minimum
+
+Batch ini membuat resource Cognito langsung di SAM:
+
+- satu User Pool
+- satu public app client untuk login frontend
+
+Flow yang diharapkan:
+
+1. Deploy stack SAM.
+2. Ambil output `CognitoUserPoolId` dan `CognitoUserPoolClientId`.
+3. Pasang keduanya ke environment variable frontend di Vercel.
+4. Buat user internal pertama di Cognito menggunakan AWS Console atau AWS CLI.
+
+Contoh CLI untuk membuat user internal:
+
+```bash
+aws cognito-idp admin-create-user --user-pool-id <user-pool-id> --username nama@perusahaan.com --user-attributes Name=email,Value=nama@perusahaan.com Name=email_verified,Value=true --message-action SUPPRESS
+aws cognito-idp admin-set-user-password --user-pool-id <user-pool-id> --username nama@perusahaan.com --password '<PasswordAwal123>' --permanent
+```
+
 ## Build and Deploy Backend
 
 Dari folder `infra/`:
@@ -137,6 +167,9 @@ Output stack yang penting:
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
+- `CognitoUserPoolId`
+- `CognitoUserPoolClientId`
+- `CognitoIssuerUrl`
 
 ## Vercel Frontend Deployment
 
@@ -151,15 +184,18 @@ Environment variable yang wajib di Vercel:
 
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+VITE_COGNITO_REGION=ap-southeast-1
+VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
+VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
 ```
 
 Karena backend CORS dikunci ke domain production final, jangan arahkan deployment ini ke preview domain untuk verifikasi utama batch ini.
 
 ## Release Notes For This Batch
 
-Batch ini hanya membersihkan baseline deployment:
+Batch ini hanya menambahkan autentikasi nyata:
 
-- wording demo diganti dengan wording penggunaan internal
-- placeholder login tetap ada, tetapi belum menjadi autentikasi nyata
-- CORS dan env deployment diarahkan ke domain final saja
-- dokumentasi kini memakai URL frontend dan API aktif
+- login Cognito berbasis email dan kata sandi
+- persistence sesi frontend dengan refresh token
+- proteksi endpoint backend dengan JWT Cognito
+- env vars frontend dan backend untuk auth

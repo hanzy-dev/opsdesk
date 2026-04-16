@@ -1,8 +1,8 @@
 # OpsDesk
 
-OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, dan infrastruktur AWS SAM.
+OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch ini merapikan baseline agar tidak lagi berorientasi demo. Fitur inti tetap sama, tetapi dokumentasi, konfigurasi deployment, dan placeholder login sekarang memakai framing yang lebih netral dan siap dipelihara.
+Batch 2 mengganti placeholder login menjadi autentikasi nyata berbasis Amazon Cognito dan JWT, tanpa menambah RBAC atau fitur lanjutan lain di luar scope batch ini.
 
 ## Deployment Tetap
 
@@ -14,6 +14,7 @@ Batch ini merapikan baseline agar tidak lagi berorientasi demo. Fitur inti tetap
 
 OpsDesk saat ini mendukung:
 
+- login dan logout nyata berbasis Amazon Cognito
 - dashboard ringkasan tiket
 - daftar tiket
 - pembuatan tiket
@@ -26,8 +27,7 @@ OpsDesk saat ini mendukung:
 
 ## Batasan Yang Masih Berlaku
 
-- autentikasi nyata belum diimplementasikan
-- layar masuk masih memakai placeholder sesi internal
+- authorization masih sebatas terautentikasi vs tidak terautentikasi
 - belum ada RBAC, assignment, audit trail, attachment, atau observability lanjutan
 - scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
@@ -64,10 +64,13 @@ npm run dev
 npm run test
 ```
 
-Buat `frontend/.env` dari [frontend/.env.example](/d:/Semester%206/Cloud%20Computing/opsdesk/frontend/.env.example), lalu isi `VITE_API_BASE_URL` secara eksplisit. Repository ini mencontohkan API deployment aktif:
+Buat `frontend/.env` dari [frontend/.env.example](/d:/Semester%206/Cloud%20Computing/opsdesk/frontend/.env.example), lalu isi variabel berikut:
 
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+VITE_COGNITO_REGION=ap-southeast-1
+VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
+VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
 ```
 
 Frontend tidak lagi memakai fallback diam-diam ke `localhost`, jadi environment variable harus selalu diset dengan jelas.
@@ -110,12 +113,20 @@ FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 LogLevel=info
 ```
 
+Stack sekarang juga membuat resource Cognito berikut:
+
+- `OpsDeskUserPool`
+- `OpsDeskUserPoolClient`
+
 Output stack yang paling penting:
 
 - `HttpApiUrl`
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
+- `CognitoUserPoolId`
+- `CognitoUserPoolClientId`
+- `CognitoIssuerUrl`
 
 ## Deploy Frontend Ke Vercel
 
@@ -130,6 +141,9 @@ Environment variable yang harus dipasang di Vercel:
 
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+VITE_COGNITO_REGION=ap-southeast-1
+VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
+VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
 ```
 
 Frontend production yang ditetapkan untuk repository ini adalah:
@@ -141,25 +155,25 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 ## Endpoint Yang Tersedia
 
 - `GET /v1/health`
+- `GET /v1/auth/me`
 - `POST /v1/tickets`
 - `GET /v1/tickets`
 - `GET /v1/tickets/{id}`
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 1
+## Catatan Batch 2
 
-Batch ini hanya mencakup cleanup baseline production-oriented:
+Batch ini hanya mencakup autentikasi nyata:
 
-- wording demo diganti menjadi wording netral
-- dokumen demo/reviewer diganti menjadi panduan penggunaan dan checklist rilis
-- domain frontend final dan API base URL final distandarkan
-- konfigurasi CORS diarahkan ke frontend final saja
-- fallback frontend ke `localhost` dihapus
+- login/logout Cognito dengan email dan kata sandi
+- session frontend persisten dengan refresh token
+- bearer token pada request API
+- proteksi endpoint backend dengan verifikasi JWT Cognito
+- endpoint identitas sederhana `GET /v1/auth/me`
 
 Yang sengaja belum dikerjakan:
 
-- autentikasi nyata
 - RBAC
 - assignment tiket
 - audit trail

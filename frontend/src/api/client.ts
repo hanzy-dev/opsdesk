@@ -1,4 +1,6 @@
 import { env } from "../config/env";
+import { getValidAccessToken } from "../modules/auth/authService";
+import { clearStoredSession } from "../modules/auth/sessionStore";
 import type { ApiErrorResponse, ApiSuccessResponse } from "../types/api";
 
 export class ApiError extends Error {
@@ -17,12 +19,14 @@ export class ApiError extends Error {
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
+  const accessToken = await getValidAccessToken();
 
   try {
     response = await fetch(`${env.apiBaseUrl}${path}`, {
       ...init,
       headers: {
         "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...(init?.headers ?? {}),
       },
     });
@@ -37,8 +41,19 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   const payload = (await response.json().catch(() => null)) as ApiSuccessResponse<T> | ApiErrorResponse | null;
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearStoredSession();
+    }
+
+    const message =
+      response.status === 401
+        ? getHttpErrorMessage(response.status)
+        : payload && "error" in payload
+          ? payload.error.message
+          : getHttpErrorMessage(response.status);
+
     throw new ApiError(
-      payload && "error" in payload ? payload.error.message : getHttpErrorMessage(response.status),
+      message,
       response.status,
       payload && "error" in payload ? payload.error.code : "api_error",
       payload && "error" in payload ? payload.error.details : undefined,
@@ -60,6 +75,8 @@ function getHttpErrorMessage(status: number) {
       return "Data yang diminta tidak ditemukan atau sudah tidak tersedia.";
     case 405:
       return "Permintaan belum didukung untuk halaman ini.";
+    case 401:
+      return "Sesi Anda tidak valid atau sudah berakhir. Silakan masuk kembali.";
     case 500:
     case 502:
     case 503:

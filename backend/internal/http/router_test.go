@@ -2,18 +2,22 @@ package httpapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
+	"opsdesk/backend/internal/auth"
 	"opsdesk/backend/internal/config"
 	"opsdesk/backend/internal/dto"
 	"opsdesk/backend/internal/repository/memory"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/validation"
 )
+
+const testAccessToken = "test-access-token"
 
 func TestPatchTicketStatusReturnsUpdatedTicket(t *testing.T) {
 	t.Parallel()
@@ -193,13 +197,58 @@ func TestOptionsTicketSubresourceReturnsNoContent(t *testing.T) {
 	}
 }
 
+func TestGetTicketsRequiresAuthentication(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter()
+	req := httptest.NewRequest(http.MethodGet, "/v1/tickets", nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", recorder.Code)
+	}
+
+	var response dto.ErrorResponse
+	decodeResponse(t, recorder, &response)
+
+	if response.Error.Code != "unauthorized" {
+		t.Fatalf("expected unauthorized error code, got %q", response.Error.Code)
+	}
+}
+
+func TestGetAuthMeReturnsIdentity(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter()
+
+	recorder := performRequest(t, router, http.MethodGet, "/v1/auth/me", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.AuthIdentityResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.Username != "opsdesk.user@example.com" {
+		t.Fatalf("expected username to match test identity, got %q", response.Data.Username)
+	}
+}
+
 func newTestRouter() http.Handler {
 	cfg := config.Config{
 		AppEnv:      "test",
 		APIBasePath: "/v1",
 	}
 
-	return NewRouter(cfg, validation.New(), service.NewTicketService(memory.NewTicketRepository()))
+	return NewRouter(
+		cfg,
+		validation.New(),
+		service.NewTicketService(memory.NewTicketRepository()),
+		staticVerifier{},
+	)
 }
 
 func createTestTicket(t *testing.T, router http.Handler) dto.TicketResponse {
@@ -241,6 +290,7 @@ func performRequest(t *testing.T, router http.Handler, method, path string, body
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	req.Header.Set("Authorization", "Bearer "+testAccessToken)
 
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
@@ -253,4 +303,18 @@ func decodeResponse(t *testing.T, recorder *httptest.ResponseRecorder, target an
 	if err := json.Unmarshal(recorder.Body.Bytes(), target); err != nil {
 		t.Fatalf("json.Unmarshal() error = %v", err)
 	}
+}
+
+type staticVerifier struct{}
+
+func (staticVerifier) VerifyAccessToken(_ context.Context, token string) (auth.Identity, error) {
+	if token != testAccessToken {
+		return auth.Identity{}, auth.ErrInvalidToken
+	}
+
+	return auth.Identity{
+		Subject:  "user-123",
+		Username: "opsdesk.user@example.com",
+		TokenUse: "access",
+	}, nil
 }

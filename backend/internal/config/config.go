@@ -10,20 +10,26 @@ const (
 )
 
 type Config struct {
-	AppEnv          string
-	Port            string
-	APIBasePath     string
-	LogLevel        string
-	TicketTableName string
+	AppEnv             string
+	Port               string
+	APIBasePath        string
+	LogLevel           string
+	TicketTableName    string
+	CognitoRegion      string
+	CognitoUserPoolID  string
+	CognitoAppClientID string
 }
 
 func Load() Config {
 	return Config{
-		AppEnv:          getEnv("APP_ENV", defaultAppEnv),
-		Port:            getEnv("PORT", defaultPort),
-		APIBasePath:     getEnv("API_BASE_PATH", defaultAPIBasePath),
-		LogLevel:        getEnv("LOG_LEVEL", defaultLogLevel),
-		TicketTableName: getEnv("TICKET_TABLE_NAME", ""),
+		AppEnv:             getEnv("APP_ENV", defaultAppEnv),
+		Port:               getEnv("PORT", defaultPort),
+		APIBasePath:        getEnv("API_BASE_PATH", defaultAPIBasePath),
+		LogLevel:           getEnv("LOG_LEVEL", defaultLogLevel),
+		TicketTableName:    getEnv("TICKET_TABLE_NAME", ""),
+		CognitoRegion:      getEnv("COGNITO_REGION", ""),
+		CognitoUserPoolID:  getEnv("COGNITO_USER_POOL_ID", ""),
+		CognitoAppClientID: getEnv("COGNITO_APP_CLIENT_ID", ""),
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"opsdesk/backend/internal/auth"
 	"opsdesk/backend/internal/config"
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
@@ -17,14 +18,16 @@ type Router struct {
 	config      config.Config
 	validator   *validation.Validator
 	ticketSvc   service.TicketService
+	authVerifier auth.Verifier
 	basePathMux *http.ServeMux
 }
 
-func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService) http.Handler {
+func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService, authVerifier auth.Verifier) http.Handler {
 	r := &Router{
 		config:      cfg,
 		validator:   validator,
 		ticketSvc:   ticketSvc,
+		authVerifier: authVerifier,
 		basePathMux: http.NewServeMux(),
 	}
 
@@ -39,8 +42,9 @@ func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc ser
 
 func (r *Router) registerRoutes() {
 	r.basePathMux.HandleFunc("/health", r.handleHealth)
-	r.basePathMux.HandleFunc("/tickets", r.handleTickets)
-	r.basePathMux.HandleFunc("/tickets/", r.handleTicketByPath)
+	r.basePathMux.HandleFunc("/auth/me", r.requireAuth(r.handleAuthMe))
+	r.basePathMux.HandleFunc("/tickets", r.requireAuth(r.handleTickets))
+	r.basePathMux.HandleFunc("/tickets/", r.requireAuth(r.handleTicketByPath))
 }
 
 func (r *Router) handleHealth(w http.ResponseWriter, req *http.Request) {
@@ -71,6 +75,33 @@ func (r *Router) handleTickets(w http.ResponseWriter, req *http.Request) {
 	default:
 		writeMethodNotAllowed(w)
 	}
+}
+
+func (r *Router) handleAuthMe(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
+	if req.Method != http.MethodGet {
+		writeMethodNotAllowed(w)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, "unauthorized", "authentication is required")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.AuthIdentityResponse]{
+		Data: dto.AuthIdentityResponse{
+			Subject:  identity.Subject,
+			Username: identity.Username,
+			TokenUse: identity.TokenUse,
+			Groups:   identity.Groups,
+		},
+	})
 }
 
 func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
@@ -261,6 +292,15 @@ func writeMethodNotAllowed(w http.ResponseWriter) {
 	})
 }
 
+func writeUnauthorized(w http.ResponseWriter, code, message string) {
+	writeJSON(w, http.StatusUnauthorized, dto.ErrorResponse{
+		Error: dto.ErrorBody{
+			Code:    code,
+			Message: message,
+		},
+	})
+}
+
 func writeNoContent(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -288,5 +328,28 @@ func writeServiceError(w http.ResponseWriter, err error) {
 				Message: "internal server error",
 			},
 		})
+	}
+}
+
+func (r *Router) requireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		if req.Method == http.MethodOptions {
+			next(w, req)
+			return
+		}
+
+		token, err := auth.ExtractBearerToken(req.Header.Get("Authorization"))
+		if err != nil {
+			writeUnauthorized(w, "unauthorized", "authentication is required")
+			return
+		}
+
+		identity, err := r.authVerifier.VerifyAccessToken(req.Context(), token)
+		if err != nil {
+			writeUnauthorized(w, "invalid_token", "authentication token is invalid or expired")
+			return
+		}
+
+		next(w, req.WithContext(auth.WithIdentity(req.Context(), identity)))
 	}
 }

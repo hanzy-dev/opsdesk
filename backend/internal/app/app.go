@@ -10,6 +10,7 @@ import (
 
 	"opsdesk/backend/internal/config"
 	httpapi "opsdesk/backend/internal/http"
+	"opsdesk/backend/internal/auth"
 	dynamorepo "opsdesk/backend/internal/repository/dynamodb"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/validation"
@@ -32,8 +33,12 @@ func New(cfg config.Config) (*App, error) {
 	validator := validation.New()
 	ticketRepository := dynamorepo.NewTicketRepository(dynamodb.NewFromConfig(awsCfg), cfg.TicketTableName)
 	ticketService := service.NewTicketService(ticketRepository)
+	authVerifier, err := auth.NewCognitoVerifier(cfg.CognitoRegion, cfg.CognitoUserPoolID, cfg.CognitoAppClientID)
+	if err != nil {
+		return nil, err
+	}
 
-	router := httpapi.NewRouter(cfg, validator, ticketService)
+	router := httpapi.NewRouter(cfg, validator, ticketService, authVerifier)
 
 	return &App{router: router}, nil
 }

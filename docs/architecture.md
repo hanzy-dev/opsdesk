@@ -27,7 +27,6 @@ The MVP should support a focused helpdesk workflow:
 The following items are explicitly out of scope for the MVP:
 
 - File attachments
-- Authentication with Cognito
 - Email notifications
 - Realtime updates
 - Analytics dashboards

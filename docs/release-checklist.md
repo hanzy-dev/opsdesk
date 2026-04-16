@@ -20,8 +20,8 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
 
 ## Verifikasi Aplikasi
 
-1. Buka halaman login dan pastikan copy-nya tidak lagi memakai wording demo.
-2. Masuk menggunakan placeholder sesi internal.
+1. Buka halaman login dan pastikan field email/kata sandi tampil dengan benar.
+2. Masuk menggunakan akun Cognito yang valid.
 3. Buka dashboard dan daftar tiket.
 4. Buat satu tiket.
 5. Buka tiket tersebut.
@@ -42,7 +42,6 @@ Checklist ini dipakai untuk verifikasi deployment dan baseline rilis OpsDesk pad
 
 ## Yang Sengaja Belum Dicentang Pada Batch Ini
 
-- autentikasi nyata
 - RBAC
 - assignment tiket
 - audit trail

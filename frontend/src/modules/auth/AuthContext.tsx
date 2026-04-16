@@ -1,53 +1,58 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-
-type UserSession = {
-  displayName: string;
-};
+import { loginWithCredentials, logoutCurrentSession, restoreAuthSession } from "./authService";
+import { subscribeToSession } from "./sessionStore";
+import type { AuthSession } from "./sessionStore";
 
 type AuthContextValue = {
   isAuthenticated: boolean;
-  session: UserSession | null;
-  startSession: (displayName: string) => void;
-  logout: () => void;
+  isLoading: boolean;
+  session: AuthSession | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
 };
-
-const storageKey = "opsdesk.session";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<UserSession | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const rawValue = window.localStorage.getItem(storageKey);
-    if (!rawValue) {
-      return;
-    }
+    const unsubscribe = subscribeToSession(setSession);
 
-    try {
-      const parsed = JSON.parse(rawValue) as UserSession;
-      setSession(parsed);
-    } catch {
-      window.localStorage.removeItem(storageKey);
-    }
+    void (async () => {
+      const restoredSession = await restoreAuthSession();
+      setSession(restoredSession);
+      setIsLoading(false);
+    })();
+
+    return unsubscribe;
   }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       isAuthenticated: session !== null,
+      isLoading,
       session,
-      startSession: (displayName: string) => {
-        const nextSession = { displayName };
-        setSession(nextSession);
-        window.localStorage.setItem(storageKey, JSON.stringify(nextSession));
+      login: async (email: string, password: string) => {
+        setIsLoading(true);
+        try {
+          await loginWithCredentials(email, password);
+        } finally {
+          setIsLoading(false);
+        }
       },
-      logout: () => {
-        setSession(null);
-        window.localStorage.removeItem(storageKey);
+      logout: async () => {
+        setIsLoading(true);
+        try {
+          await logoutCurrentSession();
+        } finally {
+          setIsLoading(false);
+        }
       },
     }),
-    [session],
+    [isLoading, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

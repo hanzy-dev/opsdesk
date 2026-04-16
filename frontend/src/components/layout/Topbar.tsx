@@ -6,7 +6,7 @@ type TopbarProps = {
 };
 
 export function Topbar({ title }: TopbarProps) {
-  const { session, logout } = useAuth();
+  const { session, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -21,18 +21,19 @@ export function Topbar({ title }: TopbarProps) {
           <span className="topbar__avatar">{session?.displayName.slice(0, 1) ?? "D"}</span>
           <div>
             <strong>{session?.displayName ?? "Pengguna OpsDesk"}</strong>
-            <p>Sesi placeholder</p>
+            <p>{session?.email ?? "Sesi aktif"}</p>
           </div>
         </div>
         <button
           className="button button--secondary"
-          onClick={() => {
-            logout();
+          disabled={isLoading}
+          onClick={async () => {
+            await logout();
             navigate("/login");
           }}
           type="button"
         >
-          Keluar
+          {isLoading ? "Memproses..." : "Keluar"}
         </button>
       </div>
     </header>

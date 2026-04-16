@@ -11,7 +11,7 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 ## Alur Penggunaan Utama
 
 1. Buka frontend production.
-2. Masuk menggunakan placeholder sesi internal yang tersedia saat ini.
+2. Masuk menggunakan email dan kata sandi akun internal yang tersedia di Cognito.
 3. Tinjau dashboard untuk melihat ringkasan tiket.
 4. Buka daftar tiket untuk memeriksa tiket aktif.
 5. Gunakan pencarian atau filter status bila diperlukan.
@@ -31,8 +31,8 @@ Jika hanya punya waktu singkat:
 ## Catatan Operasional
 
 - Teks UI tetap menggunakan Bahasa Indonesia.
-- Placeholder sesi pada halaman masuk hanya menjaga alur aplikasi tetap bisa diuji.
-- Batch ini belum menambahkan autentikasi nyata atau kontrol akses berbasis peran.
+- Login sekarang memakai Amazon Cognito dan bearer token JWT.
+- Batch ini belum menambahkan kontrol akses berbasis peran.
 
 ## Screenshot
 

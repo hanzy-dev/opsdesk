@@ -5,6 +5,7 @@
 OpsDesk exposes a small HTTP API for a serverless helpdesk workflow. The current implementation supports:
 
 - health checks
+- authenticated identity lookup
 - ticket creation
 - ticket listing
 - ticket detail lookup
@@ -45,7 +46,7 @@ https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 Fast inspection path:
 
 1. Open [openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml).
-2. Review the `paths` section for the six supported endpoints.
+2. Review the `paths` section for the supported endpoints.
 3. Check `TicketStatus` to see the allowed status values:
    `open`, `in_progress`, `resolved`
 4. Check `ErrorResponse` to understand the JSON error shape used by the backend.
@@ -56,17 +57,19 @@ Recommended quick checks:
 
 1. `GET /health`
    This confirms the backend is reachable.
-2. `POST /tickets`
+2. `GET /auth/me`
+   This confirms the JWT token is accepted by the backend.
+3. `POST /tickets`
    Create one ticket with a small JSON payload.
-3. `GET /tickets`
+4. `GET /tickets`
    Confirm the created ticket appears in the list.
-4. `PATCH /tickets/{id}/status`
+5. `PATCH /tickets/{id}/status`
    Change the status to `in_progress` or `resolved`.
-5. `POST /tickets/{id}/comments`
+6. `POST /tickets/{id}/comments`
    Add one comment and verify the detail response includes it.
 
 ## Notes
 
 - Timestamps are documented as UTC RFC3339 / ISO 8601 strings.
-- There is currently no authentication layer.
+- All endpoints except `GET /health` require a valid Cognito JWT bearer token.
 - The deployment baseline uses the `dev` backend environment.

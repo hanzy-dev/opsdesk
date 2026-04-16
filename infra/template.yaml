@@ -61,6 +61,53 @@ Globals:
       Stage: !Ref StageName
 
 Resources:
+  OpsDeskUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${ProjectName}-${StageName}-users"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Stage
+          Value: !Ref StageName
+
+  OpsDeskUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${ProjectName}-${StageName}-web-client"
+      UserPoolId: !Ref OpsDeskUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+
   TicketsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -124,6 +171,9 @@ Resources:
       Environment:
         Variables:
           TICKET_TABLE_NAME: !Ref TicketsTable
+          COGNITO_REGION: !Ref AWS::Region
+          COGNITO_USER_POOL_ID: !Ref OpsDeskUserPool
+          COGNITO_APP_CLIENT_ID: !Ref OpsDeskUserPoolClient
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketsTable
@@ -165,3 +215,15 @@ Outputs:
   SuggestedHealthEndpoint:
     Description: Health endpoint for post-deploy verification.
     Value: !Sub "https://${OpsDeskHttpApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/v1/health"
+
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID for OpsDesk authentication.
+    Value: !Ref OpsDeskUserPool
+
+  CognitoUserPoolClientId:
+    Description: Cognito User Pool app client ID for the frontend login flow.
+    Value: !Ref OpsDeskUserPoolClient
+
+  CognitoIssuerUrl:
+    Description: Cognito issuer URL used by backend JWT verification.
+    Value: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${OpsDeskUserPool}"
