@@ -38,7 +38,7 @@ export async function logoutCurrentSession() {
   }
 }
 
-export async function getValidAccessToken() {
+export async function getValidIdToken() {
   const session = getSessionSnapshot();
   if (!session) {
     return null;
@@ -48,7 +48,7 @@ export async function getValidAccessToken() {
     const nextSession =
       session.expiresAt - Date.now() > 60_000 ? session : await refreshAuthSession(session);
     writeStoredSession(nextSession);
-    return nextSession.accessToken;
+    return nextSession.idToken;
   } catch {
     clearStoredSession();
     return null;

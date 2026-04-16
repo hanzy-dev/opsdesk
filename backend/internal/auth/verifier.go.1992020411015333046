@@ -83,11 +83,11 @@ func NewCognitoVerifier(region, userPoolID, appClientID string) (*CognitoVerifie
 	issuer := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s", region, userPoolID)
 
 	return &CognitoVerifier{
-		httpClient:  &http.Client{Timeout: 5 * time.Second},
-		issuer:      issuer,
-		jwksURL:     issuer + "/.well-known/jwks.json",
+		httpClient: &http.Client{Timeout: 5 * time.Second},
+		issuer:     issuer,
+		jwksURL:    issuer + "/.well-known/jwks.json",
 		appClientID: appClientID,
-		keys:        make(map[string]*rsa.PublicKey),
+		keys:       make(map[string]*rsa.PublicKey),
 	}, nil
 }
 

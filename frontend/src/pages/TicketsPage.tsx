@@ -5,9 +5,11 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { TicketTable } from "../components/tickets/TicketTable";
+import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
 
 export function TicketsPage() {
+  const { permissions } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,9 +81,11 @@ export function TicketsPage() {
           <p className="section-eyebrow">Antrian layanan</p>
           <h2>Kelola tiket bantuan dan insiden</h2>
         </div>
-        <Link className="button button--primary" to="/tickets/new">
-          Buat Tiket
-        </Link>
+        {permissions.canCreateTickets ? (
+          <Link className="button button--primary" to="/tickets/new">
+            Buat Tiket
+          </Link>
+        ) : null}
       </div>
 
       <div className="metrics-grid metrics-grid--compact">
@@ -138,12 +142,16 @@ export function TicketsPage() {
       {tickets.length === 0 ? (
         <EmptyState
           title="Belum ada tiket yang tercatat"
-          description="Buat tiket pertama agar daftar operasional mulai terisi."
-          action={
+          description={
+            permissions.canCreateTickets
+              ? "Buat tiket pertama agar daftar operasional mulai terisi."
+              : "Belum ada tiket yang dapat Anda akses saat ini."
+          }
+          action={permissions.canCreateTickets ? (
             <Link className="button button--primary" to="/tickets/new">
               Buat Tiket Sekarang
             </Link>
-          }
+          ) : undefined}
         />
       ) : filteredTickets.length === 0 ? (
         <EmptyState

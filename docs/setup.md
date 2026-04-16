@@ -118,6 +118,10 @@ Batch ini membuat resource Cognito langsung di SAM:
 
 - satu User Pool
 - satu public app client untuk login frontend
+- tiga group role:
+  - `reporter`
+  - `agent`
+  - `admin`
 
 Flow yang diharapkan:
 
@@ -125,13 +129,21 @@ Flow yang diharapkan:
 2. Ambil output `CognitoUserPoolId` dan `CognitoUserPoolClientId`.
 3. Pasang keduanya ke environment variable frontend di Vercel.
 4. Buat user internal pertama di Cognito menggunakan AWS Console atau AWS CLI.
+5. Tambahkan user ke salah satu group RBAC yang sesuai.
 
 Contoh CLI untuk membuat user internal:
 
 ```bash
 aws cognito-idp admin-create-user --user-pool-id <user-pool-id> --username nama@perusahaan.com --user-attributes Name=email,Value=nama@perusahaan.com Name=email_verified,Value=true --message-action SUPPRESS
 aws cognito-idp admin-set-user-password --user-pool-id <user-pool-id> --username nama@perusahaan.com --password '<PasswordAwal123>' --permanent
+aws cognito-idp admin-add-user-to-group --user-pool-id <user-pool-id> --username nama@perusahaan.com --group-name reporter
 ```
+
+Role yang didukung:
+
+- `reporter`: buat tiket, lihat tiket milik sendiri, detail tiket milik sendiri, komentar pada tiket milik sendiri
+- `agent`: lihat tiket operasional, ubah status, tambah komentar
+- `admin`: full access
 
 ## Build and Deploy Backend
 
@@ -193,9 +205,9 @@ Karena backend CORS dikunci ke domain production final, jangan arahkan deploymen
 
 ## Release Notes For This Batch
 
-Batch ini hanya menambahkan autentikasi nyata:
+Batch ini menambahkan RBAC sederhana:
 
-- login Cognito berbasis email dan kata sandi
-- persistence sesi frontend dengan refresh token
-- proteksi endpoint backend dengan JWT Cognito
-- env vars frontend dan backend untuk auth
+- backend membaca role dari Cognito group pada ID token
+- endpoint tiket mengembalikan `403` untuk aksi yang tidak diizinkan
+- frontend menampilkan aksi sesuai role aktif
+- group Cognito `reporter`, `agent`, dan `admin` dibuat lewat SAM

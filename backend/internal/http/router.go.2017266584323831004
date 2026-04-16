@@ -24,11 +24,11 @@ type Router struct {
 
 func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService, authVerifier auth.Verifier) http.Handler {
 	r := &Router{
-		config:       cfg,
-		validator:    validator,
-		ticketSvc:    ticketSvc,
+		config:      cfg,
+		validator:   validator,
+		ticketSvc:   ticketSvc,
 		authVerifier: authVerifier,
-		basePathMux:  http.NewServeMux(),
+		basePathMux: http.NewServeMux(),
 	}
 
 	r.registerRoutes()

@@ -5,10 +5,12 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { StatusBadge } from "../components/tickets/StatusBadge";
+import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 
 export function TicketDetailPage() {
+  const { session, permissions } = useAuth();
   const { ticketId = "" } = useParams();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +20,10 @@ export function TicketDetailPage() {
   const [commentMessage, setCommentMessage] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>("open");
-  const [commentForm, setCommentForm] = useState({ message: "", authorName: "" });
+  const [commentForm, setCommentForm] = useState({
+    message: "",
+    authorName: session?.displayName ?? "",
+  });
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
 
@@ -46,6 +51,13 @@ export function TicketDetailPage() {
     void loadTicket();
   }, [ticketId]);
 
+  useEffect(() => {
+    setCommentForm((current) => ({
+      ...current,
+      authorName: session?.displayName ?? current.authorName,
+    }));
+  }, [session?.displayName]);
+
   async function handleStatusSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSavingStatus(true);
@@ -71,7 +83,7 @@ export function TicketDetailPage() {
 
     try {
       await addComment(ticketId, commentForm);
-      setCommentForm({ message: "", authorName: "" });
+      setCommentForm({ message: "", authorName: session?.displayName ?? "" });
       await loadTicket({ preserveView: true });
       setCommentMessage("Komentar baru berhasil ditambahkan ke tiket.");
     } catch (error) {
@@ -136,23 +148,27 @@ export function TicketDetailPage() {
         <article className="panel">
           <p className="section-eyebrow">Tindak lanjut</p>
           <h3>Perbarui status</h3>
-          <form className="stack-md" onSubmit={handleStatusSubmit}>
-            <label className="field">
-              <span>Status tiket</span>
-              <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value as TicketStatus)}>
-                <option value="open">Terbuka</option>
-                <option value="in_progress">Sedang Ditangani</option>
-                <option value="resolved">Selesai</option>
-              </select>
-            </label>
+          {permissions.canUpdateTicketStatus ? (
+            <form className="stack-md" onSubmit={handleStatusSubmit}>
+              <label className="field">
+                <span>Status tiket</span>
+                <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value as TicketStatus)}>
+                  <option value="open">Terbuka</option>
+                  <option value="in_progress">Sedang Ditangani</option>
+                  <option value="resolved">Selesai</option>
+                </select>
+              </label>
 
-            {statusError ? <p className="form-error">{statusError}</p> : null}
-            {statusMessage ? <p className="form-success">{statusMessage}</p> : null}
+              {statusError ? <p className="form-error">{statusError}</p> : null}
+              {statusMessage ? <p className="form-success">{statusMessage}</p> : null}
 
-            <button className="button button--primary" disabled={isSavingStatus} type="submit">
-              {isSavingStatus ? "Menyimpan status..." : "Perbarui Status"}
-            </button>
-          </form>
+              <button className="button button--primary" disabled={isSavingStatus} type="submit">
+                {isSavingStatus ? "Menyimpan status..." : "Perbarui Status"}
+              </button>
+            </form>
+          ) : (
+            <p className="form-hint">Status tiket hanya dapat diperbarui oleh petugas atau admin.</p>
+          )}
         </article>
       </div>
 
@@ -192,7 +208,7 @@ export function TicketDetailPage() {
               <input
                 value={commentForm.authorName}
                 onChange={(event) => setCommentForm((current) => ({ ...current, authorName: event.target.value }))}
-                placeholder="Nama operator"
+                placeholder="Nama penulis komentar"
               />
             </label>
 

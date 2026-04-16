@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"sort"
+	"strings"
 	"sync"
 
 	"opsdesk/backend/internal/domain"
@@ -51,6 +52,10 @@ func (r *TicketRepository) ListTickets(_ context.Context, filter repository.List
 		}
 
 		if filter.Priority != "" && ticket.Priority != filter.Priority {
+			continue
+		}
+
+		if strings.TrimSpace(filter.ReporterEmail) != "" && !strings.EqualFold(ticket.ReporterEmail, strings.TrimSpace(filter.ReporterEmail)) {
 			continue
 		}
 

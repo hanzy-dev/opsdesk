@@ -10,6 +10,7 @@ Current infrastructure scope is intentionally small:
 - one API Gateway HTTP API
 - one DynamoDB table for ticket persistence
 - one Cognito User Pool and app client for authentication
+- three Cognito groups for RBAC: `reporter`, `agent`, and `admin`
 - CloudWatch-friendly log retention defaults
 - basic environment variable wiring for the backend
 

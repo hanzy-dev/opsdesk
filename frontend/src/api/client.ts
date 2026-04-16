@@ -1,5 +1,5 @@
 import { env } from "../config/env";
-import { getValidAccessToken } from "../modules/auth/authService";
+import { getValidIdToken } from "../modules/auth/authService";
 import { clearStoredSession } from "../modules/auth/sessionStore";
 import type { ApiErrorResponse, ApiSuccessResponse } from "../types/api";
 
@@ -19,14 +19,14 @@ export class ApiError extends Error {
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
-  const accessToken = await getValidAccessToken();
+  const idToken = await getValidIdToken();
 
   try {
     response = await fetch(`${env.apiBaseUrl}${path}`, {
       ...init,
       headers: {
         "Content-Type": "application/json",
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
         ...(init?.headers ?? {}),
       },
     });
@@ -77,6 +77,8 @@ function getHttpErrorMessage(status: number) {
       return "Permintaan belum didukung untuk halaman ini.";
     case 401:
       return "Sesi Anda tidak valid atau sudah berakhir. Silakan masuk kembali.";
+    case 403:
+      return "Anda tidak memiliki izin untuk melakukan aksi ini.";
     case 500:
     case 502:
     case 503:

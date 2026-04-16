@@ -6,7 +6,7 @@ type TopbarProps = {
 };
 
 export function Topbar({ title }: TopbarProps) {
-  const { session, logout, isLoading } = useAuth();
+  const { session, roleLabel, logout, isLoading } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -21,7 +21,7 @@ export function Topbar({ title }: TopbarProps) {
           <span className="topbar__avatar">{session?.displayName.slice(0, 1) ?? "D"}</span>
           <div>
             <strong>{session?.displayName ?? "Pengguna OpsDesk"}</strong>
-            <p>{session?.email ?? "Sesi aktif"}</p>
+            <p>{roleLabel ? `${roleLabel} • ${session?.email ?? ""}` : session?.email ?? "Sesi aktif"}</p>
           </div>
         </div>
         <button

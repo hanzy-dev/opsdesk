@@ -9,6 +9,21 @@ vi.mock("../api/tickets", () => ({
   createTicket: (input: unknown) => createTicketMock(input),
 }));
 
+vi.mock("../modules/auth/AuthContext", () => ({
+  useAuth: () => ({
+    session: {
+      email: "aulia@example.com",
+      displayName: "Aulia Rahman",
+      role: "admin",
+    },
+    permissions: {
+      canCreateTickets: true,
+      canUpdateTicketStatus: true,
+      canViewOperationalTickets: true,
+    },
+  }),
+}));
+
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
 
@@ -35,7 +50,7 @@ describe("CreateTicketPage smoke tests", () => {
     fireEvent.change(screen.getByPlaceholderText("Nama lengkap"), {
       target: { value: "Aulia Rahman" },
     });
-    fireEvent.change(screen.getByPlaceholderText("nama@kampus.ac.id"), {
+    fireEvent.change(screen.getByPlaceholderText("nama@perusahaan.com"), {
       target: { value: "aulia@example.com" },
     });
 

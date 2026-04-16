@@ -2,7 +2,7 @@
 
 OpsDesk adalah aplikasi helpdesk internal berbasis cloud untuk alur tiket operasional sederhana. Repository ini berisi frontend React + Vite + TypeScript yang dideploy ke Vercel, backend Go yang dideploy ke AWS Lambda container image, API Gateway HTTP API, DynamoDB, Amazon Cognito, dan infrastruktur AWS SAM.
 
-Batch 2 mengganti placeholder login menjadi autentikasi nyata berbasis Amazon Cognito dan JWT, tanpa menambah RBAC atau fitur lanjutan lain di luar scope batch ini.
+Batch 3 menambahkan RBAC sederhana di atas autentikasi Cognito dengan tiga peran: `reporter`, `agent`, dan `admin`.
 
 ## Deployment Tetap
 
@@ -15,6 +15,7 @@ Batch 2 mengganti placeholder login menjadi autentikasi nyata berbasis Amazon Co
 OpsDesk saat ini mendukung:
 
 - login dan logout nyata berbasis Amazon Cognito
+- RBAC sederhana berbasis Cognito group
 - dashboard ringkasan tiket
 - daftar tiket
 - pembuatan tiket
@@ -27,8 +28,7 @@ OpsDesk saat ini mendukung:
 
 ## Batasan Yang Masih Berlaku
 
-- authorization masih sebatas terautentikasi vs tidak terautentikasi
-- belum ada RBAC, assignment, audit trail, attachment, atau observability lanjutan
+- belum ada assignment, audit trail, attachment, atau observability lanjutan
 - scope aplikasi tetap kecil agar arsitektur incremental dan mudah direview
 
 ## Arsitektur Singkat
@@ -117,6 +117,9 @@ Stack sekarang juga membuat resource Cognito berikut:
 
 - `OpsDeskUserPool`
 - `OpsDeskUserPoolClient`
+- `OpsDeskReporterGroup`
+- `OpsDeskAgentGroup`
+- `OpsDeskAdminGroup`
 
 Output stack yang paling penting:
 
@@ -162,19 +165,22 @@ https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
 - `PATCH /v1/tickets/{id}/status`
 - `POST /v1/tickets/{id}/comments`
 
-## Catatan Batch 2
+## Catatan Batch 3
 
-Batch ini hanya mencakup autentikasi nyata:
+Batch ini menambahkan RBAC sederhana:
 
-- login/logout Cognito dengan email dan kata sandi
-- session frontend persisten dengan refresh token
-- bearer token pada request API
-- proteksi endpoint backend dengan verifikasi JWT Cognito
-- endpoint identitas sederhana `GET /v1/auth/me`
+- `reporter`: dapat membuat tiket, melihat tiket milik sendiri, melihat detail tiket milik sendiri, dan menambah komentar pada tiket milik sendiri
+- `agent`: dapat melihat tiket operasional, memperbarui status, dan menambah komentar
+- `admin`: full access
+
+Role dibaca dari Cognito group dengan nama persis:
+
+- `reporter`
+- `agent`
+- `admin`
 
 Yang sengaja belum dikerjakan:
 
-- RBAC
 - assignment tiket
 - audit trail
 - attachment

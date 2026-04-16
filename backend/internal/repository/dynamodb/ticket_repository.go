@@ -90,7 +90,7 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 	}
 
 	expressionValues := map[string]types.AttributeValue{}
-	filterExpressions := make([]string, 0, 2)
+	filterExpressions := make([]string, 0, 3)
 
 	if filter.Status != "" {
 		filterExpressions = append(filterExpressions, "#status = :status")
@@ -102,11 +102,17 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 		expressionValues[":priority"] = &types.AttributeValueMemberS{Value: string(filter.Priority)}
 	}
 
+	if strings.TrimSpace(filter.ReporterEmail) != "" {
+		filterExpressions = append(filterExpressions, "#reporterEmail = :reporterEmail")
+		expressionValues[":reporterEmail"] = &types.AttributeValueMemberS{Value: strings.TrimSpace(filter.ReporterEmail)}
+	}
+
 	if len(filterExpressions) > 0 {
 		input.FilterExpression = aws.String(joinFilterExpressions(filterExpressions))
 		input.ExpressionAttributeNames = map[string]string{
-			"#status":   "status",
-			"#priority": "priority",
+			"#status":        "status",
+			"#priority":      "priority",
+			"#reporterEmail": "reporterEmail",
 		}
 		input.ExpressionAttributeValues = expressionValues
 	}

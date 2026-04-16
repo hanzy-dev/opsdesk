@@ -72,4 +72,6 @@ Recommended quick checks:
 
 - Timestamps are documented as UTC RFC3339 / ISO 8601 strings.
 - All endpoints except `GET /health` require a valid Cognito JWT bearer token.
+- Backend reads RBAC from Cognito groups `reporter`, `agent`, and `admin`.
+- Forbidden actions return `403` even if the frontend hides the action.
 - The deployment baseline uses the `dev` backend environment.

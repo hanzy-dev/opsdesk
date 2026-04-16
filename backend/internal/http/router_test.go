@@ -11,22 +11,26 @@ import (
 
 	"opsdesk/backend/internal/auth"
 	"opsdesk/backend/internal/config"
+	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
 	"opsdesk/backend/internal/repository/memory"
 	"opsdesk/backend/internal/service"
 	"opsdesk/backend/internal/validation"
 )
 
-const testAccessToken = "test-access-token"
+const testIDToken = "test-id-token"
 
 func TestPatchTicketStatusReturnsUpdatedTicket(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
-	ticket := createTestTicket(t, router)
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
 	time.Sleep(1100 * time.Millisecond)
 
-	recorder := performRequest(t, router, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/status", dto.UpdateTicketStatusRequest{
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
+
+	recorder := performRequest(t, agentRouter, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/status", dto.UpdateTicketStatusRequest{
 		Status: "in_progress",
 	})
 
@@ -49,10 +53,12 @@ func TestPatchTicketStatusReturnsUpdatedTicket(t *testing.T) {
 func TestPatchTicketStatusRejectsInvalidStatus(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
-	ticket := createTestTicket(t, router)
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
 
-	recorder := performRequest(t, router, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/status", dto.UpdateTicketStatusRequest{
+	recorder := performRequest(t, agentRouter, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/status", dto.UpdateTicketStatusRequest{
 		Status: "closed",
 	})
 
@@ -71,7 +77,7 @@ func TestPatchTicketStatusRejectsInvalidStatus(t *testing.T) {
 func TestPatchTicketStatusReturnsNotFoundForMissingTicket(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testAgentIdentity())
 
 	recorder := performRequest(t, router, http.MethodPatch, "/v1/tickets/TCK-9999/status", dto.UpdateTicketStatusRequest{
 		Status: "resolved",
@@ -92,7 +98,7 @@ func TestPatchTicketStatusReturnsNotFoundForMissingTicket(t *testing.T) {
 func TestPostTicketCommentReturnsCreatedComment(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 	ticket := createTestTicket(t, router)
 
 	recorder := performRequest(t, router, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
@@ -119,7 +125,7 @@ func TestPostTicketCommentReturnsCreatedComment(t *testing.T) {
 func TestPostTicketCommentRejectsInvalidPayload(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 	ticket := createTestTicket(t, router)
 
 	recorder := performRequest(t, router, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
@@ -146,7 +152,7 @@ func TestPostTicketCommentRejectsInvalidPayload(t *testing.T) {
 func TestPostTicketCommentReturnsNotFoundForMissingTicket(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 
 	recorder := performRequest(t, router, http.MethodPost, "/v1/tickets/TCK-9999/comments", dto.AddCommentRequest{
 		Message:    "Following up on the incident",
@@ -168,7 +174,7 @@ func TestPostTicketCommentReturnsNotFoundForMissingTicket(t *testing.T) {
 func TestOptionsTicketsReturnsNoContent(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 
 	recorder := performRequest(t, router, http.MethodOptions, "/v1/tickets", nil)
 
@@ -184,7 +190,7 @@ func TestOptionsTicketsReturnsNoContent(t *testing.T) {
 func TestOptionsTicketSubresourceReturnsNoContent(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 
 	recorder := performRequest(t, router, http.MethodOptions, "/v1/tickets/TCK-1001/status", nil)
 
@@ -200,7 +206,7 @@ func TestOptionsTicketSubresourceReturnsNoContent(t *testing.T) {
 func TestGetTicketsRequiresAuthentication(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 	req := httptest.NewRequest(http.MethodGet, "/v1/tickets", nil)
 	recorder := httptest.NewRecorder()
 
@@ -221,7 +227,7 @@ func TestGetTicketsRequiresAuthentication(t *testing.T) {
 func TestGetAuthMeReturnsIdentity(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter()
+	router := newTestRouter(testReporterIdentity())
 
 	recorder := performRequest(t, router, http.MethodGet, "/v1/auth/me", nil)
 
@@ -235,9 +241,88 @@ func TestGetAuthMeReturnsIdentity(t *testing.T) {
 	if response.Data.Username != "opsdesk.user@example.com" {
 		t.Fatalf("expected username to match test identity, got %q", response.Data.Username)
 	}
+
+	if response.Data.Role != "reporter" {
+		t.Fatalf("expected role reporter, got %q", response.Data.Role)
+	}
 }
 
-func newTestRouter() http.Handler {
+func TestReporterCannotUpdateTicketStatus(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	ticket := createTestTicket(t, router)
+
+	recorder := performRequest(t, router, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/status", dto.UpdateTicketStatusRequest{
+		Status: "resolved",
+	})
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", recorder.Code)
+	}
+}
+
+func TestReporterSeesOnlyOwnTickets(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+
+	createTestTicket(t, reporterRouter)
+	if err := repo.CreateTicket(context.Background(), domain.Ticket{
+		ID:            "TCK-9000",
+		Title:         "Admin ticket",
+		Description:   "Admin created ticket",
+		Status:        domain.TicketStatusOpen,
+		Priority:      domain.TicketPriorityMedium,
+		ReporterName:  "Another User",
+		ReporterEmail: "another.user@example.com",
+		CreatedAt:     time.Now().UTC(),
+		UpdatedAt:     time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("expected seeded admin ticket, got error %v", err)
+	}
+
+	listRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets", nil)
+	if listRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", listRecorder.Code)
+	}
+
+	var response dto.SuccessResponse[[]dto.TicketResponse]
+	decodeResponse(t, listRecorder, &response)
+
+	if len(response.Data) != 1 {
+		t.Fatalf("expected exactly 1 reporter ticket, got %d", len(response.Data))
+	}
+
+	if response.Data[0].ReporterEmail != "opsdesk.user@example.com" {
+		t.Fatalf("expected own reporter email, got %q", response.Data[0].ReporterEmail)
+	}
+}
+
+func TestAgentCannotCreateTicket(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testAgentIdentity())
+
+	recorder := performRequest(t, router, http.MethodPost, "/v1/tickets", dto.CreateTicketRequest{
+		Title:         "Ticket title",
+		Description:   "Ticket description",
+		Priority:      "high",
+		ReporterName:  "OpsDesk User",
+		ReporterEmail: "opsdesk.user@example.com",
+	})
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", recorder.Code)
+	}
+}
+
+func newTestRouter(identity auth.Identity) http.Handler {
+	return newTestRouterWithRepository(identity, memory.NewTicketRepository())
+}
+
+func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepository) http.Handler {
 	cfg := config.Config{
 		AppEnv:      "test",
 		APIBasePath: "/v1",
@@ -246,8 +331,8 @@ func newTestRouter() http.Handler {
 	return NewRouter(
 		cfg,
 		validation.New(),
-		service.NewTicketService(memory.NewTicketRepository()),
-		staticVerifier{},
+		service.NewTicketService(repo),
+		staticVerifier{identity: identity},
 	)
 }
 
@@ -290,7 +375,7 @@ func performRequest(t *testing.T, router http.Handler, method, path string, body
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	req.Header.Set("Authorization", "Bearer "+testAccessToken)
+	req.Header.Set("Authorization", "Bearer "+testIDToken)
 
 	recorder := httptest.NewRecorder()
 	router.ServeHTTP(recorder, req)
@@ -305,16 +390,50 @@ func decodeResponse(t *testing.T, recorder *httptest.ResponseRecorder, target an
 	}
 }
 
-type staticVerifier struct{}
+type staticVerifier struct {
+	identity auth.Identity
+}
 
-func (staticVerifier) VerifyAccessToken(_ context.Context, token string) (auth.Identity, error) {
-	if token != testAccessToken {
+func (s staticVerifier) VerifyToken(_ context.Context, token string) (auth.Identity, error) {
+	if token != testIDToken {
 		return auth.Identity{}, auth.ErrInvalidToken
 	}
 
+	return s.identity, nil
+}
+
+func testReporterIdentity() auth.Identity {
 	return auth.Identity{
 		Subject:  "user-123",
 		Username: "opsdesk.user@example.com",
-		TokenUse: "access",
-	}, nil
+		Email:    "opsdesk.user@example.com",
+		Name:     "OpsDesk User",
+		TokenUse: "id",
+		Role:     auth.RoleReporter,
+		Groups:   []string{"reporter"},
+	}
+}
+
+func testAgentIdentity() auth.Identity {
+	return auth.Identity{
+		Subject:  "agent-123",
+		Username: "agent@example.com",
+		Email:    "agent@example.com",
+		Name:     "OpsDesk Agent",
+		TokenUse: "id",
+		Role:     auth.RoleAgent,
+		Groups:   []string{"agent"},
+	}
+}
+
+func testAdminIdentity() auth.Identity {
+	return auth.Identity{
+		Subject:  "admin-123",
+		Username: "admin@example.com",
+		Email:    "admin@example.com",
+		Name:     "OpsDesk Admin",
+		TokenUse: "id",
+		Role:     auth.RoleAdmin,
+		Groups:   []string{"admin"},
+	}
 }

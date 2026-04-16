@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../../modules/auth/AuthContext";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard" },
@@ -7,6 +8,9 @@ const navItems = [
 ];
 
 export function Sidebar() {
+  const { permissions } = useAuth();
+  const visibleItems = navItems.filter((item) => item.to !== "/tickets/new" || permissions.canCreateTickets);
+
   return (
     <aside className="sidebar">
       <div className="sidebar__brand">
@@ -18,7 +22,7 @@ export function Sidebar() {
       </div>
 
       <nav className="sidebar__nav" aria-label="Navigasi utama">
-        {navItems.map((item) => (
+        {visibleItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}

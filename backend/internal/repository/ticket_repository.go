@@ -10,8 +10,9 @@ import (
 var ErrTicketNotFound = errors.New("ticket not found")
 
 type ListTicketsFilter struct {
-	Status   domain.TicketStatus
-	Priority domain.TicketPriority
+	Status        domain.TicketStatus
+	Priority      domain.TicketPriority
+	ReporterEmail string
 }
 
 type TicketRepository interface {

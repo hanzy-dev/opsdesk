@@ -15,6 +15,7 @@ info:
     - ticket comments
 
     All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
+    RBAC is enforced from Cognito groups reporter, agent, and admin.
 
 servers:
   - url: https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
@@ -162,6 +163,12 @@ paths:
                       details:
                         - field: priority
                           message: priority must be one of: low, medium, high
+        "403":
+          description: Authenticated but not allowed to create a ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /tickets/{id}:
     get:
@@ -190,6 +197,12 @@ paths:
                 error:
                   code: ticket_not_found
                   message: ticket not found
+        "403":
+          description: Authenticated but not allowed to view this ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /tickets/{id}/status:
     patch:
@@ -231,6 +244,12 @@ paths:
                       message: status must be one of: open, in_progress, resolved
         "404":
           description: Ticket was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated but not allowed to update ticket status
           content:
             application/json:
               schema:
@@ -277,6 +296,12 @@ paths:
                       message: message is required
         "404":
           description: Ticket was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated but not allowed to comment on this ticket
           content:
             application/json:
               schema:
@@ -377,7 +402,9 @@ components:
       required:
         - subject
         - username
+        - email
         - tokenUse
+        - role
       properties:
         subject:
           type: string
@@ -385,9 +412,22 @@ components:
         username:
           type: string
           example: user@example.com
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        name:
+          type: string
+          example: OpsDesk User
         tokenUse:
           type: string
-          example: access
+          example: id
+        role:
+          type: string
+          enum:
+            - reporter
+            - agent
+            - admin
         groups:
           type: array
           items:

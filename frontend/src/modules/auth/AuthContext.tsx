@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { loginWithCredentials, logoutCurrentSession, restoreAuthSession } from "./authService";
+import { canCreateTickets, canUpdateTicketStatus, canViewOperationalTickets, getRoleLabel } from "./roles";
 import { subscribeToSession } from "./sessionStore";
 import type { AuthSession } from "./sessionStore";
 
@@ -8,6 +9,12 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
   session: AuthSession | null;
+  roleLabel: string | null;
+  permissions: {
+    canCreateTickets: boolean;
+    canUpdateTicketStatus: boolean;
+    canViewOperationalTickets: boolean;
+  };
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -35,6 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated: session !== null,
       isLoading,
       session,
+      roleLabel: session ? getRoleLabel(session.role) : null,
+      permissions: {
+        canCreateTickets: session ? canCreateTickets(session.role) : false,
+        canUpdateTicketStatus: session ? canUpdateTicketStatus(session.role) : false,
+        canViewOperationalTickets: session ? canViewOperationalTickets(session.role) : false,
+      },
       login: async (email: string, password: string) => {
         setIsLoading(true);
         try {

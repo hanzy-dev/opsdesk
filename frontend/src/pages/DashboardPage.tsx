@@ -5,10 +5,12 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { TicketTable } from "../components/tickets/TicketTable";
+import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 
 export function DashboardPage() {
+  const { permissions } = useAuth();
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,12 +89,16 @@ export function DashboardPage() {
       {tickets.length === 0 ? (
         <EmptyState
           title="Belum ada tiket"
-          description="Mulai dengan membuat tiket baru untuk melihat alur kerja OpsDesk."
-          action={
+          description={
+            permissions.canCreateTickets
+              ? "Mulai dengan membuat tiket baru untuk melihat alur kerja OpsDesk."
+              : "Belum ada tiket yang dapat Anda akses saat ini."
+          }
+          action={permissions.canCreateTickets ? (
             <Link className="button button--primary" to="/tickets/new">
               Buat Tiket
             </Link>
-          }
+          ) : undefined}
         />
       ) : (
         <div className="stack-lg">

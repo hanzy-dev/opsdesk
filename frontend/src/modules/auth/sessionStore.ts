@@ -5,6 +5,8 @@ export type AuthSession = {
   expiresAt: number;
   email: string;
   displayName: string;
+  groups: string[];
+  role: "reporter" | "agent" | "admin";
 };
 
 const storageKey = "opsdesk.auth.session";

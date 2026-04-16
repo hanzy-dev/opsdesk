@@ -1,4 +1,5 @@
 import { env } from "../../config/env";
+import { resolveRole } from "./roles";
 import type { AuthSession } from "./sessionStore";
 
 type CognitoAuthenticationResult = {
@@ -82,6 +83,8 @@ function buildAuthSession(result: CognitoAuthenticationResult | undefined, fallb
   const idTokenClaims = parseJwtPayload(result.IdToken);
   const email = getStringClaim(idTokenClaims, "email");
 
+  const groups = getStringArrayClaim(idTokenClaims, "cognito:groups");
+
   return {
     accessToken: result.AccessToken,
     idToken: result.IdToken,
@@ -89,6 +92,8 @@ function buildAuthSession(result: CognitoAuthenticationResult | undefined, fallb
     expiresAt: Date.now() + result.ExpiresIn * 1000,
     email,
     displayName: getDisplayName(idTokenClaims, email),
+    groups,
+    role: resolveRole(groups),
   };
 }
 
@@ -112,6 +117,15 @@ function getStringClaim(claims: JwtPayload, name: string) {
 function getOptionalStringClaim(claims: JwtPayload, name: string) {
   const value = claims[name];
   return typeof value === "string" && value.trim() !== "" ? value : undefined;
+}
+
+function getStringArrayClaim(claims: JwtPayload, name: string) {
+  const value = claims[name];
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string => typeof item === "string" && item.trim() !== "");
 }
 
 function parseJwtPayload(token: string): JwtPayload {

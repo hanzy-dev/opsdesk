@@ -15,8 +15,8 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 3. Tinjau dashboard untuk melihat ringkasan tiket.
 4. Buka daftar tiket untuk memeriksa tiket aktif.
 5. Gunakan pencarian atau filter status bila diperlukan.
-6. Buat tiket baru dari halaman "Buat Tiket".
-7. Buka detail tiket untuk mengubah status dan menambahkan komentar.
+6. Jika akun Anda bertipe pelapor atau admin, buat tiket baru dari halaman "Buat Tiket".
+7. Buka detail tiket untuk menambahkan komentar, dan jika akun Anda petugas atau admin, ubah status tiket.
 
 ## Jalur Verifikasi Cepat
 
@@ -25,14 +25,14 @@ Jika hanya punya waktu singkat:
 1. Pastikan dashboard dapat dimuat tanpa error.
 2. Pastikan daftar tiket menampilkan data.
 3. Buat satu tiket baru.
-4. Ubah status tiket pada halaman detail.
+4. Jika login sebagai petugas, ubah status tiket pada halaman detail.
 5. Tambahkan satu komentar dan pastikan tampil pada detail tiket.
 
 ## Catatan Operasional
 
 - Teks UI tetap menggunakan Bahasa Indonesia.
 - Login sekarang memakai Amazon Cognito dan bearer token JWT.
-- Batch ini belum menambahkan kontrol akses berbasis peran.
+- RBAC sederhana memakai Cognito group `reporter`, `agent`, dan `admin`.
 
 ## Screenshot
 

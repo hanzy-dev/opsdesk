@@ -4,14 +4,33 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TicketsPage } from "./TicketsPage";
 
 const listTicketsMock = vi.fn();
+const useAuthMock = vi.fn(() => ({
+  permissions: {
+    canCreateTickets: true,
+    canUpdateTicketStatus: false,
+    canViewOperationalTickets: false,
+  },
+}));
 
 vi.mock("../api/tickets", () => ({
   listTickets: () => listTicketsMock(),
 }));
 
+vi.mock("../modules/auth/AuthContext", () => ({
+  useAuth: () => useAuthMock(),
+}));
+
 describe("TicketsPage smoke tests", () => {
   afterEach(() => {
     listTicketsMock.mockReset();
+    useAuthMock.mockReset();
+    useAuthMock.mockReturnValue({
+      permissions: {
+        canCreateTickets: true,
+        canUpdateTicketStatus: false,
+        canViewOperationalTickets: false,
+      },
+    });
   });
 
   it("renders ticket data and supports search plus status filter", async () => {
@@ -72,5 +91,25 @@ describe("TicketsPage smoke tests", () => {
       expect(screen.getByText("Reset akses printer lab")).toBeInTheDocument();
       expect(screen.queryByText("Gangguan login SSO")).not.toBeInTheDocument();
     });
+  });
+
+  it("hides create ticket action for agent accounts", async () => {
+    useAuthMock.mockReturnValue({
+      permissions: {
+        canCreateTickets: false,
+        canUpdateTicketStatus: true,
+        canViewOperationalTickets: true,
+      },
+    });
+    listTicketsMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter>
+        <TicketsPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Belum ada tiket yang tercatat")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Buat Tiket" })).not.toBeInTheDocument();
   });
 });

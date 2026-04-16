@@ -2,6 +2,8 @@ import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { createTicket } from "../api/tickets";
+import { ErrorState } from "../components/common/ErrorState";
+import { useAuth } from "../modules/auth/AuthContext";
 import type { CreateTicketInput } from "../types/ticket";
 
 const initialForm: CreateTicketInput = {
@@ -13,6 +15,7 @@ const initialForm: CreateTicketInput = {
 };
 
 export function CreateTicketPage() {
+  const { session, permissions } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,7 +31,16 @@ export function CreateTicketPage() {
     setFieldErrors({});
 
     try {
-      const ticket = await createTicket(form);
+      const payload: CreateTicketInput =
+        session?.role === "reporter"
+          ? {
+              ...form,
+              reporterName: session.displayName,
+              reporterEmail: session.email,
+            }
+          : form;
+
+      const ticket = await createTicket(payload);
       navigate(`/tickets/${ticket.id}`);
     } catch (error) {
       if (error instanceof ApiError) {
@@ -41,6 +53,15 @@ export function CreateTicketPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (!permissions.canCreateTickets) {
+    return (
+      <ErrorState
+        title="Aksi belum diizinkan"
+        message="Akun petugas tidak dapat membuat tiket baru pada tahap ini."
+      />
+    );
   }
 
   return (
@@ -94,26 +115,44 @@ export function CreateTicketPage() {
             {fieldErrors.description ? <small>{fieldErrors.description}</small> : null}
           </label>
 
-          <label className="field">
-            <span>Nama pelapor</span>
-            <input
-              value={form.reporterName}
-              onChange={(event) => setForm((current) => ({ ...current, reporterName: event.target.value }))}
-              placeholder="Nama lengkap"
-            />
-            {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
-          </label>
+          {session?.role === "reporter" ? (
+            <>
+              <label className="field">
+                <span>Nama pelapor</span>
+                <input readOnly value={session.displayName} />
+                {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
+              </label>
 
-          <label className="field">
-            <span>Email pelapor</span>
-            <input
-              value={form.reporterEmail}
-              onChange={(event) => setForm((current) => ({ ...current, reporterEmail: event.target.value }))}
-              placeholder="nama@kampus.ac.id"
-              type="email"
-            />
-            {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
-          </label>
+              <label className="field">
+                <span>Email pelapor</span>
+                <input readOnly type="email" value={session.email} />
+                {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
+              </label>
+            </>
+          ) : (
+            <>
+              <label className="field">
+                <span>Nama pelapor</span>
+                <input
+                  value={form.reporterName}
+                  onChange={(event) => setForm((current) => ({ ...current, reporterName: event.target.value }))}
+                  placeholder="Nama lengkap"
+                />
+                {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
+              </label>
+
+              <label className="field">
+                <span>Email pelapor</span>
+                <input
+                  value={form.reporterEmail}
+                  onChange={(event) => setForm((current) => ({ ...current, reporterEmail: event.target.value }))}
+                  placeholder="nama@perusahaan.com"
+                  type="email"
+                />
+                {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
+              </label>
+            </>
+          )}
         </div>
 
         {errorMessage ? <p className="form-error">{errorMessage}</p> : null}

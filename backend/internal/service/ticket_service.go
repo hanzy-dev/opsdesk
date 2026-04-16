@@ -23,8 +23,9 @@ type CreateTicketInput struct {
 }
 
 type ListTicketsInput struct {
-	Status   domain.TicketStatus
-	Priority domain.TicketPriority
+	Status        domain.TicketStatus
+	Priority      domain.TicketPriority
+	ReporterEmail string
 }
 
 type UpdateTicketStatusInput struct {
@@ -81,8 +82,9 @@ func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInpu
 
 func (s *ticketService) ListTickets(ctx context.Context, input ListTicketsInput) ([]domain.Ticket, error) {
 	return s.repo.ListTickets(ctx, repository.ListTicketsFilter{
-		Status:   input.Status,
-		Priority: input.Priority,
+		Status:        input.Status,
+		Priority:      input.Priority,
+		ReporterEmail: strings.TrimSpace(input.ReporterEmail),
 	})
 }
 

@@ -108,6 +108,27 @@ Resources:
         - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
 
+  OpsDeskReporterGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: reporter
+      Description: Reporter role for internal ticket submitters.
+      UserPoolId: !Ref OpsDeskUserPool
+
+  OpsDeskAgentGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: agent
+      Description: Agent role for operational ticket handling.
+      UserPoolId: !Ref OpsDeskUserPool
+
+  OpsDeskAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      Description: Admin role with full OpsDesk access.
+      UserPoolId: !Ref OpsDeskUserPool
+
   TicketsTable:
     Type: AWS::DynamoDB::Table
     Properties:
