@@ -84,11 +84,9 @@ Resources:
           AttributeDataType: String
           Mutable: true
           Required: true
-      Tags:
-        - Key: Project
-          Value: !Ref ProjectName
-        - Key: Stage
-          Value: !Ref StageName
+      UserPoolTags:
+        Project: !Ref ProjectName
+        Stage: !Ref StageName
 
   OpsDeskUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
