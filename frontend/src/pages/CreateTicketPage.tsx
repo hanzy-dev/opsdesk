@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import { createTicket } from "../api/tickets";
 import { ErrorState } from "../components/common/ErrorState";
 import { useAuth } from "../modules/auth/AuthContext";
+import { getRoleLabel } from "../modules/auth/roles";
 import type { CreateTicketInput } from "../types/ticket";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 
@@ -16,7 +17,7 @@ const initialForm: CreateTicketInput = {
 };
 
 export function CreateTicketPage() {
-  const { session, permissions } = useAuth();
+  const { session, profile, permissions } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,6 +25,16 @@ export function CreateTicketPage() {
   const [errorReferenceId, setErrorReferenceId] = useState<string | null>(null);
   const [submitNotice, setSubmitNotice] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const effectiveIdentity = profile
+    ? profile
+    : session
+      ? {
+          subject: session.subject,
+          displayName: session.displayName,
+          email: session.email,
+          role: session.role,
+        }
+      : null;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,14 +45,11 @@ export function CreateTicketPage() {
     setFieldErrors({});
 
     try {
-      const payload: CreateTicketInput =
-        session?.role === "reporter"
-          ? {
-              ...form,
-              reporterName: session.displayName,
-              reporterEmail: session.email,
-            }
-          : form;
+      const payload: CreateTicketInput = {
+        ...form,
+        reporterName: effectiveIdentity?.displayName ?? "",
+        reporterEmail: effectiveIdentity?.email ?? "",
+      };
 
       const ticket = await createTicket(payload);
       navigate(`/tickets/${ticket.id}`);
@@ -74,14 +82,34 @@ export function CreateTicketPage() {
       <div className="hero-card">
         <p className="section-eyebrow">Input tiket</p>
         <h2>Buat tiket baru</h2>
-        <p>Gunakan formulir ini untuk membuat tiket insiden atau permintaan bantuan baru.</p>
+        <p>Gunakan formulir ini untuk membuat tiket insiden atau permintaan bantuan baru tanpa mengisi ulang identitas akun.</p>
       </div>
+
+      <article className="panel profile-summary profile-summary--compact">
+        <div className="profile-summary__header">
+          <div className="profile-summary__meta">
+            <div>
+              <span>Pelapor terautentikasi</span>
+              <strong>{effectiveIdentity?.displayName ?? "Pengguna OpsDesk"}</strong>
+            </div>
+            <div>
+              <span>Email akun</span>
+              <strong>{effectiveIdentity?.email ?? "Email belum tersedia"}</strong>
+            </div>
+            <div>
+              <span>ID akun</span>
+              <strong className="profile-summary__subtle">{effectiveIdentity?.subject ?? "ID belum tersedia"}</strong>
+            </div>
+          </div>
+          <span className="role-pill">{effectiveIdentity ? getRoleLabel(effectiveIdentity.role) : "Akun"}</span>
+        </div>
+      </article>
 
       <form className="panel form-panel" onSubmit={handleSubmit}>
         <div className="form-intro">
           <p>
-            Isi informasi inti tiket secara singkat dan jelas. Setelah tersimpan, Anda akan langsung diarahkan ke detail
-            tiket untuk melanjutkan tindak lanjut.
+            Isi informasi inti tiket secara singkat dan jelas. Identitas pelapor diambil dari sesi masuk yang aktif agar
+            pencatatan tetap konsisten.
           </p>
         </div>
 
@@ -120,44 +148,19 @@ export function CreateTicketPage() {
             {fieldErrors.description ? <small>{fieldErrors.description}</small> : null}
           </label>
 
-          {session?.role === "reporter" ? (
-            <>
-              <label className="field">
-                <span>Nama pelapor</span>
-                <input readOnly value={session.displayName} />
-                {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
-              </label>
+          <label className="field">
+            <span>Nama pelapor</span>
+            <input readOnly value={effectiveIdentity?.displayName ?? ""} />
+            <small>Diambil langsung dari identitas akun yang sedang masuk.</small>
+            {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
+          </label>
 
-              <label className="field">
-                <span>Email pelapor</span>
-                <input readOnly type="email" value={session.email} />
-                {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
-              </label>
-            </>
-          ) : (
-            <>
-              <label className="field">
-                <span>Nama pelapor</span>
-                <input
-                  value={form.reporterName}
-                  onChange={(event) => setForm((current) => ({ ...current, reporterName: event.target.value }))}
-                  placeholder="Nama lengkap"
-                />
-                {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
-              </label>
-
-              <label className="field">
-                <span>Email pelapor</span>
-                <input
-                  value={form.reporterEmail}
-                  onChange={(event) => setForm((current) => ({ ...current, reporterEmail: event.target.value }))}
-                  placeholder="nama@perusahaan.com"
-                  type="email"
-                />
-                {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
-              </label>
-            </>
-          )}
+          <label className="field">
+            <span>Email pelapor</span>
+            <input readOnly type="email" value={effectiveIdentity?.email ?? ""} />
+            <small>Email ini akan digunakan pada metadata tiket.</small>
+            {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
+          </label>
         </div>
 
         {errorMessage ? (

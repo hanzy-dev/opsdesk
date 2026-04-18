@@ -27,6 +27,12 @@ vi.mock("../modules/auth/AuthContext", () => ({
       displayName: "Aulia Rahman",
       role: "admin",
     },
+    profile: {
+      subject: "admin-123",
+      email: "aulia@example.com",
+      displayName: "Aulia Rahman",
+      role: "admin",
+    },
     permissions: {
       canAssignTickets: true,
       canCreateTickets: true,
@@ -59,12 +65,6 @@ describe("CreateTicketPage smoke tests", () => {
     fireEvent.change(screen.getByPlaceholderText("Jelaskan gejala, dampak, dan konteks singkat."), {
       target: { value: "Dashboard gagal memuat data tiket selama jam sibuk." },
     });
-    fireEvent.change(screen.getByPlaceholderText("Nama lengkap"), {
-      target: { value: "Aulia Rahman" },
-    });
-    fireEvent.change(screen.getByPlaceholderText("nama@perusahaan.com"), {
-      target: { value: "aulia@example.com" },
-    });
 
     fireEvent.click(screen.getByRole("button", { name: "Simpan Tiket" }));
 
@@ -81,6 +81,14 @@ describe("CreateTicketPage smoke tests", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith("/tickets/TCK-2001");
     });
+  });
+
+  it("shows reporter identity as derived read-only fields", () => {
+    render(<CreateTicketPage />);
+
+    expect(screen.getByDisplayValue("Aulia Rahman")).toHaveAttribute("readonly");
+    expect(screen.getByDisplayValue("aulia@example.com")).toHaveAttribute("readonly");
+    expect(screen.getByText("Diambil langsung dari identitas akun yang sedang masuk.")).toBeInTheDocument();
   });
 
   it("shows backend reference code when ticket creation fails", async () => {

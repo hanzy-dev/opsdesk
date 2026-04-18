@@ -10,7 +10,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-import { TicketDetailPage } from "./pages/TicketDetailPage";
+import { TicketDetailPage } from "./pages/TicketDetailScreen";
 import { TicketsPage } from "./pages/TicketsPage";
 
 export default function App() {
