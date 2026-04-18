@@ -54,4 +54,14 @@ describe("AccountSettingsPage", () => {
 
     expect(await screen.findByText("Kata sandi berhasil diubah.")).toBeInTheDocument();
   });
+
+  it("shows a direct link to the API documentation viewer", () => {
+    render(
+      <MemoryRouter>
+        <AccountSettingsPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: "Dokumentasi API" })).toHaveAttribute("href", "/api-docs");
+  });
 });

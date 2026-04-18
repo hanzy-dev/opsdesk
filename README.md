@@ -152,7 +152,10 @@ Kebijakan assignment saat ini sengaja dibatasi:
 
 ## Dokumentasi API
 
-Kontrak API yang machine-readable tersedia di [docs/openapi.yaml](./docs/openapi.yaml). Referensi pendukung:
+Kontrak API yang machine-readable tersedia di [docs/openapi.yaml](./docs/openapi.yaml).
+Viewer Swagger UI yang terhubung ke kontrak yang sama tersedia di `https://opsdesk-teal.vercel.app/api-docs`.
+
+Referensi pendukung:
 
 - [docs/api.md](./docs/api.md)
 - [docs/architecture.md](./docs/architecture.md)

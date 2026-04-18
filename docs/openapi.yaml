@@ -5,6 +5,8 @@ info:
   description: |
     OpenAPI specification for the current OpsDesk backend implementation.
 
+    The deployed API is exposed through AWS API Gateway HTTP API and served by a Go backend running on AWS Lambda container image. Data persistence uses DynamoDB, authentication uses Amazon Cognito, and ticket attachments use private Amazon S3 objects with presigned URLs.
+
     The API provides a simple serverless helpdesk workflow for:
     - health checks
     - authenticated identity lookup
@@ -21,16 +23,24 @@ info:
     All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
     RBAC is enforced from Cognito groups reporter, agent, and admin.
     Error responses may include requestId for operational troubleshooting.
+    All paths below are relative to the server base URL that already ends with /v1.
+externalDocs:
+  description: Interactive Swagger UI viewer hosted on the frontend deployment
+  url: https://opsdesk-teal.vercel.app/api-docs
 
 servers:
   - url: https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
-    description: Deployed API Gateway URL for the OpsDesk dev environment
+    description: AWS API Gateway HTTP API base URL for the deployed dev environment
 
 tags:
   - name: System
+    description: Operational visibility endpoints for deployment and runtime health.
   - name: Auth
+    description: Identity lookup endpoints backed by Cognito JWT verification.
   - name: Profile
+    description: Current-account profile retrieval and partial update operations.
   - name: Tickets
+    description: Ticket CRUD-style workflow, activities, comments, assignment, and attachment operations.
 
 paths:
   /health:
@@ -638,6 +648,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Paste an Amazon Cognito ID token in the format `Bearer <JWT>` to call protected endpoints from Swagger UI.
   parameters:
     TicketId:
       in: path

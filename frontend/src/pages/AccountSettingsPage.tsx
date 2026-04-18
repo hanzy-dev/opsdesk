@@ -123,6 +123,9 @@ export function AccountSettingsPage() {
                 <Link className="button button--secondary" to="/profile">
                   Buka Profil
                 </Link>
+                <Link className="button button--ghost" to="/api-docs">
+                  Dokumentasi API
+                </Link>
               </div>
             </div>
           </div>

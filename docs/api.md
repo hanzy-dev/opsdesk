@@ -16,6 +16,7 @@ OpsDesk mengekspos HTTP API kecil yang mengikuti implementasi backend saat ini. 
 - structured error response dengan `requestId`
 
 The authoritative machine-readable contract is in [openapi.yaml](./openapi.yaml).
+Viewer interaktif yang memakai source of truth yang sama tersedia di `https://opsdesk-teal.vercel.app/api-docs`.
 
 ## How To Read The OpenAPI File
 
@@ -67,10 +68,11 @@ https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 Fast inspection path:
 
 1. Open [openapi.yaml](./openapi.yaml).
-2. Review the `paths` section for the supported endpoints.
-3. Check `TicketStatus` to see the allowed status values:
+2. Atau buka viewer Swagger UI di `https://opsdesk-teal.vercel.app/api-docs`.
+3. Review the `paths` section for the supported endpoints.
+4. Check `TicketStatus` to see the allowed status values:
    `open`, `in_progress`, `resolved`
-4. Check `ErrorResponse` untuk bentuk JSON error, termasuk `requestId`.
+5. Check `ErrorResponse` untuk bentuk JSON error, termasuk `requestId`.
 
 ## Quick Testing Suggestions
 

@@ -1,5 +1,7 @@
+import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { LoadingState } from "./components/common/LoadingState";
 import { ProtectedRoute } from "./components/routing/ProtectedRoute";
 import { PublicOnlyRoute } from "./components/routing/PublicOnlyRoute";
 import { CreateTicketPage } from "./pages/CreateTicketPage";
@@ -12,6 +14,11 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { TicketDetailPage } from "./pages/TicketDetailScreen";
 import { TicketsPage } from "./pages/TicketsPage";
+
+const ApiDocsPage = lazy(async () => {
+  const module = await import("./pages/ApiDocsPage");
+  return { default: module.ApiDocsPage };
+});
 
 export default function App() {
   return (
@@ -38,6 +45,14 @@ export default function App() {
           <PublicOnlyRoute>
             <ResetPasswordPage />
           </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/api-docs"
+        element={
+          <Suspense fallback={<LoadingState label="Menyiapkan dokumentasi API..." lines={6} />}>
+            <ApiDocsPage />
+          </Suspense>
         }
       />
       <Route

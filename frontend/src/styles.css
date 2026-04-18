@@ -260,6 +260,142 @@ textarea:focus-visible {
   transform: translateY(-1px);
 }
 
+.button--ghost {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.button--ghost:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border-strong);
+}
+
+.stack-sm {
+  display: grid;
+  gap: 12px;
+}
+
+.api-docs-page {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+  display: grid;
+  gap: 24px;
+}
+
+.api-docs-page__hero {
+  overflow: hidden;
+}
+
+.api-docs-page__hero-copy {
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.api-docs-page__hero-copy h1,
+.api-docs-page__summary h2,
+.api-docs-viewer h2 {
+  margin: 0;
+}
+
+.api-docs-page__hero-copy p,
+.api-docs-page__summary p,
+.api-docs-page__summary li,
+.api-docs-viewer p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.api-docs-page__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.api-docs-page__meta,
+.api-docs-page__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.api-docs-page__meta-card {
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(0, 0, 0, 0.12);
+  display: grid;
+  gap: 8px;
+}
+
+.api-docs-page__meta-card span {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.api-docs-page__meta-card strong {
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.api-docs-page__summary {
+  display: grid;
+  gap: 16px;
+}
+
+.api-docs-page__list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.api-docs-page__hint {
+  font-size: 0.94rem;
+}
+
+.api-docs-viewer__frame {
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: var(--shadow-soft);
+}
+
+.api-docs-viewer__frame .swagger-ui {
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+}
+
+.api-docs-viewer__frame .swagger-ui .topbar {
+  display: none;
+}
+
+.api-docs-viewer__frame .swagger-ui .info {
+  margin: 0;
+  padding: 28px 28px 0;
+}
+
+.api-docs-viewer__frame .swagger-ui .scheme-container {
+  box-shadow: none;
+  background: #f7f3ee;
+}
+
+.api-docs-viewer__frame .swagger-ui .information-container,
+.api-docs-viewer__frame .swagger-ui .scheme-container .wrapper,
+.api-docs-viewer__frame .swagger-ui .wrapper {
+  max-width: none;
+}
+
+.api-docs-viewer__frame .swagger-ui .opblock-tag {
+  border-bottom-color: rgba(21, 17, 19, 0.08);
+}
+
 .sidebar__link--active {
   box-shadow:
     inset 0 0 0 1px rgba(239, 142, 83, 0.14),
