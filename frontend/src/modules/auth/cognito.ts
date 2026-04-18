@@ -62,6 +62,30 @@ export async function signOutFromCognito(accessToken: string) {
   });
 }
 
+export async function requestPasswordReset(email: string) {
+  await cognitoRequest("AWSCognitoIdentityProviderService.ForgotPassword", {
+    ClientId: env.cognitoClientId,
+    Username: email.trim(),
+  });
+}
+
+export async function confirmPasswordReset(email: string, confirmationCode: string, nextPassword: string) {
+  await cognitoRequest("AWSCognitoIdentityProviderService.ConfirmForgotPassword", {
+    ClientId: env.cognitoClientId,
+    Username: email.trim(),
+    ConfirmationCode: confirmationCode.trim(),
+    Password: nextPassword,
+  });
+}
+
+export async function changePassword(accessToken: string, previousPassword: string, proposedPassword: string) {
+  await cognitoRequest("AWSCognitoIdentityProviderService.ChangePassword", {
+    AccessToken: accessToken,
+    PreviousPassword: previousPassword,
+    ProposedPassword: proposedPassword,
+  });
+}
+
 export async function ensureFreshSession(session: AuthSession) {
   if (session.expiresAt - Date.now() > refreshLeewayMs) {
     return session;
@@ -185,6 +209,14 @@ function resolveCognitoErrorMessage(errorType?: string, message?: string) {
       return "Akun belum dikonfirmasi. Hubungi administrator.";
     case "PasswordResetRequiredException":
       return "Akun memerlukan reset kata sandi sebelum dapat digunakan.";
+    case "CodeMismatchException":
+      return "Kode verifikasi tidak sesuai. Periksa kembali lalu coba lagi.";
+    case "ExpiredCodeException":
+      return "Kode verifikasi sudah kedaluwarsa. Minta kode baru lalu coba lagi.";
+    case "LimitExceededException":
+      return "Batas percobaan tercapai untuk sementara. Coba lagi beberapa saat.";
+    case "InvalidPasswordException":
+      return "Kata sandi baru belum memenuhi kebijakan keamanan yang berlaku.";
     case "TooManyRequestsException":
       return "Terlalu banyak percobaan masuk. Coba lagi beberapa saat.";
     default:

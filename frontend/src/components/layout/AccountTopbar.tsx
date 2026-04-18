@@ -74,6 +74,14 @@ export function AccountTopbar({ title }: AccountTopbarProps) {
               >
                 Profil
               </Link>
+              <Link
+                className="topbar__menu-link"
+                onClick={() => setIsOpen(false)}
+                role="menuitem"
+                to="/settings"
+              >
+                Pengaturan Akun
+              </Link>
               <button
                 className="topbar__menu-link topbar__menu-link--button"
                 disabled={isLoading}

@@ -1,5 +1,13 @@
 import { clearStoredSession, getSessionSnapshot, readStoredSession, writeStoredSession } from "./sessionStore";
-import { ensureFreshSession, refreshAuthSession, signInWithPassword, signOutFromCognito } from "./cognito";
+import {
+  changePassword,
+  confirmPasswordReset,
+  ensureFreshSession,
+  refreshAuthSession,
+  requestPasswordReset,
+  signInWithPassword,
+  signOutFromCognito,
+} from "./cognito";
 
 export async function restoreAuthSession() {
   const session = readStoredSession();
@@ -53,4 +61,21 @@ export async function getValidIdToken() {
     clearStoredSession();
     return null;
   }
+}
+
+export async function startForgotPassword(email: string) {
+  await requestPasswordReset(email);
+}
+
+export async function completeForgotPassword(email: string, confirmationCode: string, nextPassword: string) {
+  await confirmPasswordReset(email, confirmationCode, nextPassword);
+}
+
+export async function changeCurrentPassword(currentPassword: string, nextPassword: string) {
+  const session = getSessionSnapshot();
+  if (!session) {
+    throw new Error("Sesi tidak tersedia. Silakan masuk kembali.");
+  }
+
+  await changePassword(session.accessToken, currentPassword, nextPassword);
 }

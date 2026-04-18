@@ -28,6 +28,7 @@ Konstanta deployment tetap untuk repository ini:
 - Autentikasi Amazon Cognito dengan alur login nyata
 - Kontrol akses berbasis peran untuk `reporter`, `agent`, dan `admin`
 - Fondasi profil akun dengan nama tampilan dan avatar yang dapat diperbarui
+- Pengaturan akun dan alur kata sandi berbasis Amazon Cognito
 - Pembuatan tiket, daftar tiket, detail tiket, komentar, dan pembaruan status
 - Ownership tiket untuk kontrol akses mandiri
 - Alur self-assignment untuk `agent` dan `admin`

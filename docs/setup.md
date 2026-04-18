@@ -21,6 +21,14 @@ Environment variable yang dipakai frontend:
 - `VITE_COGNITO_USER_POOL_ID`
 - `VITE_COGNITO_CLIENT_ID`
 
+Flow akun Cognito yang digunakan frontend pada batch ini:
+
+- login dengan `USER_PASSWORD_AUTH`
+- refresh token session
+- forgot password melalui email verifikasi
+- konfirmasi reset password
+- change password untuk pengguna yang sedang login
+
 Nilai yang distandarkan untuk deployment aktif:
 
 ```text

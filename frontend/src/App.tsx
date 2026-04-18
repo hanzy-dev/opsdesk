@@ -3,10 +3,13 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./components/routing/ProtectedRoute";
 import { PublicOnlyRoute } from "./components/routing/PublicOnlyRoute";
 import { CreateTicketPage } from "./pages/CreateTicketPage";
+import { AccountSettingsPage } from "./pages/AccountSettingsPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProfilePage } from "./pages/ProfilePage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { TicketDetailPage } from "./pages/TicketDetailPage";
 import { TicketsPage } from "./pages/TicketsPage";
 
@@ -22,6 +25,22 @@ export default function App() {
         }
       />
       <Route
+        path="/forgot-password"
+        element={
+          <PublicOnlyRoute>
+            <ForgotPasswordPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicOnlyRoute>
+            <ResetPasswordPage />
+          </PublicOnlyRoute>
+        }
+      />
+      <Route
         path="/"
         element={
           <ProtectedRoute>
@@ -32,6 +51,7 @@ export default function App() {
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<AccountSettingsPage />} />
         <Route path="tickets" element={<TicketsPage />} />
         <Route path="tickets/new" element={<CreateTicketPage />} />
         <Route path="tickets/:ticketId" element={<TicketDetailPage />} />

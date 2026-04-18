@@ -20,6 +20,8 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 8. Jika akun Anda petugas atau admin, gunakan tombol penugasan untuk mengambil tanggung jawab tiket ke akun Anda.
 9. Gunakan bagian "Lampiran" pada detail tiket untuk mengunggah atau membuka file pendukung.
 10. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
+11. Buka menu akun di topbar untuk mengakses halaman "Profil" dan "Pengaturan Akun".
+12. Gunakan "Pengaturan Akun" untuk mengubah kata sandi saat masih login.
 
 ## Jalur Verifikasi Cepat
 
@@ -46,6 +48,8 @@ Jika hanya punya waktu singkat:
 - Login sekarang memakai Amazon Cognito dan bearer token JWT.
 - RBAC sederhana memakai Cognito group `reporter`, `agent`, dan `admin`.
 - Ownership tiket mengikuti identitas login, dan assignment operator masih memakai kebijakan sederhana "tugaskan ke saya".
+- Akun kini memiliki halaman profil dan halaman pengaturan akun yang terpisah.
+- Reset kata sandi untuk akun yang lupa kata sandi mengikuti alur email verifikasi Amazon Cognito.
 - Aktivitas tiket dicatat append-only dan ditampilkan pada halaman detail.
 - Daftar tiket sekarang memakai query server-side agar pencarian dan pagination tetap konsisten untuk data yang lebih besar.
 - Lampiran memakai S3 private dan diakses melalui URL presigned yang berlaku sementara.

@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../modules/auth/AuthContext";
 
 export function LoginPage() {
@@ -60,6 +60,12 @@ export function LoginPage() {
             {isLoading ? "Memproses Masuk..." : "Masuk"}
           </button>
         </form>
+
+        <div className="login-card__footer">
+          <Link className="text-link" to="/forgot-password">
+            Lupa kata sandi?
+          </Link>
+        </div>
       </section>
     </main>
   );

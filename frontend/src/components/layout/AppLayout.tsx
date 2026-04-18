@@ -7,6 +7,7 @@ const pageTitles: Record<string, string> = {
   "/tickets": "Daftar Tiket",
   "/tickets/new": "Buat Tiket",
   "/profile": "Profil",
+  "/settings": "Pengaturan Akun",
 };
 
 export function AppLayout() {

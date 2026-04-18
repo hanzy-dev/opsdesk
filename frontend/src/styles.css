@@ -555,6 +555,21 @@ button {
   gap: 18px;
 }
 
+.login-card__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.text-link {
+  color: #ffc49d;
+  font-weight: 600;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+}
+
 .user-avatar {
   border-radius: 50%;
   display: grid;
@@ -697,6 +712,11 @@ button {
   font-size: 0.92rem;
   line-height: 1.5;
   word-break: break-word;
+}
+
+.account-settings__links {
+  display: flex;
+  gap: 12px;
 }
 
 @keyframes spin {
