@@ -44,6 +44,7 @@ Backend membaca environment variable berikut:
 - `API_BASE_PATH`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
+- `PROFILE_TABLE_NAME`
 - `ATTACHMENT_BUCKET_NAME`
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
@@ -57,7 +58,7 @@ API_BASE_PATH=/v1
 LOG_LEVEL=info
 ```
 
-`TICKET_TABLE_NAME`, `ATTACHMENT_BUCKET_NAME`, `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, dan `COGNITO_APP_CLIENT_ID` diisi otomatis oleh stack SAM saat deploy.
+`TICKET_TABLE_NAME`, `PROFILE_TABLE_NAME`, `ATTACHMENT_BUCKET_NAME`, `COGNITO_REGION`, `COGNITO_USER_POOL_ID`, dan `COGNITO_APP_CLIENT_ID` diisi otomatis oleh stack SAM saat deploy.
 
 ## Local Backend Run
 
@@ -190,6 +191,7 @@ Contoh verifikasi:
 ```bash
 curl https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
 curl -H "Authorization: Bearer <id-token>" https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/auth/me
+curl -H "Authorization: Bearer <id-token>" https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/profile/me
 ```
 
 Output stack yang penting:
@@ -198,6 +200,7 @@ Output stack yang penting:
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
+- `ProfilesTableName`
 - `CognitoUserPoolId`
 - `CognitoUserPoolClientId`
 - `CognitoIssuerUrl`
@@ -224,4 +227,4 @@ Karena backend CORS dikunci ke domain production final, jangan arahkan verifikas
 
 ## Catatan
 
-Dokumen ini berfokus pada setup dan deployment yang sesuai dengan sistem yang saat ini diterapkan. Untuk ringkasan presentasi repository, gunakan [README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/README.md).
+Dokumen ini berfokus pada setup dan deployment yang sesuai dengan sistem yang saat ini diterapkan. Untuk ringkasan presentasi repository, gunakan [README.md](../README.md).

@@ -1,6 +1,7 @@
 package validation
 
 import (
+	"net/url"
 	"strings"
 
 	"opsdesk/backend/internal/domain"
@@ -132,6 +133,27 @@ func (v *Validator) ValidateListTicketsQuery(input dto.ListTicketsQuery) []dto.F
 
 	if input.PageSize < 1 || input.PageSize > 100 {
 		errs = append(errs, dto.FieldError{Field: "page_size", Message: "page_size must be between 1 and 100"})
+	}
+
+	return errs
+}
+
+func (v *Validator) ValidateUpdateProfileRequest(input dto.UpdateProfileRequest) []dto.FieldError {
+	var errs []dto.FieldError
+
+	displayName := strings.TrimSpace(input.DisplayName)
+	if displayName == "" {
+		errs = append(errs, dto.FieldError{Field: "displayName", Message: "displayName is required"})
+	} else if len([]rune(displayName)) > 80 {
+		errs = append(errs, dto.FieldError{Field: "displayName", Message: "displayName must be at most 80 characters"})
+	}
+
+	avatarURL := strings.TrimSpace(input.AvatarURL)
+	if avatarURL != "" {
+		parsed, err := url.ParseRequestURI(avatarURL)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+			errs = append(errs, dto.FieldError{Field: "avatarUrl", Message: "avatarUrl must be a valid http or https URL"})
+		}
 	}
 
 	return errs

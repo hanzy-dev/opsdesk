@@ -8,6 +8,7 @@ info:
     The API provides a simple serverless helpdesk workflow for:
     - health checks
     - authenticated identity lookup
+    - authenticated profile lookup and update
     - ticket creation
     - ticket listing
     - ticket detail lookup
@@ -28,6 +29,7 @@ servers:
 tags:
   - name: System
   - name: Auth
+  - name: Profile
   - name: Tickets
 
 paths:
@@ -75,6 +77,63 @@ paths:
                   code: invalid_token
                   message: authentication token is invalid or expired
                   requestId: req-1a2b3c4d
+
+  /profile/me:
+    get:
+      tags:
+        - Profile
+      summary: Get current profile
+      operationId: getCurrentProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current profile returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileSuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags:
+        - Profile
+      summary: Update current profile
+      operationId: updateCurrentProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+            example:
+              displayName: Rina Aulia
+              avatarUrl: https://images.example.com/rina.jpg
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileSuccessResponse"
+        "400":
+          description: Profile update request is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /tickets:
     get:
@@ -703,6 +762,49 @@ components:
           items:
             type: string
 
+    Profile:
+      type: object
+      required:
+        - subject
+        - displayName
+        - email
+        - role
+      properties:
+        subject:
+          type: string
+          example: 9b0dc1d7-2f5c-40ff-97b5-0201ee2fe2a7
+        displayName:
+          type: string
+          example: Rina Aulia
+        email:
+          type: string
+          format: email
+          example: rina@example.com
+        avatarUrl:
+          type: string
+          format: uri
+          example: https://images.example.com/rina.jpg
+        role:
+          type: string
+          enum:
+            - reporter
+            - agent
+            - admin
+
+    UpdateProfileRequest:
+      type: object
+      required:
+        - displayName
+        - avatarUrl
+      properties:
+        displayName:
+          type: string
+          maxLength: 80
+          example: Rina Aulia
+        avatarUrl:
+          type: string
+          example: https://images.example.com/rina.jpg
+
     Comment:
       type: object
       required:
@@ -986,6 +1088,14 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/AuthIdentity"
+
+    ProfileSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/Profile"
 
     TicketSuccessResponse:
       type: object

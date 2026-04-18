@@ -273,6 +273,76 @@ func TestGetAuthMeReturnsIdentity(t *testing.T) {
 	}
 }
 
+func TestGetProfileMeReturnsIdentityBasedProfile(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+
+	recorder := performRequest(t, router, http.MethodGet, "/v1/profile/me", nil)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.ProfileResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.DisplayName != "OpsDesk User" {
+		t.Fatalf("expected displayName OpsDesk User, got %q", response.Data.DisplayName)
+	}
+
+	if response.Data.Email != "opsdesk.user@example.com" {
+		t.Fatalf("expected profile email to match identity, got %q", response.Data.Email)
+	}
+
+	if response.Data.Role != "reporter" {
+		t.Fatalf("expected profile role reporter, got %q", response.Data.Role)
+	}
+}
+
+func TestPatchProfilePersistsDisplayNameAndAvatar(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+
+	updateRecorder := performRequest(t, router, http.MethodPatch, "/v1/profile/me", dto.UpdateProfileRequest{
+		DisplayName: "Rina Aulia",
+		AvatarURL:   "https://images.example.com/rina.jpg",
+	})
+
+	if updateRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", updateRecorder.Code)
+	}
+
+	var updateResponse dto.SuccessResponse[dto.ProfileResponse]
+	decodeResponse(t, updateRecorder, &updateResponse)
+
+	if updateResponse.Data.DisplayName != "Rina Aulia" {
+		t.Fatalf("expected updated displayName, got %q", updateResponse.Data.DisplayName)
+	}
+
+	if updateResponse.Data.AvatarURL != "https://images.example.com/rina.jpg" {
+		t.Fatalf("expected avatar URL to persist, got %q", updateResponse.Data.AvatarURL)
+	}
+
+	profileRecorder := performRequest(t, router, http.MethodGet, "/v1/profile/me", nil)
+	if profileRecorder.Code != http.StatusOK {
+		t.Fatalf("expected profile status 200, got %d", profileRecorder.Code)
+	}
+
+	var profileResponse dto.SuccessResponse[dto.ProfileResponse]
+	decodeResponse(t, profileRecorder, &profileResponse)
+
+	if profileResponse.Data.DisplayName != "Rina Aulia" {
+		t.Fatalf("expected persisted displayName, got %q", profileResponse.Data.DisplayName)
+	}
+
+	ticket := createTestTicket(t, router)
+	if ticket.CreatedByName != "Rina Aulia" {
+		t.Fatalf("expected createdByName to use updated profile, got %q", ticket.CreatedByName)
+	}
+}
+
 func TestReporterCannotUpdateTicketStatus(t *testing.T) {
 	t.Parallel()
 
@@ -614,9 +684,11 @@ func newTestRouter(identity auth.Identity) http.Handler {
 }
 
 func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepository, attachmentStorages ...storage.AttachmentStorage) http.Handler {
+	profileRepo := memory.NewProfileRepository()
 	cfg := config.Config{
 		AppEnv:               "test",
 		APIBasePath:          "/v1",
+		ProfileTableName:     "opsdesk-test-profiles",
 		AttachmentBucketName: "opsdesk-test-attachments",
 	}
 
@@ -624,6 +696,7 @@ func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepo
 		cfg,
 		validation.New(),
 		service.NewTicketService(repo, attachmentStorages...),
+		service.NewProfileService(profileRepo),
 		staticVerifier{identity: identity},
 		observability.NewLogger("error", "test"),
 	)

@@ -9,6 +9,7 @@ Current infrastructure scope is intentionally small:
 - one Go-based AWS Lambda function packaged as a container image
 - one API Gateway HTTP API
 - one DynamoDB table for ticket persistence
+- one DynamoDB table for user profile persistence
 - one private S3 bucket for ticket attachments
 - one Cognito User Pool and app client for authentication
 - three Cognito groups for RBAC: `reporter`, `agent`, and `admin`
@@ -32,7 +33,7 @@ The infrastructure stays intentionally small. It still does not include:
 
 ## Build Assumption
 
-The SAM template builds the backend Lambda image from [backend/Dockerfile.lambda](/d:/Semester%206/Cloud%20Computing/opsdesk/backend/Dockerfile.lambda). The Dockerfile compiles `backend/cmd/lambda` into a `bootstrap` binary and places it into the AWS Lambda `provided.al2023` base image for `x86_64`.
+The SAM template builds the backend Lambda image from [backend/Dockerfile.lambda](../backend/Dockerfile.lambda). The Dockerfile compiles `backend/cmd/lambda` into a `bootstrap` binary and places it into the AWS Lambda `provided.al2023` base image for `x86_64`.
 
 ## Parameters
 
@@ -58,6 +59,7 @@ Backend runtime environment variables wired by SAM:
 - `API_BASE_PATH`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
+- `PROFILE_TABLE_NAME`
 - `ATTACHMENT_BUCKET_NAME`
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
@@ -103,6 +105,7 @@ Useful stack outputs after deployment:
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
+- `ProfilesTableName`
 - `AttachmentsBucketName`
 - `BackendFunctionName`
 - `CognitoUserPoolId`

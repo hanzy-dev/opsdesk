@@ -12,6 +12,7 @@ Current scope:
 - request validation helpers
 - thin HTTP handlers with service and repository layers
 - DynamoDB-backed ticket persistence
+- DynamoDB-backed profile persistence
 - private S3 attachment support
 - structured logging and request ID propagation
 

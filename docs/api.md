@@ -6,6 +6,7 @@ OpsDesk mengekspos HTTP API kecil yang mengikuti implementasi backend saat ini. 
 
 - health check
 - lookup identitas login
+- lookup dan update profil akun saat ini
 - create/list/detail tiket
 - update status tiket
 - assignment tiket ke operator yang sedang login
@@ -14,7 +15,7 @@ OpsDesk mengekspos HTTP API kecil yang mengikuti implementasi backend saat ini. 
 - presigned upload URL dan presigned download URL untuk lampiran
 - structured error response dengan `requestId`
 
-The authoritative machine-readable contract is in [openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml).
+The authoritative machine-readable contract is in [openapi.yaml](./openapi.yaml).
 
 ## How To Read The OpenAPI File
 
@@ -65,7 +66,7 @@ https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 
 Fast inspection path:
 
-1. Open [openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml).
+1. Open [openapi.yaml](./openapi.yaml).
 2. Review the `paths` section for the supported endpoints.
 3. Check `TicketStatus` to see the allowed status values:
    `open`, `in_progress`, `resolved`
@@ -79,21 +80,23 @@ Recommended quick checks:
    This confirms the backend is reachable.
 2. `GET /auth/me`
    This confirms the JWT token is accepted by the backend.
-3. `POST /tickets`
+3. `GET /profile/me` and `PATCH /profile/me`
+   This confirms account profile data can be read and updated.
+4. `POST /tickets`
    Create one ticket with a small JSON payload.
-4. `GET /tickets`
+5. `GET /tickets`
    Confirm the created ticket appears in the list and test `q`, `status`, `priority`, `assignee`, `page`, `page_size`, `sort_by`, and `sort_order`.
-5. `PATCH /tickets/{id}/status`
+6. `PATCH /tickets/{id}/status`
    Change the status to `in_progress` or `resolved`.
-6. `PATCH /tickets/{id}/assignment`
+7. `PATCH /tickets/{id}/assignment`
    Assign the ticket to the authenticated operator.
-7. `POST /tickets/{id}/comments`
+8. `POST /tickets/{id}/comments`
    Add one comment and verify the detail response includes it.
-8. `GET /tickets/{id}/activities`
+9. `GET /tickets/{id}/activities`
    Confirm the activity timeline contains create/update/comment/assignment/attachment events.
-9. `POST /tickets/{id}/attachments/upload-url` then `POST /tickets/{id}/attachments`
+10. `POST /tickets/{id}/attachments/upload-url` then `POST /tickets/{id}/attachments`
    Confirm the upload URL is returned, upload succeeds to S3, and attachment metadata appears in ticket detail.
-10. `GET /tickets/{id}/attachments/{attachmentId}/download`
+11. `GET /tickets/{id}/attachments/{attachmentId}/download`
    Confirm a short-lived download/open URL is returned for an accessible ticket.
 
 ## Notes
@@ -103,5 +106,6 @@ Recommended quick checks:
 - Aktivitas tiket disimpan append-only di record tiket yang sama.
 - Lampiran memakai bucket S3 private dengan presigned PUT dan presigned GET.
 - Validasi lampiran saat ini mengizinkan PDF, JPG, PNG, TXT, CSV, dan DOCX sampai 10 MB.
+- Profil akun mendukung perubahan `displayName` dan `avatarUrl` sederhana tanpa mengubah identitas dasar Cognito.
 - `GET /tickets` mendukung `assignee=me`, `assignee=unassigned`, dan alias backward-compatible `assignedToMe=true`.
 - Baseline deploy yang dipakai repository ini tetap environment `dev`.

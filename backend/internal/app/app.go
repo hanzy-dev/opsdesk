@@ -28,6 +28,10 @@ func New(cfg config.Config) (*App, error) {
 		return nil, errors.New("TICKET_TABLE_NAME is required")
 	}
 
+	if cfg.ProfileTableName == "" {
+		return nil, errors.New("PROFILE_TABLE_NAME is required")
+	}
+
 	if cfg.AttachmentBucketName == "" {
 		return nil, errors.New("ATTACHMENT_BUCKET_NAME is required")
 	}
@@ -39,15 +43,17 @@ func New(cfg config.Config) (*App, error) {
 
 	validator := validation.New()
 	ticketRepository := dynamorepo.NewTicketRepository(dynamodb.NewFromConfig(awsCfg), cfg.TicketTableName)
+	profileRepository := dynamorepo.NewProfileRepository(dynamodb.NewFromConfig(awsCfg), cfg.ProfileTableName)
 	attachmentStorage := storage.NewS3AttachmentStorage(s3.NewFromConfig(awsCfg), cfg.AttachmentBucketName)
 	ticketService := service.NewTicketService(ticketRepository, attachmentStorage)
+	profileService := service.NewProfileService(profileRepository)
 	authVerifier, err := auth.NewCognitoVerifier(cfg.CognitoRegion, cfg.CognitoUserPoolID, cfg.CognitoAppClientID)
 	if err != nil {
 		return nil, err
 	}
 
 	logger := observability.NewLogger(cfg.LogLevel, cfg.AppEnv)
-	router := httpapi.NewRouter(cfg, validator, ticketService, authVerifier, logger)
+	router := httpapi.NewRouter(cfg, validator, ticketService, profileService, authVerifier, logger)
 
 	return &App{router: router}, nil
 }

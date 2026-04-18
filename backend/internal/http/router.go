@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -21,15 +22,17 @@ type Router struct {
 	config       config.Config
 	validator    *validation.Validator
 	ticketSvc    service.TicketService
+	profileSvc   service.ProfileService
 	authVerifier auth.Verifier
 	basePathMux  *http.ServeMux
 }
 
-func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService, authVerifier auth.Verifier, logger *slog.Logger) http.Handler {
+func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc service.TicketService, profileSvc service.ProfileService, authVerifier auth.Verifier, logger *slog.Logger) http.Handler {
 	r := &Router{
 		config:       cfg,
 		validator:    validator,
 		ticketSvc:    ticketSvc,
+		profileSvc:   profileSvc,
 		authVerifier: authVerifier,
 		basePathMux:  http.NewServeMux(),
 	}
@@ -46,6 +49,7 @@ func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc ser
 func (r *Router) registerRoutes() {
 	r.basePathMux.HandleFunc("/health", r.handleHealth)
 	r.basePathMux.HandleFunc("/auth/me", r.requireAuth(r.handleAuthMe))
+	r.basePathMux.HandleFunc("/profile/me", r.requireAuth(r.handleProfileMe))
 	r.basePathMux.HandleFunc("/tickets", r.requireAuth(r.handleTickets))
 	r.basePathMux.HandleFunc("/tickets/", r.requireAuth(r.handleTicketByPath))
 }
@@ -108,6 +112,58 @@ func (r *Router) handleAuthMe(w http.ResponseWriter, req *http.Request) {
 			Groups:   identity.Groups,
 		},
 	})
+}
+
+func (r *Router) handleProfileMe(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
+		return
+	}
+
+	switch req.Method {
+	case http.MethodGet:
+		profile, err := r.profileSvc.GetCurrentProfile(req.Context(), identity)
+		if err != nil {
+			writeInternalError(w, req, "failed to load profile")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.ProfileResponse]{
+			Data: toProfileResponse(profile),
+		})
+	case http.MethodPatch:
+		var payload dto.UpdateProfileRequest
+		if err := decodeJSON(req, &payload); err != nil {
+			writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
+			return
+		}
+
+		if fieldErrors := r.validator.ValidateUpdateProfileRequest(payload); len(fieldErrors) > 0 {
+			writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
+			return
+		}
+
+		profile, err := r.profileSvc.UpdateCurrentProfile(req.Context(), identity, service.UpdateProfileInput{
+			DisplayName: strings.TrimSpace(payload.DisplayName),
+			AvatarURL:   strings.TrimSpace(payload.AvatarURL),
+		})
+		if err != nil {
+			writeInternalError(w, req, "failed to update profile")
+			return
+		}
+
+		writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.ProfileResponse]{
+			Data: toProfileResponse(profile),
+		})
+	default:
+		writeMethodNotAllowed(w, req)
+	}
 }
 
 func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
@@ -195,13 +251,10 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 
 	reporterName := strings.TrimSpace(payload.ReporterName)
 	reporterEmail := strings.TrimSpace(payload.ReporterEmail)
+	currentProfile := r.currentProfile(req.Context(), identity)
 	if identity.Role == auth.RoleReporter {
 		reporterEmail = identity.Email
-		if strings.TrimSpace(identity.Name) != "" {
-			reporterName = strings.TrimSpace(identity.Name)
-		} else {
-			reporterName = strings.TrimSpace(identity.Username)
-		}
+		reporterName = currentProfile.DisplayName
 	}
 
 	ticket, err := r.ticketSvc.CreateTicket(req.Context(), service.CreateTicketInput{
@@ -209,7 +262,7 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 		Description:    strings.TrimSpace(payload.Description),
 		Priority:       domain.TicketPriority(payload.Priority),
 		CreatedBy:      identity.Subject,
-		CreatedByName:  displayNameFor(identity),
+		CreatedByName:  currentProfile.DisplayName,
 		CreatedByEmail: identity.Email,
 		CreatedByRole:  string(identity.Role),
 		ReporterID:     reporterIDFor(identity, reporterEmail),
@@ -343,7 +396,7 @@ func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Reque
 	ticket, err := r.ticketSvc.UpdateTicketStatus(req.Context(), ticketID, service.UpdateTicketStatusInput{
 		Status:    domain.TicketStatus(payload.Status),
 		ActorID:   identity.Subject,
-		ActorName: displayNameFor(identity),
+		ActorName: r.currentProfile(req.Context(), identity).DisplayName,
 		ActorRole: string(identity.Role),
 	})
 	if err != nil {
@@ -397,7 +450,7 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 		Message:    strings.TrimSpace(payload.Message),
 		AuthorName: strings.TrimSpace(payload.AuthorName),
 		ActorID:    identity.Subject,
-		ActorName:  displayNameFor(identity),
+		ActorName:  r.currentProfile(req.Context(), identity).DisplayName,
 		ActorRole:  string(identity.Role),
 	})
 	if err != nil {
@@ -443,7 +496,7 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 
 	ticket, err := r.ticketSvc.AssignTicket(req.Context(), ticketID, service.AssignTicketInput{
 		AssigneeID:   identity.Subject,
-		AssigneeName: displayNameFor(identity),
+		AssigneeName: r.currentProfile(req.Context(), identity).DisplayName,
 		ActorID:      identity.Subject,
 		ActorRole:    string(identity.Role),
 	})
@@ -599,7 +652,7 @@ func (r *Router) handleSaveAttachment(w http.ResponseWriter, req *http.Request, 
 		ObjectKey:    strings.TrimSpace(payload.ObjectKey),
 		FileName:     strings.TrimSpace(payload.FileName),
 		ActorID:      identity.Subject,
-		ActorName:    displayNameFor(identity),
+		ActorName:    r.currentProfile(req.Context(), identity).DisplayName,
 		ActorRole:    string(identity.Role),
 	})
 	if err != nil {
@@ -798,12 +851,23 @@ func reporterIDFor(identity auth.Identity, reporterEmail string) string {
 	return ""
 }
 
-func displayNameFor(identity auth.Identity) string {
-	if strings.TrimSpace(identity.Name) != "" {
-		return strings.TrimSpace(identity.Name)
+func (r *Router) currentProfile(ctx context.Context, identity auth.Identity) dto.ProfileResponse {
+	profile, err := r.profileSvc.GetCurrentProfile(ctx, identity)
+	if err != nil {
+		return toProfileResponse(service.DefaultProfile(identity))
 	}
 
-	return strings.TrimSpace(identity.Username)
+	return toProfileResponse(profile)
+}
+
+func toProfileResponse(profile domain.Profile) dto.ProfileResponse {
+	return dto.ProfileResponse{
+		Subject:     profile.Subject,
+		DisplayName: profile.DisplayName,
+		Email:       profile.Email,
+		AvatarURL:   profile.AvatarURL,
+		Role:        profile.Role,
+	}
 }
 
 func parseListTicketsQuery(req *http.Request) dto.ListTicketsQuery {

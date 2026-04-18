@@ -27,6 +27,7 @@ Konstanta deployment tetap untuk repository ini:
 
 - Autentikasi Amazon Cognito dengan alur login nyata
 - Kontrol akses berbasis peran untuk `reporter`, `agent`, dan `admin`
+- Fondasi profil akun dengan nama tampilan dan avatar yang dapat diperbarui
 - Pembuatan tiket, daftar tiket, detail tiket, komentar, dan pembaruan status
 - Ownership tiket untuk kontrol akses mandiri
 - Alur self-assignment untuk `agent` dan `admin`
@@ -113,6 +114,7 @@ Backend membaca environment variable berikut:
 - `API_BASE_PATH`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
+- `PROFILE_TABLE_NAME`
 - `ATTACHMENT_BUCKET_NAME`
 - `COGNITO_REGION`
 - `COGNITO_USER_POOL_ID`
@@ -129,7 +131,7 @@ COGNITO_USER_POOL_ID=ap-southeast-1_sMFqei7IT
 COGNITO_APP_CLIENT_ID=3gtbp1t96krpj6t9hfon4ljujn
 ```
 
-`TICKET_TABLE_NAME` dan `ATTACHMENT_BUCKET_NAME` disediakan oleh stack SAM yang telah dideploy.
+`TICKET_TABLE_NAME`, `PROFILE_TABLE_NAME`, dan `ATTACHMENT_BUCKET_NAME` disediakan oleh stack SAM yang telah dideploy.
 
 ## Autentikasi dan Peran
 
@@ -161,6 +163,8 @@ Endpoint HTTP yang tersedia mencakup:
 
 - `GET /v1/health`
 - `GET /v1/auth/me`
+- `GET /v1/profile/me`
+- `PATCH /v1/profile/me`
 - `POST /v1/tickets`
 - `GET /v1/tickets`
 - `GET /v1/tickets/{id}`

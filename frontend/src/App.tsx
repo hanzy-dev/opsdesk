@@ -6,6 +6,7 @@ import { CreateTicketPage } from "./pages/CreateTicketPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { ProfilePage } from "./pages/ProfilePage";
 import { TicketDetailPage } from "./pages/TicketDetailPage";
 import { TicketsPage } from "./pages/TicketsPage";
 
@@ -30,6 +31,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="profile" element={<ProfilePage />} />
         <Route path="tickets" element={<TicketsPage />} />
         <Route path="tickets/new" element={<CreateTicketPage />} />
         <Route path="tickets/:ticketId" element={<TicketDetailPage />} />

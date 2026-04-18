@@ -144,6 +144,23 @@ Resources:
         - Key: Stage
           Value: !Ref StageName
 
+  ProfilesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-${StageName}-profiles"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: subject
+          AttributeType: S
+      KeySchema:
+        - AttributeName: subject
+          KeyType: HASH
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Stage
+          Value: !Ref StageName
+
   AttachmentsBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -221,6 +238,7 @@ Resources:
       Environment:
         Variables:
           TICKET_TABLE_NAME: !Ref TicketsTable
+          PROFILE_TABLE_NAME: !Ref ProfilesTable
           ATTACHMENT_BUCKET_NAME: !Ref AttachmentsBucket
           COGNITO_REGION: !Ref AWS::Region
           COGNITO_USER_POOL_ID: !Ref OpsDeskUserPool
@@ -228,6 +246,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref TicketsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ProfilesTable
         - S3CrudPolicy:
             BucketName: !Ref AttachmentsBucket
 
@@ -268,6 +288,10 @@ Outputs:
   AttachmentsBucketName:
     Description: Private S3 bucket name used for ticket attachments.
     Value: !Ref AttachmentsBucket
+
+  ProfilesTableName:
+    Description: DynamoDB table name used for persisted user profiles.
+    Value: !Ref ProfilesTable
 
   SuggestedHealthEndpoint:
     Description: Health endpoint for post-deploy verification.

@@ -6,6 +6,7 @@ export type AuthSession = {
   expiresAt: number;
   email: string;
   displayName: string;
+  avatarUrl?: string;
   groups: string[];
   role: "reporter" | "agent" | "admin";
 };
@@ -43,6 +44,24 @@ export function writeStoredSession(session: AuthSession) {
   currentSession = session;
   if (typeof window !== "undefined") {
     window.localStorage.setItem(storageKey, JSON.stringify(session));
+  }
+
+  notifyListeners();
+}
+
+export function updateStoredSessionProfile(patch: { displayName: string; avatarUrl?: string }) {
+  if (!currentSession) {
+    return;
+  }
+
+  currentSession = {
+    ...currentSession,
+    displayName: patch.displayName,
+    avatarUrl: patch.avatarUrl,
+  };
+
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(storageKey, JSON.stringify(currentSession));
   }
 
   notifyListeners();

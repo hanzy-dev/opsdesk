@@ -15,6 +15,7 @@ type Config struct {
 	APIBasePath          string
 	LogLevel             string
 	TicketTableName      string
+	ProfileTableName     string
 	AttachmentBucketName string
 	CognitoRegion        string
 	CognitoUserPoolID    string
@@ -28,6 +29,7 @@ func Load() Config {
 		APIBasePath:          getEnv("API_BASE_PATH", defaultAPIBasePath),
 		LogLevel:             getEnv("LOG_LEVEL", defaultLogLevel),
 		TicketTableName:      getEnv("TICKET_TABLE_NAME", ""),
+		ProfileTableName:     getEnv("PROFILE_TABLE_NAME", ""),
 		AttachmentBucketName: getEnv("ATTACHMENT_BUCKET_NAME", ""),
 		CognitoRegion:        getEnv("COGNITO_REGION", ""),
 		CognitoUserPoolID:    getEnv("COGNITO_USER_POOL_ID", ""),
