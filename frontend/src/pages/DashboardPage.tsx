@@ -74,7 +74,7 @@ export function DashboardPage() {
 
   return (
     <section className="stack-lg">
-      <div className="hero-card">
+      <div className="hero-card hero-card--spotlight dashboard-hero">
         <p className="section-eyebrow">Pusat kendali</p>
         <h2>Pantau antrean tiket secara cepat</h2>
         <p>
@@ -82,9 +82,9 @@ export function DashboardPage() {
         </p>
       </div>
 
-      <div className="metrics-grid">
+      <div className="metrics-grid dashboard-metrics">
         {metrics.map((metric) => (
-          <article className={`metric-card ${metric.tone}`} key={metric.label}>
+          <article className={`metric-card metric-card--premium ${metric.tone}`} key={metric.label}>
             <p>{metric.label}</p>
             <strong>{metric.value}</strong>
           </article>

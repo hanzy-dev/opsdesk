@@ -160,7 +160,7 @@ export function TicketsPage() {
 
   return (
     <section className="stack-lg">
-      <div className="hero-card hero-card--compact">
+      <div className="hero-card hero-card--compact hero-card--spotlight">
         <div>
           <p className="section-eyebrow">{preset.eyebrow}</p>
           <h2>{preset.title}</h2>
@@ -173,21 +173,21 @@ export function TicketsPage() {
       </div>
 
       <div className="metrics-grid metrics-grid--compact">
-        <article className="metric-card">
+        <article className="metric-card metric-card--premium">
           <p>Total tiket</p>
           <strong>{stats.total}</strong>
         </article>
-        <article className="metric-card">
+        <article className="metric-card metric-card--premium">
           <p>Tiket terbuka</p>
           <strong>{stats.open}</strong>
         </article>
-        <article className="metric-card">
+        <article className="metric-card metric-card--premium">
           <p>Tiket selesai</p>
           <strong>{stats.resolved}</strong>
         </article>
       </div>
 
-      <div className="panel stack-md">
+      <div className="panel panel--section stack-md">
         <div className="section-heading">
           <div>
             <p className="section-eyebrow">Pencarian cepat</p>

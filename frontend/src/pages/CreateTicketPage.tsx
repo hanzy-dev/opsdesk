@@ -96,13 +96,13 @@ export function CreateTicketPage() {
 
   return (
     <section className="stack-lg">
-      <div className="hero-card">
+      <div className="hero-card hero-card--spotlight">
         <p className="section-eyebrow">Input tiket</p>
         <h2>Buat tiket baru</h2>
         <p>Gunakan formulir ini untuk membuat tiket insiden atau permintaan bantuan baru tanpa mengisi ulang identitas akun.</p>
       </div>
 
-      <article className="panel profile-summary profile-summary--compact">
+      <article className="panel panel--section profile-summary profile-summary--compact">
         <div className="profile-summary__header">
           <div className="profile-summary__meta">
             <div>
@@ -122,7 +122,7 @@ export function CreateTicketPage() {
         </div>
       </article>
 
-      <form className="panel form-panel" onSubmit={handleSubmit}>
+      <form className="panel panel--section form-panel" onSubmit={handleSubmit}>
         <div className="form-intro">
           <p>
             Isi informasi inti tiket secara singkat dan jelas. Identitas pelapor diambil dari sesi masuk yang aktif agar

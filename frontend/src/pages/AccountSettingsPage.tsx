@@ -95,7 +95,7 @@ export function AccountSettingsPage() {
 
   return (
     <section className="stack-lg">
-      <div className="hero-card hero-card--compact">
+      <div className="hero-card hero-card--compact hero-card--spotlight">
         <div>
           <p className="section-eyebrow">Akun</p>
           <h2>Pengaturan akun</h2>
@@ -104,7 +104,7 @@ export function AccountSettingsPage() {
       </div>
 
       <div className="detail-grid">
-        <article className="panel profile-summary">
+        <article className="panel panel--section profile-summary">
           <div className="profile-summary__header">
             <UserAvatar avatarUrl={identity?.avatarUrl} name={identity?.displayName ?? "Pengguna OpsDesk"} size="lg" />
             <div className="stack-md">
@@ -128,7 +128,7 @@ export function AccountSettingsPage() {
           </div>
         </article>
 
-        <form className="panel stack-md" onSubmit={handleSubmit}>
+        <form className="panel panel--section stack-md" onSubmit={handleSubmit}>
           <div className="section-heading">
             <div>
               <p className="section-eyebrow">Keamanan</p>

@@ -24,7 +24,7 @@ export function TicketTable({
           <h2>{title}</h2>
           {helperText ? <p className="table-panel__helper">{helperText}</p> : null}
         </div>
-        <p>{tickets.length} tiket</p>
+        <p className="table-panel__count">{tickets.length} tiket</p>
       </div>
 
       <div className="ticket-table-wrap">
@@ -52,7 +52,9 @@ export function TicketTable({
                 <td>
                   <StatusBadge status={ticket.status} />
                 </td>
-                <td className="ticket-table__priority">{formatPriority(ticket.priority)}</td>
+                <td>
+                  <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
+                </td>
                 <td>{ticket.reporterName}</td>
                 <td>{ticket.assigneeName || "Belum ditugaskan"}</td>
                 <td>{formatDateTime(ticket.updatedAt)}</td>

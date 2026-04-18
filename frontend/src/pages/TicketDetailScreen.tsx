@@ -353,7 +353,7 @@ export function TicketDetailPage() {
 
   return (
     <section className="stack-lg">
-      <article className="panel ticket-summary ticket-summary--hero">
+      <article className="panel panel--section ticket-summary ticket-summary--hero">
         <div className="ticket-summary__header">
           <div>
             <p className="section-eyebrow">{ticket.id}</p>
@@ -396,7 +396,7 @@ export function TicketDetailPage() {
 
       <div className="ticket-layout">
         <div className="stack-lg">
-          <article className="panel stack-md">
+          <article className="panel panel--section stack-md">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">Metadata</p>
@@ -457,7 +457,7 @@ export function TicketDetailPage() {
             </dl>
           </article>
 
-          <article className="panel stack-md">
+          <article className="panel panel--section stack-md">
             <div>
               <p className="section-eyebrow">Lampiran</p>
               <h3>Dokumen dan file pendukung</h3>
@@ -493,7 +493,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel stack-md">
+          <article className="panel panel--section stack-md">
             <div>
               <p className="section-eyebrow">Kolaborasi</p>
               <h3>Komentar dan catatan kerja</h3>
@@ -516,7 +516,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel stack-md">
+          <article className="panel panel--section stack-md">
             <div>
               <p className="section-eyebrow">Riwayat</p>
               <h3>Timeline aktivitas tiket</h3>
@@ -549,7 +549,7 @@ export function TicketDetailPage() {
         </div>
 
         <aside className="stack-lg">
-          <article className="panel stack-md">
+          <article className="panel panel--section stack-md">
             <div>
               <p className="section-eyebrow">Aksi cepat</p>
               <h3>Tindakan yang tersedia</h3>
@@ -569,7 +569,7 @@ export function TicketDetailPage() {
             </div>
           </article>
 
-          <article className="panel">
+          <article className="panel panel--section">
             <p className="section-eyebrow">Penugasan</p>
             <h3>Tanggung jawab tiket</h3>
             {permissions.canAssignTickets ? (
@@ -598,7 +598,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel">
+          <article className="panel panel--section">
             <p className="section-eyebrow">Status</p>
             <h3>Perbarui progres tiket</h3>
             {permissions.canUpdateTicketStatus ? (
@@ -623,7 +623,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel">
+          <article className="panel panel--section">
             <p className="section-eyebrow">Tambah lampiran</p>
             <h3>Unggah file pendukung</h3>
             <p className="form-hint">Format yang didukung: PDF, JPG, PNG, TXT, CSV, dan DOCX dengan ukuran maksimal 10 MB.</p>
@@ -647,7 +647,7 @@ export function TicketDetailPage() {
             </form>
           </article>
 
-          <article className="panel">
+          <article className="panel panel--section">
             <p className="section-eyebrow">Tambah catatan</p>
             <h3>Tulis komentar baru</h3>
             <form className="stack-md" onSubmit={handleCommentSubmit}>
