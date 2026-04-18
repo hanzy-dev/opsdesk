@@ -1,12 +1,12 @@
 # OpsDesk
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite%20%2B%20TypeScript-3178C6)
-![Backend](https://img.shields.io/badge/Backend-Go-00ADD8)
-![AWS Stack](https://img.shields.io/badge/AWS-Lambda%20%7C%20API%20Gateway%20%7C%20DynamoDB%20%7C%20Cognito%20%7C%20S3-FF9900)
-![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20AWS%20SAM-111111)
-![CI/CD: Vercel + AWS SAM](https://img.shields.io/badge/CI%2FCD-Vercel%20%2B%20AWS%20SAM-4f46e5)
-![Status](https://img.shields.io/badge/Status-Active%20Development-0A7F5A)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20Vite%20%2B%20TypeScript-3178C6)](./frontend)
+[![Backend](https://img.shields.io/badge/Backend-Go-00ADD8)](./backend)
+[![AWS Stack](https://img.shields.io/badge/AWS-Lambda%20%7C%20API%20Gateway%20%7C%20DynamoDB%20%7C%20Cognito%20%7C%20S3-FF9900)](./infra)
+[![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20AWS%20SAM-111111)](./docs/setup.md)
+[![CI/CD: Vercel + AWS SAM](https://img.shields.io/badge/CI%2FCD-Vercel%20%2B%20AWS%20SAM-4f46e5)](./docs/release-checklist.md)
+[![Status: Production-Oriented](https://img.shields.io/badge/Status-Production--Oriented-0A7F5A)](./README.md)
 
 OpsDesk adalah aplikasi helpdesk dan ticketing berbasis cloud untuk kebutuhan dukungan operasional internal. Repository ini memuat implementasi frontend web, backend Go, infrastruktur AWS, dan dokumentasi pendukung yang digunakan oleh sistem yang telah dideploy.
 
@@ -94,7 +94,7 @@ sam deploy --config-file samconfig.toml --resolve-image-repos
 
 ### Frontend
 
-Buat `frontend/.env` berdasarkan [frontend/.env.example](/d:/Semester%206/Cloud%20Computing/opsdesk/frontend/.env.example):
+Buat `frontend/.env` berdasarkan [frontend/.env.example](./frontend/.env.example):
 
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
@@ -149,13 +149,13 @@ Kebijakan assignment saat ini sengaja dibatasi:
 
 ## Dokumentasi API
 
-Kontrak API yang machine-readable tersedia di [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml). Referensi pendukung:
+Kontrak API yang machine-readable tersedia di [docs/openapi.yaml](./docs/openapi.yaml). Referensi pendukung:
 
-- [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md)
-- [docs/architecture.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/architecture.md)
-- [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md)
-- [docs/usage-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/usage-guide.md)
-- [docs/operations.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/operations.md)
+- [docs/api.md](./docs/api.md)
+- [docs/architecture.md](./docs/architecture.md)
+- [docs/setup.md](./docs/setup.md)
+- [docs/usage-guide.md](./docs/usage-guide.md)
+- [docs/operations.md](./docs/operations.md)
 
 Endpoint HTTP yang tersedia mencakup:
 
@@ -182,4 +182,4 @@ Endpoint HTTP yang tersedia mencakup:
 
 ## Lisensi
 
-Proyek ini menggunakan lisensi MIT. Lihat [LICENSE](/d:/Semester%206/Cloud%20Computing/opsdesk/LICENSE) untuk detail lengkap.
+Proyek ini menggunakan lisensi MIT. Lihat [LICENSE](./LICENSE) untuk detail lengkap.
