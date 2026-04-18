@@ -144,7 +144,7 @@ export function TicketsPage() {
   );
 
   if (loading) {
-    return <LoadingState label="Memuat daftar tiket operasional..." />;
+    return <LoadingState label="Memuat daftar tiket operasional..." lines={6} />;
   }
 
   if (error) {
@@ -323,6 +323,7 @@ export function TicketsPage() {
 
       {pagination.totalItems === 0 ? (
         <EmptyState
+          eyebrow={preset.key === "assigned" ? "Penugasan" : preset.key === "mine" ? "Akun Saya" : "Daftar Tiket"}
           title={preset.emptyTitle}
           description={
             permissions.canCreateTickets
@@ -337,8 +338,27 @@ export function TicketsPage() {
         />
       ) : tickets.length === 0 ? (
         <EmptyState
+          eyebrow="Pencarian"
           title="Tidak ada tiket yang cocok"
-          description="Coba ubah kata kunci, filter, atau urutan agar hasil lebih luas."
+          description="Coba ubah kata kunci, filter, atau urutan agar hasil pencarian lebih relevan."
+          action={
+            <button
+              className="button button--secondary"
+              onClick={() => {
+                setSearchQuery("");
+                setSubmittedQuery("");
+                setStatusFilter("all");
+                setPriorityFilter("all");
+                setAssigneeFilter(preset.assigneeFilter);
+                setSortBy("updated_at");
+                setSortOrder("desc");
+                setPage(1);
+              }}
+              type="button"
+            >
+              Reset Pencarian
+            </button>
+          }
         />
       ) : (
         <div className="stack-md">

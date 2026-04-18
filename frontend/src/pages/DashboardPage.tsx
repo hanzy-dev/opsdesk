@@ -59,7 +59,7 @@ export function DashboardPage() {
   );
 
   if (loading) {
-    return <LoadingState label="Menyiapkan ringkasan operasional tiket..." />;
+    return <LoadingState label="Menyiapkan ringkasan operasional tiket..." lines={5} />;
   }
 
   if (error) {
@@ -93,6 +93,7 @@ export function DashboardPage() {
 
       {tickets.length === 0 ? (
         <EmptyState
+          eyebrow="Dashboard"
           title="Belum ada tiket"
           description={
             permissions.canCreateTickets

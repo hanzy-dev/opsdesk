@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { useToast } from "../components/common/ToastProvider";
 import { changeCurrentPassword } from "../modules/auth/authService";
 import { useAuth } from "../modules/auth/AuthContext";
 import { UserAvatar } from "../components/common/UserAvatar";
@@ -7,6 +8,7 @@ import { getRoleLabel } from "../modules/auth/roles";
 
 export function AccountSettingsPage() {
   const { profile, session } = useAuth();
+  const { showToast } = useToast();
   const [currentPassword, setCurrentPassword] = useState("");
   const [nextPassword, setNextPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -38,16 +40,31 @@ export function AccountSettingsPage() {
 
     if (!currentPassword || !nextPassword || !confirmPassword) {
       setErrorMessage("Semua field kata sandi wajib diisi.");
+      showToast({
+        title: "Data belum lengkap",
+        description: "Semua field kata sandi wajib diisi.",
+        tone: "error",
+      });
       return;
     }
 
     if (nextPassword !== confirmPassword) {
       setErrorMessage("Konfirmasi kata sandi baru belum sama.");
+      showToast({
+        title: "Konfirmasi kata sandi belum sesuai",
+        description: "Pastikan kata sandi baru dan konfirmasinya sama.",
+        tone: "error",
+      });
       return;
     }
 
     if (currentPassword === nextPassword) {
       setErrorMessage("Kata sandi baru harus berbeda dari kata sandi saat ini.");
+      showToast({
+        title: "Kata sandi baru belum valid",
+        description: "Gunakan kata sandi baru yang berbeda dari kata sandi saat ini.",
+        tone: "error",
+      });
       return;
     }
 
@@ -56,11 +73,21 @@ export function AccountSettingsPage() {
     try {
       await changeCurrentPassword(currentPassword, nextPassword);
       setSuccessMessage("Kata sandi berhasil diubah.");
+      showToast({
+        title: "Kata sandi berhasil diubah",
+        description: "Gunakan kata sandi baru saat masuk pada sesi berikutnya.",
+        tone: "success",
+      });
       setCurrentPassword("");
       setNextPassword("");
       setConfirmPassword("");
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Perubahan kata sandi belum berhasil.");
+      showToast({
+        title: "Kata sandi belum berhasil diubah",
+        description: error instanceof Error ? error.message : "Periksa kembali input Anda dan coba lagi.",
+        tone: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }

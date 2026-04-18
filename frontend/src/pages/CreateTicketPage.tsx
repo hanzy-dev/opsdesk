@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { createTicket } from "../api/tickets";
 import { ErrorState } from "../components/common/ErrorState";
+import { useToast } from "../components/common/ToastProvider";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
 import type { CreateTicketInput } from "../types/ticket";
@@ -18,6 +19,7 @@ const initialForm: CreateTicketInput = {
 
 export function CreateTicketPage() {
   const { session, profile, permissions } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,15 +54,30 @@ export function CreateTicketPage() {
       };
 
       const ticket = await createTicket(payload);
+      showToast({
+        title: "Tiket berhasil dibuat",
+        description: `Tiket ${ticket.id} siap ditindaklanjuti di halaman detail.`,
+        tone: "success",
+      });
       navigate(`/tickets/${ticket.id}`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
         setErrorReferenceId(error.requestId ?? null);
         setFieldErrors(Object.fromEntries((error.details ?? []).map((detail) => [detail.field, detail.message])));
+        showToast({
+          title: "Tiket belum berhasil dibuat",
+          description: error.message,
+          tone: "error",
+        });
       } else {
         setErrorMessage(getErrorMessage(error, "Tiket belum berhasil dibuat. Silakan coba lagi."));
         setErrorReferenceId(getErrorReferenceId(error) ?? null);
+        showToast({
+          title: "Tiket belum berhasil dibuat",
+          description: getErrorMessage(error, "Tiket belum berhasil dibuat. Silakan coba lagi."),
+          tone: "error",
+        });
       }
       setSubmitNotice(null);
     } finally {

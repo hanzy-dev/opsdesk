@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
+import { useToast } from "../components/common/ToastProvider";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
 
 export function ProfilePage() {
   const { profile, session, isProfileLoading, profileError, refreshProfile, saveProfile } = useAuth();
+  const { showToast } = useToast();
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -43,7 +45,7 @@ export function ProfilePage() {
   );
 
   if (isProfileLoading && !effectiveProfile) {
-    return <LoadingState label="Memuat informasi akun Anda..." />;
+    return <LoadingState label="Memuat informasi akun Anda..." lines={4} />;
   }
 
   if (!effectiveProfile) {
@@ -68,8 +70,18 @@ export function ProfilePage() {
         avatarUrl: avatarUrl.trim(),
       });
       setFeedback("Profil berhasil diperbarui.");
+      showToast({
+        title: "Profil berhasil diperbarui",
+        description: "Perubahan identitas akun sudah diterapkan di aplikasi.",
+        tone: "success",
+      });
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Profil belum dapat diperbarui.");
+      showToast({
+        title: "Profil belum dapat diperbarui",
+        description: error instanceof Error ? error.message : "Silakan coba kembali beberapa saat lagi.",
+        tone: "error",
+      });
     } finally {
       setIsSaving(false);
     }

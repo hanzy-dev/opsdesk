@@ -14,6 +14,7 @@ import {
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
+import { useToast } from "../components/common/ToastProvider";
 import { StatusBadge } from "../components/tickets/StatusBadge";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
@@ -34,6 +35,7 @@ const maxAttachmentSizeBytes = 10 * 1024 * 1024;
 
 export function TicketDetailPage() {
   const { session, profile, permissions } = useAuth();
+  const { showToast } = useToast();
   const { ticketId = "" } = useParams();
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [activities, setActivities] = useState<TicketActivity[]>([]);
@@ -151,10 +153,21 @@ export function TicketDetailPage() {
       const updatedTicket = await updateTicketStatus(ticketId, selectedStatus);
       setTicket(updatedTicket);
       setStatusMessage("Status tiket berhasil diperbarui.");
+      showToast({
+        title: "Status tiket diperbarui",
+        description: `Status terbaru: ${formatStatusLabel(selectedStatus)}.`,
+        tone: "success",
+      });
       await loadTicket({ preserveView: true });
     } catch (error) {
-      setStatusError(getErrorMessage(error, "Status belum berhasil diperbarui."));
+      const message = getErrorMessage(error, "Status belum berhasil diperbarui.");
+      setStatusError(message);
       setStatusErrorReferenceId(getErrorReferenceId(error) ?? null);
+      showToast({
+        title: "Status belum berhasil diperbarui",
+        description: message,
+        tone: "error",
+      });
     } finally {
       setIsSavingStatus(false);
     }
@@ -172,9 +185,20 @@ export function TicketDetailPage() {
       setCommentForm({ message: "", authorName: currentIdentity?.displayName ?? "" });
       await loadTicket({ preserveView: true });
       setCommentMessage("Komentar baru berhasil ditambahkan ke tiket.");
+      showToast({
+        title: "Komentar berhasil ditambahkan",
+        description: "Catatan terbaru sudah masuk ke riwayat tiket.",
+        tone: "success",
+      });
     } catch (error) {
-      setCommentError(getErrorMessage(error, "Komentar belum berhasil ditambahkan."));
+      const message = getErrorMessage(error, "Komentar belum berhasil ditambahkan.");
+      setCommentError(message);
       setCommentErrorReferenceId(getErrorReferenceId(error) ?? null);
+      showToast({
+        title: "Komentar belum berhasil ditambahkan",
+        description: message,
+        tone: "error",
+      });
     } finally {
       setIsSavingComment(false);
     }
@@ -190,10 +214,21 @@ export function TicketDetailPage() {
       const updatedTicket = await assignTicket(ticketId);
       setTicket(updatedTicket);
       setAssignmentMessage("Tiket berhasil ditugaskan kepada Anda.");
+      showToast({
+        title: "Penugasan berhasil diperbarui",
+        description: "Tiket ini sekarang tercatat atas nama Anda.",
+        tone: "success",
+      });
       await loadTicket({ preserveView: true });
     } catch (error) {
-      setAssignmentError(getErrorMessage(error, "Penugasan tiket belum berhasil."));
+      const message = getErrorMessage(error, "Penugasan tiket belum berhasil.");
+      setAssignmentError(message);
       setAssignmentErrorReferenceId(getErrorReferenceId(error) ?? null);
+      showToast({
+        title: "Penugasan tiket belum berhasil",
+        description: message,
+        tone: "error",
+      });
     } finally {
       setIsSavingAssignment(false);
     }
@@ -207,16 +242,31 @@ export function TicketDetailPage() {
 
     if (!selectedFile) {
       setAttachmentError("Pilih file lampiran terlebih dahulu.");
+      showToast({
+        title: "Lampiran belum dipilih",
+        description: "Pilih file terlebih dahulu sebelum mengunggah lampiran.",
+        tone: "error",
+      });
       return;
     }
 
     if (!allowedAttachmentTypes.includes(selectedFile.type)) {
       setAttachmentError("Tipe file belum didukung. Gunakan PDF, JPG, PNG, TXT, CSV, atau DOCX.");
+      showToast({
+        title: "Tipe file belum didukung",
+        description: "Gunakan PDF, JPG, PNG, TXT, CSV, atau DOCX.",
+        tone: "error",
+      });
       return;
     }
 
     if (selectedFile.size > maxAttachmentSizeBytes) {
       setAttachmentError("Ukuran file melebihi batas 10 MB.");
+      showToast({
+        title: "Ukuran file terlalu besar",
+        description: "Ukuran lampiran maksimal adalah 10 MB.",
+        tone: "error",
+      });
       return;
     }
 
@@ -241,9 +291,20 @@ export function TicketDetailPage() {
       setSelectedFile(null);
       await loadTicket({ preserveView: true });
       setAttachmentMessage("Lampiran berhasil ditambahkan ke tiket.");
+      showToast({
+        title: "Lampiran berhasil diunggah",
+        description: `${selectedFile.name} sudah ditambahkan ke tiket.`,
+        tone: "success",
+      });
     } catch (error) {
-      setAttachmentError(getErrorMessage(error, "Lampiran belum berhasil diunggah."));
+      const message = getErrorMessage(error, "Lampiran belum berhasil diunggah.");
+      setAttachmentError(message);
       setAttachmentErrorReferenceId(getErrorReferenceId(error) ?? null);
+      showToast({
+        title: "Lampiran belum berhasil diunggah",
+        description: message,
+        tone: "error",
+      });
     } finally {
       setIsUploadingAttachment(false);
     }
@@ -258,15 +319,21 @@ export function TicketDetailPage() {
       const downloadTarget = await getAttachmentDownloadUrl(ticketId, attachment.id);
       window.open(downloadTarget.downloadUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
-      setAttachmentError(getErrorMessage(error, "Lampiran belum bisa dibuka."));
+      const message = getErrorMessage(error, "Lampiran belum bisa dibuka.");
+      setAttachmentError(message);
       setAttachmentErrorReferenceId(getErrorReferenceId(error) ?? null);
+      showToast({
+        title: "Lampiran belum bisa dibuka",
+        description: message,
+        tone: "error",
+      });
     } finally {
       setDownloadingAttachmentId(null);
     }
   }
 
   if (loading) {
-    return <LoadingState label="Memuat detail tiket..." />;
+    return <LoadingState label="Memuat detail tiket..." lines={6} />;
   }
 
   if (pageError) {
