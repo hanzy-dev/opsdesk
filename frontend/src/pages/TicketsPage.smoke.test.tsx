@@ -146,4 +146,26 @@ describe("TicketsPage smoke tests", () => {
     expect(await screen.findByText("Belum ada tiket yang tercatat")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Buat Tiket" })).not.toBeInTheDocument();
   });
+
+  it("shows reporter-focused copy on my tickets route", async () => {
+    listTicketsMock.mockResolvedValue({
+      items: [],
+      pagination: {
+        page: 1,
+        page_size: 10,
+        total_items: 0,
+        total_pages: 0,
+        has_next: false,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/tickets/mine"]}>
+        <TicketsPage />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Pantau tiket yang Anda ajukan")).toBeInTheDocument();
+    expect(screen.getByText("Belum ada tiket pada akun Anda")).toBeInTheDocument();
+  });
 });

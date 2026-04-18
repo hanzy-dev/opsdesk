@@ -53,6 +53,8 @@ export default function App() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="settings" element={<AccountSettingsPage />} />
         <Route path="tickets" element={<TicketsPage />} />
+        <Route path="tickets/mine" element={<TicketsPage />} />
+        <Route path="tickets/assigned" element={<TicketsPage />} />
         <Route path="tickets/new" element={<CreateTicketPage />} />
         <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
       </Route>

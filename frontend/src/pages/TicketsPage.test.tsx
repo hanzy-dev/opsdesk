@@ -81,4 +81,33 @@ describe("TicketsPage error handling", () => {
       expect(screen.getByText("Penugasan")).toBeInTheDocument();
     });
   });
+
+  it("applies assigned preset when opened from assigned route", async () => {
+    listTicketsMock.mockResolvedValue({
+      items: [],
+      pagination: {
+        page: 1,
+        page_size: 10,
+        total_items: 0,
+        total_pages: 0,
+        has_next: false,
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/tickets/assigned"]}>
+        <TicketsPage />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(listTicketsMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          assignee: "me",
+        }),
+      );
+    });
+
+    expect(screen.getByText("Fokus pada tiket yang ditugaskan ke Anda")).toBeInTheDocument();
+  });
 });

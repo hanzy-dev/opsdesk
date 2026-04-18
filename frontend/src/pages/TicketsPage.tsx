@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { listTickets } from "../api/tickets";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
@@ -9,8 +9,64 @@ import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 
+type TicketViewPreset = {
+  key: "all" | "mine" | "assigned";
+  eyebrow: string;
+  title: string;
+  helperText: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  assigneeFilter: "all" | "me" | "unassigned";
+  isSearchLocked?: boolean;
+};
+
+const allTicketsPreset: TicketViewPreset = {
+  key: "all",
+  eyebrow: "Antrian layanan",
+  title: "Kelola tiket bantuan dan insiden",
+  helperText: "Temukan tiket lebih cepat untuk verifikasi operasional",
+  emptyTitle: "Belum ada tiket yang tercatat",
+  emptyDescription: "Buat tiket pertama agar daftar operasional mulai terisi.",
+  assigneeFilter: "all",
+};
+
+const mineTicketsPreset: TicketViewPreset = {
+  key: "mine",
+  eyebrow: "Akses personal",
+  title: "Pantau tiket yang Anda ajukan",
+  helperText: "Tampilan ini membantu Anda meninjau tiket yang berada dalam akses akun saat ini.",
+  emptyTitle: "Belum ada tiket pada akun Anda",
+  emptyDescription: "Tiket yang Anda buat akan muncul di halaman ini.",
+  assigneeFilter: "all",
+};
+
+const assignedTicketsPreset: TicketViewPreset = {
+  key: "assigned",
+  eyebrow: "Antrian personal",
+  title: "Fokus pada tiket yang ditugaskan ke Anda",
+  helperText: "Preset ini mengunci daftar pada tiket yang sudah ditugaskan kepada akun Anda.",
+  emptyTitle: "Belum ada tiket yang ditugaskan",
+  emptyDescription: "Tiket yang Anda ambil alih akan muncul di halaman ini.",
+  assigneeFilter: "me",
+  isSearchLocked: true,
+};
+
+function resolvePreset(pathname: string): TicketViewPreset {
+  if (pathname === "/tickets/mine") {
+    return mineTicketsPreset;
+  }
+
+  if (pathname === "/tickets/assigned") {
+    return assignedTicketsPreset;
+  }
+
+  return allTicketsPreset;
+}
+
 export function TicketsPage() {
   const { permissions } = useAuth();
+  const location = useLocation();
+  const preset = useMemo(() => resolvePreset(location.pathname), [location.pathname]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -26,10 +82,21 @@ export function TicketsPage() {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Ticket["priority"]>("all");
-  const [assigneeFilter, setAssigneeFilter] = useState<"all" | "me" | "unassigned">("all");
+  const [assigneeFilter, setAssigneeFilter] = useState<"all" | "me" | "unassigned">(preset.assigneeFilter);
   const [sortBy, setSortBy] = useState<"updated_at" | "created_at" | "priority" | "status">("updated_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setSearchQuery("");
+    setSubmittedQuery("");
+    setStatusFilter("all");
+    setPriorityFilter("all");
+    setAssigneeFilter(preset.assigneeFilter);
+    setSortBy("updated_at");
+    setSortOrder("desc");
+    setPage(1);
+  }, [preset]);
 
   async function loadTickets() {
     setLoading(true);
@@ -95,8 +162,8 @@ export function TicketsPage() {
     <section className="stack-lg">
       <div className="hero-card hero-card--compact">
         <div>
-          <p className="section-eyebrow">Antrian layanan</p>
-          <h2>Kelola tiket bantuan dan insiden</h2>
+          <p className="section-eyebrow">{preset.eyebrow}</p>
+          <h2>{preset.title}</h2>
         </div>
         {permissions.canCreateTickets ? (
           <Link className="button button--primary" to="/tickets/new">
@@ -124,7 +191,7 @@ export function TicketsPage() {
         <div className="section-heading">
           <div>
             <p className="section-eyebrow">Pencarian cepat</p>
-            <h3>Temukan tiket lebih cepat untuk verifikasi operasional</h3>
+            <h3>{preset.helperText}</h3>
           </div>
           <p className="filter-summary">
             Menampilkan {tickets.length} dari {pagination.totalItems} tiket
@@ -135,6 +202,7 @@ export function TicketsPage() {
           <label className="field field--search">
             <span>Cari tiket</span>
             <input
+              disabled={preset.isSearchLocked}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Cari ID tiket, judul, atau nama pelapor"
@@ -177,6 +245,7 @@ export function TicketsPage() {
             <label className="field">
               <span>Penugasan</span>
               <select
+                disabled={preset.isSearchLocked}
                 value={assigneeFilter}
                 onChange={(event) => {
                   setAssigneeFilter(event.target.value as "all" | "me" | "unassigned");
@@ -224,6 +293,7 @@ export function TicketsPage() {
         <div className="form-actions">
           <button
             className="button button--secondary"
+            disabled={preset.isSearchLocked}
             onClick={() => {
               setPage(1);
               setSubmittedQuery(searchQuery.trim());
@@ -239,7 +309,7 @@ export function TicketsPage() {
               setSubmittedQuery("");
               setStatusFilter("all");
               setPriorityFilter("all");
-              setAssigneeFilter("all");
+              setAssigneeFilter(preset.assigneeFilter);
               setSortBy("updated_at");
               setSortOrder("desc");
               setPage(1);
@@ -253,10 +323,10 @@ export function TicketsPage() {
 
       {pagination.totalItems === 0 ? (
         <EmptyState
-          title="Belum ada tiket yang tercatat"
+          title={preset.emptyTitle}
           description={
             permissions.canCreateTickets
-              ? "Buat tiket pertama agar daftar operasional mulai terisi."
+              ? preset.emptyDescription
               : "Belum ada tiket yang dapat Anda akses saat ini."
           }
           action={permissions.canCreateTickets ? (

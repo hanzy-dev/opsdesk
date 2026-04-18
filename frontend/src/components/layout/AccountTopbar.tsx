@@ -6,9 +6,17 @@ import { getRoleLabel } from "../../modules/auth/roles";
 
 type AccountTopbarProps = {
   title: string;
+  isMobileNavigation: boolean;
+  isSidebarCollapsed: boolean;
+  onNavigationToggle: () => void;
 };
 
-export function AccountTopbar({ title }: AccountTopbarProps) {
+export function AccountTopbar({
+  title,
+  isMobileNavigation,
+  isSidebarCollapsed,
+  onNavigationToggle,
+}: AccountTopbarProps) {
   const { session, profile, logout, isLoading } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -43,9 +51,25 @@ export function AccountTopbar({ title }: AccountTopbarProps) {
 
   return (
     <header className="topbar">
-      <div>
-        <p className="section-eyebrow">Operasional</p>
-        <h1>{title}</h1>
+      <div className="topbar__leading">
+        <button
+          aria-label={
+            isMobileNavigation
+              ? "Buka navigasi"
+              : isSidebarCollapsed
+                ? "Perluas navigasi"
+                : "Ciutkan navigasi"
+          }
+          className="topbar__nav-trigger"
+          onClick={onNavigationToggle}
+          type="button"
+        >
+          {isMobileNavigation ? "Menu" : isSidebarCollapsed ? ">>" : "<<"}
+        </button>
+        <div>
+          <p className="section-eyebrow">Operasional</p>
+          <h1>{title}</h1>
+        </div>
       </div>
 
       <div className="topbar__actions">
