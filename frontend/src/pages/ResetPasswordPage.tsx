@@ -20,7 +20,7 @@ export function ResetPasswordPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const helperMessage = useMemo(
-    () => "Gunakan kode verifikasi dari email dan masukkan kata sandi baru yang memenuhi kebijakan Cognito.",
+    () => "Gunakan kode verifikasi dari email, lalu masukkan kata sandi baru yang memenuhi kebijakan Cognito.",
     [],
   );
 
@@ -109,13 +109,13 @@ export function ResetPasswordPage() {
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
           <button className="button button--primary button--wide" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Memperbarui..." : "Perbarui Kata Sandi"}
+            {isSubmitting ? "Memperbarui..." : "Perbarui kata sandi"}
           </button>
         </form>
 
         <div className="login-card__footer">
           <Link className="text-link" to="/forgot-password">
-            Kirim ulang permintaan reset
+            Kirim ulang permintaan pengaturan ulang
           </Link>
         </div>
       </section>

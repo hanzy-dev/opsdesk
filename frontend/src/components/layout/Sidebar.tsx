@@ -61,7 +61,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onToggleColl
             <div className="sidebar__brand-mark">OD</div>
             <div className="sidebar__brand-copy">
               <p className="sidebar__brand-title">OpsDesk</p>
-              <p className="sidebar__brand-subtitle">Cloud Helpdesk Internal</p>
+              <p className="sidebar__brand-subtitle">Helpdesk Internal Berbasis Cloud</p>
             </div>
           </div>
           <div className="sidebar__controls">

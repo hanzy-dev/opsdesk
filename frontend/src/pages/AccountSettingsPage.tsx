@@ -99,7 +99,7 @@ export function AccountSettingsPage() {
         <div>
           <p className="section-eyebrow">Akun</p>
           <h2>Pengaturan akun</h2>
-          <p>Kelola pengaturan penting akun, termasuk perubahan kata sandi dan akses cepat ke profil Anda.</p>
+          <p>Kelola pengaturan penting akun, termasuk perubahan kata sandi, profil, dan akses ke dokumentasi API.</p>
         </div>
       </div>
 
@@ -115,7 +115,7 @@ export function AccountSettingsPage() {
               </div>
               <div className="profile-summary__meta">
                 <div>
-                  <span>UUID Cognito</span>
+                  <span>ID Cognito</span>
                   <strong>{identity?.subject ?? "Belum tersedia"}</strong>
                 </div>
               </div>

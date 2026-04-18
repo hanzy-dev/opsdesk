@@ -22,9 +22,9 @@ type TicketViewPreset = {
 
 const allTicketsPreset: TicketViewPreset = {
   key: "all",
-  eyebrow: "Antrian layanan",
+  eyebrow: "Antrean layanan",
   title: "Kelola tiket bantuan dan insiden",
-  helperText: "Temukan tiket lebih cepat untuk verifikasi operasional",
+  helperText: "Temukan tiket dengan cepat untuk verifikasi operasional",
   emptyTitle: "Belum ada tiket yang tercatat",
   emptyDescription: "Buat tiket pertama agar daftar operasional mulai terisi.",
   assigneeFilter: "all",
@@ -366,7 +366,7 @@ export function TicketsPage() {
             tickets={tickets}
             title="Daftar tiket"
             eyebrow="Operasional"
-            helperText="Explorer tiket ini memakai pencarian, filter, urutan, dan pagination dari server."
+            helperText="Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
           />
 
           <div className="panel">

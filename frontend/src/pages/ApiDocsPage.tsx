@@ -20,9 +20,9 @@ const cloudHighlights = [
 ];
 
 const operationHighlights = [
-  "GET untuk health check, identitas akun, profil, daftar tiket, detail tiket, aktivitas, dan download URL lampiran",
-  "POST untuk pembuatan tiket, komentar, presigned upload URL, dan penyimpanan metadata lampiran",
-  "PATCH untuk pembaruan profil, status tiket, dan assignment tiket",
+  "GET untuk health check, identitas akun, profil, daftar tiket, detail tiket, aktivitas, dan URL unduhan lampiran",
+  "POST untuk pembuatan tiket, komentar, URL unggah sementara, dan penyimpanan metadata lampiran",
+  "PATCH untuk pembaruan profil, status tiket, dan penugasan tiket",
 ];
 
 export function ApiDocsPage() {
@@ -32,16 +32,16 @@ export function ApiDocsPage() {
         <div className="api-docs-page__hero-copy">
           <div>
             <p className="section-eyebrow">Dokumentasi API</p>
-            <h1>OpsDesk API Reference</h1>
+            <h1>Referensi API OpsDesk</h1>
             <p>
-              Viewer ini menampilkan kontrak OpenAPI backend OpsDesk yang aktif, lengkap dengan endpoint operasional,
+              Halaman ini menampilkan kontrak OpenAPI backend OpsDesk yang aktif, lengkap dengan endpoint operasional,
               kebutuhan autentikasi Cognito, dan alur integrasi layanan AWS yang dipakai aplikasi.
             </p>
           </div>
 
           <div className="api-docs-page__actions">
             <Link className="button button--secondary" to="/login">
-              Kembali ke aplikasi
+              Buka halaman masuk
             </Link>
             <a
               className="button button--ghost"
@@ -56,7 +56,7 @@ export function ApiDocsPage() {
 
         <div className="api-docs-page__meta">
           <article className="api-docs-page__meta-card">
-            <span>Base URL API</span>
+            <span>URL dasar API</span>
             <strong>{env.apiBaseUrl}</strong>
           </article>
           <article className="api-docs-page__meta-card">
@@ -64,7 +64,7 @@ export function ApiDocsPage() {
             <strong>https://opsdesk-teal.vercel.app/api-docs</strong>
           </article>
           <article className="api-docs-page__meta-card">
-            <span>Auth</span>
+            <span>Autentikasi</span>
             <strong>Bearer JWT Cognito</strong>
           </article>
         </div>
@@ -84,7 +84,7 @@ export function ApiDocsPage() {
           <div className="section-heading">
             <div>
               <p className="section-eyebrow">Cakupan operasi</p>
-              <h2>Yang ditunjukkan viewer ini</h2>
+              <h2>Yang ditampilkan di halaman ini</h2>
             </div>
           </div>
           <ul className="api-docs-page__list">
@@ -93,8 +93,8 @@ export function ApiDocsPage() {
             ))}
           </ul>
           <p className="api-docs-page__hint">
-            Endpoint ditampilkan dari source of truth `docs/openapi.yaml`, sehingga dokumen viewer tetap sinkron dengan
-            kontrak API repository.
+            Endpoint ditampilkan dari source of truth `docs/openapi.yaml`, sehingga dokumentasi ini tetap sinkron
+            dengan kontrak API repository.
           </p>
         </article>
       </section>
@@ -103,7 +103,7 @@ export function ApiDocsPage() {
         <div className="section-heading">
           <div>
             <p className="section-eyebrow">OpenAPI 3.0.3</p>
-            <h2>Swagger UI</h2>
+            <h2>Viewer Swagger UI</h2>
           </div>
         </div>
 

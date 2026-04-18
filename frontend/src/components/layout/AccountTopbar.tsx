@@ -82,8 +82,10 @@ export function AccountTopbar({
             <UserAvatar avatarUrl={identity?.avatarUrl} name={identity?.displayName ?? "Pengguna OpsDesk"} />
             <div className="topbar__identity">
               <strong>{identity?.displayName ?? "Pengguna OpsDesk"}</strong>
-              <p>{identity?.email ?? "Sesi aktif"}</p>
-              <small className="topbar__identity-subtle">{identity?.subject ?? "ID pengguna belum tersedia"}</small>
+              <p>{identity?.email ?? "Email akun belum tersedia"}</p>
+              <small className="topbar__identity-subtle">
+                {identity ? `Peran ${getRoleLabel(identity.role)}` : "Sesi akun aktif"}
+              </small>
             </div>
             <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
           </button>

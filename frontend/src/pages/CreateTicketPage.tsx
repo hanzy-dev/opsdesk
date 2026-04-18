@@ -106,7 +106,7 @@ export function CreateTicketPage() {
         <div className="profile-summary__header">
           <div className="profile-summary__meta">
             <div>
-              <span>Pelapor terautentikasi</span>
+              <span>Pelapor aktif</span>
               <strong>{effectiveIdentity?.displayName ?? "Pengguna OpsDesk"}</strong>
             </div>
             <div>

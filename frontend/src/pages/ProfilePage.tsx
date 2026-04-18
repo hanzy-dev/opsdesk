@@ -92,8 +92,8 @@ export function ProfilePage() {
       <div className="hero-card hero-card--compact hero-card--spotlight">
         <div>
           <p className="section-eyebrow">Akun</p>
-          <h2>Kelola identitas akun Anda</h2>
-          <p>Perbarui nama tampilan dan sumber avatar agar identitas akun tampil lebih profesional di seluruh aplikasi.</p>
+          <h2>Kelola identitas akun</h2>
+          <p>Perbarui nama tampilan dan avatar agar identitas akun tampil konsisten di seluruh aplikasi.</p>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function ProfilePage() {
               </div>
               <div className="profile-summary__meta">
                 <div>
-                  <span>UUID Cognito</span>
+                  <span>ID Cognito</span>
                   <strong>{effectiveProfile.subject}</strong>
                 </div>
                 <div>
@@ -161,7 +161,7 @@ export function ProfilePage() {
             </label>
 
             <label className="field">
-              <span>UUID Cognito</span>
+              <span>ID Cognito</span>
               <input readOnly value={effectiveProfile.subject} />
             </label>
           </div>
@@ -184,7 +184,7 @@ export function ProfilePage() {
               }}
               type="button"
             >
-              Reset
+              Kembalikan Perubahan
             </button>
           </div>
         </form>

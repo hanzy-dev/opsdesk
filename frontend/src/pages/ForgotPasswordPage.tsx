@@ -41,7 +41,7 @@ export function ForgotPasswordPage() {
         <div className="login-card__intro">
           <p className="section-eyebrow">Pemulihan akun</p>
           <h1>Lupa kata sandi</h1>
-          <p>Masukkan email akun Anda untuk menerima kode verifikasi reset kata sandi melalui Cognito.</p>
+          <p>Masukkan email akun Anda untuk menerima kode verifikasi pengaturan ulang kata sandi melalui Cognito.</p>
         </div>
 
         <form className="login-form" onSubmit={handleSubmit}>
@@ -60,7 +60,7 @@ export function ForgotPasswordPage() {
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
           <button className="button button--primary button--wide" disabled={isSubmitting} type="submit">
-            {isSubmitting ? "Mengirim Kode..." : "Kirim Kode Verifikasi"}
+            {isSubmitting ? "Mengirim kode..." : "Kirim Kode Verifikasi"}
           </button>
         </form>
 

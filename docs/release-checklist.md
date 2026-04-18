@@ -47,6 +47,8 @@ Checklist ini dipakai untuk verifikasi rilis final OpsDesk pada baseline impleme
    saat ada error dari backend, UI menampilkan `Kode referensi` jika `requestId` tersedia.
 14. Verifikasi observability dasar:
    cari `requestId` yang sama di CloudWatch Lambda log dan pastikan request dapat ditelusuri.
+15. Verifikasi dokumentasi API:
+   buka `https://opsdesk-teal.vercel.app/api-docs`, pastikan Swagger UI tampil, base URL benar, dan YAML OpenAPI dapat dibuka.
 
 ## Verifikasi Backend
 

@@ -57,7 +57,7 @@ export function LoginPage() {
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
           <button className="button button--primary button--wide" disabled={isLoading} type="submit">
-            {isLoading ? "Memproses Masuk..." : "Masuk"}
+            {isLoading ? "Memproses..." : "Masuk"}
           </button>
         </form>
 

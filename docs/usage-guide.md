@@ -14,7 +14,7 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 2. Masuk menggunakan email dan kata sandi akun internal yang tersedia di Cognito.
 3. Tinjau dashboard untuk melihat ringkasan tiket.
 4. Buka daftar tiket untuk memeriksa tiket aktif.
-5. Gunakan kotak pencarian, filter status, filter prioritas, filter assignee, serta kontrol urutan untuk menelusuri tiket dari server.
+5. Gunakan kotak pencarian, filter status, filter prioritas, filter penugasan, serta kontrol urutan untuk menelusuri tiket dari server.
 6. Jika akun Anda bertipe pelapor atau admin, buat tiket baru dari halaman "Buat Tiket".
 7. Buka detail tiket untuk menambahkan komentar, dan jika akun Anda petugas atau admin, ubah status tiket.
 8. Jika akun Anda petugas atau admin, gunakan tombol penugasan untuk mengambil tanggung jawab tiket ke akun Anda.
@@ -22,6 +22,7 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 10. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
 11. Buka menu akun di topbar untuk mengakses halaman "Profil" dan "Pengaturan Akun".
 12. Gunakan "Pengaturan Akun" untuk mengubah kata sandi saat masih login.
+13. Buka `https://opsdesk-teal.vercel.app/api-docs` untuk meninjau dokumentasi API interaktif.
 
 ## Jalur Verifikasi Cepat
 

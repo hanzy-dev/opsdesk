@@ -15,7 +15,7 @@ describe("ApiDocsPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: /OpsDesk API Reference/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Referensi API OpsDesk/i })).toBeInTheDocument();
     expect(screen.getByText(/AWS API Gateway HTTP API/i)).toBeInTheDocument();
     expect(screen.getByText(/Bearer JWT Cognito/i)).toBeInTheDocument();
     expect(screen.getByTestId("swagger-ui-mock")).toBeInTheDocument();
