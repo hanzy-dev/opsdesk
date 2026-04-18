@@ -21,6 +21,6 @@ parameter_overrides = [
   "StageName=dev",
   "AppEnv=dev",
   "ApiBasePath=/v1",
-  "FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app",
+  "FrontendOrigin=https://opsdesk-teal.vercel.app",
   "LogLevel=info"
 ]

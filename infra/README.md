@@ -49,7 +49,7 @@ Current defaults in this repository:
 
 - `StageName=dev`
 - `AppEnv=dev`
-- `FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+- `FrontendOrigin=https://opsdesk-teal.vercel.app`
 - API base URL output expected after deploy: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 
 Backend runtime environment variables wired by SAM:

@@ -31,7 +31,7 @@ Parameters:
 
   FrontendOrigin:
     Type: String
-    Default: https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
+    Default: https://opsdesk-teal.vercel.app
     Description: Allowed CORS origin for the deployed OpsDesk frontend.
 
   LogLevel:

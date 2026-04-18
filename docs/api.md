@@ -34,7 +34,7 @@ The spec follows the current backend implementation instead of proposing a redes
 Final deployed frontend:
 
 ```text
-https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
+https://opsdesk-teal.vercel.app
 ```
 
 Final deployed API Gateway base URL:

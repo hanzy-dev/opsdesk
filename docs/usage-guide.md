@@ -4,7 +4,7 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 
 ## URL Aktif
 
-- Frontend: `https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+- Frontend: `https://opsdesk-teal.vercel.app`
 - Backend API: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 - Backend environment: `dev`
 

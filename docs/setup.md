@@ -4,7 +4,7 @@
 
 Dokumen ini mengikuti konstanta deployment tetap untuk repository ini:
 
-- Frontend production: `https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+- Frontend production: `https://opsdesk-teal.vercel.app`
 - Backend environment: `dev`
 - Backend API base URL: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 
@@ -26,8 +26,8 @@ Nilai yang distandarkan untuk deployment aktif:
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 VITE_COGNITO_REGION=ap-southeast-1
-VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
-VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
+VITE_COGNITO_USER_POOL_ID=ap-southeast-1_sMFqei7IT
+VITE_COGNITO_CLIENT_ID=3gtbp1t96krpj6t9hfon4ljujn
 ```
 
 Catatan:
@@ -108,7 +108,7 @@ ProjectName=opsdesk
 StageName=dev
 AppEnv=dev
 ApiBasePath=/v1
-FrontendOrigin=https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app
+FrontendOrigin=https://opsdesk-teal.vercel.app
 LogLevel=info
 ```
 
@@ -176,7 +176,7 @@ Lambda dibangun sebagai container image dari `backend/Dockerfile.lambda`, jadi D
 
 Pastikan asumsi berikut benar sebelum rilis:
 
-1. Frontend production tetap `https://opsdesk-cs747lhoe-hanzy-devs-projects.vercel.app`
+1. Frontend production tetap `https://opsdesk-teal.vercel.app`
 2. Backend tetap environment `dev`
 3. API base URL tetap `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 4. SAM parameter `FrontendOrigin` masih sama dengan domain frontend final
@@ -216,18 +216,12 @@ Environment variable yang wajib di Vercel:
 ```text
 VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 VITE_COGNITO_REGION=ap-southeast-1
-VITE_COGNITO_USER_POOL_ID=<stack-output-cognito-user-pool-id>
-VITE_COGNITO_CLIENT_ID=<stack-output-cognito-user-pool-client-id>
+VITE_COGNITO_USER_POOL_ID=ap-southeast-1_sMFqei7IT
+VITE_COGNITO_CLIENT_ID=3gtbp1t96krpj6t9hfon4ljujn
 ```
 
 Karena backend CORS dikunci ke domain production final, jangan arahkan verifikasi utama ke preview domain.
 
-## Catatan Akhir Batch 9
+## Catatan
 
-Batch ini tidak menambah fitur produk baru. Fokusnya adalah:
-
-- finalisasi dokumentasi
-- refresh OpenAPI
-- hardening test
-- hardening deployment guidance
-- repo hygiene ringan
+Dokumen ini berfokus pada setup dan deployment yang sesuai dengan sistem yang saat ini diterapkan. Untuk ringkasan presentasi repository, gunakan [README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/README.md).
