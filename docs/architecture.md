@@ -41,7 +41,7 @@ OpsDesk adalah aplikasi helpdesk internal kecil dengan arsitektur serverless AWS
   - `reporter`
   - `agent`
   - `admin`
-- assignment tiket saat ini hanya ke operator yang sedang login
+- assignment tiket tersedia untuk `agent` dan `admin`, dengan daftar operator yang dibaca dari profil DynamoDB
 
 ### Observability
 
@@ -74,6 +74,5 @@ OpsDesk adalah aplikasi helpdesk internal kecil dengan arsitektur serverless AWS
 
 - belum ada malware scanning attachment
 - belum ada distributed tracing atau alerting lanjutan
-- belum ada assignment ke operator lain
 - belum ada email notification atau automation workflow
 - belum ada multi-tenant support

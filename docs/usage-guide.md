@@ -17,7 +17,7 @@ Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tan
 5. Gunakan kotak pencarian, filter status, filter prioritas, filter penugasan, serta kontrol urutan untuk menelusuri tiket dari server.
 6. Jika akun Anda bertipe pelapor atau admin, buat tiket baru dari halaman "Buat Tiket".
 7. Buka detail tiket untuk menambahkan komentar, dan jika akun Anda petugas atau admin, ubah status tiket.
-8. Jika akun Anda petugas atau admin, gunakan tombol penugasan untuk mengambil tanggung jawab tiket ke akun Anda.
+8. Jika akun Anda petugas atau admin, gunakan kontrol penugasan untuk mengambil tiket atau memindahkannya ke operator lain yang eligible.
 9. Gunakan bagian "Lampiran" pada detail tiket untuk mengunggah atau membuka file pendukung.
 10. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
 11. Buka menu akun di topbar untuk mengakses halaman "Profil" dan "Pengaturan Akun".
@@ -37,7 +37,7 @@ Jika hanya punya waktu singkat:
 7. Ubah halaman pagination dan pastikan data berikutnya termuat.
 8. Buat satu tiket baru.
 9. Jika login sebagai petugas, ubah status tiket pada halaman detail.
-10. Jika login sebagai petugas, klik "Tugaskan ke Saya" dan pastikan nama petugas tampil di detail tiket.
+10. Jika login sebagai petugas atau admin, ubah assignment tiket dan pastikan nama petugas terbaru tampil di detail tiket.
 11. Tambahkan satu komentar dan pastikan tampil pada detail tiket.
 12. Unggah satu lampiran yang valid dan pastikan daftar lampiran bertambah.
 13. Buka lampiran dari detail tiket dan pastikan file terbuka lewat URL sementara.
@@ -48,7 +48,7 @@ Jika hanya punya waktu singkat:
 - Teks UI tetap menggunakan Bahasa Indonesia.
 - Login sekarang memakai Amazon Cognito dan bearer token JWT.
 - RBAC sederhana memakai Cognito group `reporter`, `agent`, dan `admin`.
-- Ownership tiket mengikuti identitas login, dan assignment operator masih memakai kebijakan sederhana "tugaskan ke saya".
+- Ownership tiket mengikuti identitas login, dan assignment operator tersedia untuk agent atau admin terhadap user operasional yang eligible.
 - Akun kini memiliki halaman profil dan halaman pengaturan akun yang terpisah.
 - Reset kata sandi untuk akun yang lupa kata sandi mengikuti alur email verifikasi Amazon Cognito.
 - Aktivitas tiket dicatat append-only dan ditampilkan pada halaman detail.

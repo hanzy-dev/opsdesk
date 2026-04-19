@@ -5,170 +5,224 @@
 [![Backend](https://img.shields.io/badge/Backend-Go-00ADD8)](./backend)
 [![AWS Stack](https://img.shields.io/badge/AWS-Lambda%20%7C%20API%20Gateway%20%7C%20DynamoDB%20%7C%20Cognito%20%7C%20S3-FF9900)](./infra)
 [![Deployment](https://img.shields.io/badge/Deployment-Vercel%20%2B%20AWS%20SAM-111111)](./docs/setup.md)
-[![CI/CD: Vercel + AWS SAM](https://img.shields.io/badge/CI%2FCD-Vercel%20%2B%20AWS%20SAM-4f46e5)](./docs/release-checklist.md)
 [![Status: Production-Oriented](https://img.shields.io/badge/Status-Production--Oriented-0A7F5A)](./README.md)
 
-OpsDesk adalah aplikasi helpdesk dan ticketing berbasis cloud untuk kebutuhan dukungan operasional internal. Repository ini memuat implementasi frontend web, backend Go, infrastruktur AWS, dan dokumentasi pendukung yang digunakan oleh sistem yang telah dideploy.
+OpsDesk adalah aplikasi helpdesk dan ticketing internal berbasis cloud yang dirancang untuk alur operasional yang ringkas, terkontrol, dan mudah dipresentasikan. Repository ini memuat frontend React, backend Go, infrastruktur AWS SAM, serta dokumentasi operator yang mengikuti perilaku sistem saat ini.
 
-## Ringkasan
+## Ringkasan Proyek
 
-OpsDesk dikembangkan sebagai platform helpdesk yang terfokus, dengan akses terautentikasi, kontrol akses berbasis peran, pengelolaan siklus hidup tiket, lampiran yang aman, serta panduan deployment yang selaras dengan kondisi sistem saat ini.
+OpsDesk menangani kebutuhan inti helpdesk internal: autentikasi, pembagian peran, pembuatan tiket, triase, penugasan, komentar, lampiran, audit trail, serta tampilan dashboard operasional yang cukup kuat untuk demo teknis maupun evaluasi produk.
 
-Konstanta deployment tetap untuk repository ini:
+Nilai yang menonjol dari implementasi ini:
 
-- Domain frontend: `https://opsdesk-teal.vercel.app`
-- Environment backend: `dev`
-- API base URL: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
-- Region Cognito: `ap-southeast-1`
-- Cognito user pool ID: `ap-southeast-1_sMFqei7IT`
-- Cognito client ID: `3gtbp1t96krpj6t9hfon4ljujn`
+- arsitektur cloud yang nyata dan terdeploy
+- pemisahan frontend, backend, dan infrastruktur yang jelas
+- RBAC berbasis Cognito group
+- audit trail tiket yang konsisten
+- penugasan tiket ke diri sendiri maupun operator lain yang berwenang
+- dokumentasi API interaktif dan panduan operator yang praktis
 
-## Fitur Utama
+## Link Deployment
 
-- Autentikasi Amazon Cognito dengan alur login nyata
-- Kontrol akses berbasis peran untuk `reporter`, `agent`, dan `admin`
-- Fondasi profil akun dengan nama tampilan dan avatar yang dapat diperbarui
-- Pengaturan akun dan alur kata sandi berbasis Amazon Cognito
-- Pembuatan tiket, daftar tiket, detail tiket, komentar, dan pembaruan status
-- Ownership tiket untuk kontrol akses mandiri
-- Alur self-assignment untuk `agent` dan `admin`
-- Activity log append-only pada halaman detail tiket
-- Pencarian, filter, sorting, dan pagination di sisi server
-- Lampiran S3 privat dengan alur presigned upload dan download
-- Structured logging serta propagasi request ID untuk kebutuhan troubleshooting operasional
-- Dokumentasi OpenAPI yang selaras dengan implementasi backend
-- Cakupan pengujian backend dan frontend untuk alur utama
+- Frontend: `https://opsdesk-teal.vercel.app`
+- Backend API: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
+- API docs: `https://opsdesk-teal.vercel.app/api-docs`
+- Region AWS utama: `ap-southeast-1`
+- Stack SAM aktif: `opsdesk-dev`
 
-## Arsitektur
+Konstanta Cognito yang digunakan deployment aktif:
 
-Komponen utama:
+- User Pool ID: `ap-southeast-1_sMFqei7IT`
+- App Client ID: `3gtbp1t96krpj6t9hfon4ljujn`
 
-- `frontend/`: aplikasi React, Vite, dan TypeScript yang dideploy di Vercel
-- `backend/`: aplikasi HTTP Go untuk eksekusi lokal dan deployment AWS Lambda berbasis container
-- `infra/`: template AWS SAM dan konfigurasi deployment
-- `docs/`: dokumentasi operasional, API, setup, dan arsitektur
+## Masalah yang Diselesaikan
 
-Arsitektur runtime:
+OpsDesk ditujukan untuk skenario dukungan operasional internal yang membutuhkan:
 
-1. Pengguna mengakses frontend pada `https://opsdesk-teal.vercel.app`.
-2. Frontend memanggil HTTP API pada `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`.
-3. API Gateway meneruskan request ke backend Go yang berjalan di AWS Lambda sebagai container image.
-4. Backend memvalidasi JWT Cognito, menerapkan RBAC, dan mengeksekusi alur kerja tiket.
-5. Data tiket disimpan di DynamoDB dan objek lampiran disimpan di bucket S3 privat.
-6. Structured log dan request ID mendukung troubleshooting melalui CloudWatch.
+- kanal tunggal untuk pelaporan isu
+- pemisahan wewenang antara pelapor, petugas, dan admin
+- visibilitas status tiket dan penanggung jawab
+- riwayat perubahan yang bisa ditelusuri
+- lampiran yang tidak terbuka ke publik
+- deployment yang realistis dan mudah diaudit
 
-## Deployment
+## Sorotan Fitur
 
-### Frontend
+- Login Amazon Cognito dengan sesi JWT dan refresh token
+- RBAC untuk `reporter`, `agent`, dan `admin`
+- Dashboard operasional dengan kartu metrik, tiket terbaru, aktivitas terbaru, dan quick actions
+- Daftar tiket dengan pencarian, filter, sorting, dan pagination di sisi server
+- Halaman detail tiket dengan komentar, lampiran, status, penugasan, dan timeline aktivitas
+- Penugasan tiket ke diri sendiri atau ke operator lain yang eligible
+- Profil akun dan pengaturan akun terpisah
+- Forgot password, reset password, dan change password berbasis Cognito
+- Dokumentasi OpenAPI yang terhubung ke viewer Swagger UI
+- Pengujian backend dan frontend untuk alur utama
 
-- Platform: Vercel
-- Root directory: `frontend`
-- Framework preset: `Vite`
-- Build command: `npm run build`
-- Output directory: `dist`
-- Domain production: `https://opsdesk-teal.vercel.app`
+## Peran yang Didukung
 
-### Backend dan Infrastruktur
+Peran aplikasi diturunkan dari Cognito User Pool Group:
 
-- Platform: AWS
+- `reporter`: membuat tiket, melihat tiket milik sendiri, dan menambahkan komentar pada tiket yang dapat diaksesnya
+- `agent`: melihat tiket operasional, memperbarui status, menambahkan komentar, dan mengelola penugasan tiket
+- `admin`: akses operasional penuh, termasuk membuat tiket dan mengelola penugasan
+
+Urutan prioritas role mengikuti grup Cognito:
+
+- `admin` mengungguli `agent`
+- `agent` mengungguli `reporter`
+- jika tidak ada grup yang cocok, sistem memperlakukan akun sebagai `reporter`
+
+## Arsitektur Singkat
+
+Alur runtime aplikasi:
+
+1. Pengguna mengakses frontend Vite di Vercel.
+2. Frontend melakukan autentikasi langsung ke Cognito dan menyimpan sesi JWT.
+3. Frontend memanggil backend HTTP API di API Gateway dengan bearer token.
+4. Backend Go di AWS Lambda memverifikasi JWT Cognito, menyelesaikan role, lalu menerapkan RBAC.
+5. Data tiket dan profil disimpan di DynamoDB.
+6. Lampiran diunggah ke bucket S3 privat melalui presigned URL.
+7. Log request dan request ID dikirim ke CloudWatch untuk troubleshooting.
+
+Komponen utama repository:
+
+- `frontend/`: React + Vite + TypeScript
+- `backend/`: layanan HTTP Go untuk Lambda dan run lokal
+- `infra/`: AWS SAM template dan konfigurasi deploy
+- `docs/`: dokumentasi API, setup, operator guide, dan alur demo
+
+## Stack Teknologi
+
+- Frontend: React, Vite, TypeScript, React Router
+- Backend: Go
+- API: AWS API Gateway HTTP API
+- Compute: AWS Lambda container image
+- Database: DynamoDB
+- Auth: Amazon Cognito
+- Storage: Amazon S3
 - Infrastructure as Code: AWS SAM
-- Model runtime: backend Go dideploy ke AWS Lambda sebagai container image
-- Lapisan API: API Gateway HTTP API
-- Layanan data dan identitas: DynamoDB, Amazon Cognito, Amazon S3
-- Environment backend terdeploy: `dev`
+- Hosting frontend: Vercel
 
-Alur kerja infrastruktur yang umum dari `infra/`:
+## Ringkasan Alur Aplikasi
+
+Alur penggunaan inti di deployment aktif:
+
+1. Pengguna login dengan akun Cognito.
+2. Reporter atau admin membuat tiket baru.
+3. Petugas atau admin meninjau tiket melalui dashboard dan halaman daftar tiket.
+4. Tiket ditugaskan ke petugas yang relevan.
+5. Status, komentar, dan lampiran diperbarui dari halaman detail tiket.
+6. Timeline aktivitas mencatat perubahan penting secara append-only.
+
+## Fitur yang Sudah Tersedia
+
+- Cognito auth dengan login, refresh session, logout global, forgot password, reset password, dan change password
+- Dashboard operasional yang lebih hidup untuk monitoring tiket
+- `/tickets/assigned` dan tampilan "Ditugaskan ke Saya"
+- assignment ke operator lain yang berwenang
+- profile persistence di DynamoDB
+- daftar user assignable untuk agent/admin
+- upload dan download lampiran S3 privat
+- API docs viewer di frontend
+
+## Menjalankan Secara Lokal
+
+### Backend
+
+Dari folder `backend/`:
 
 ```bash
-sam validate --template-file template.yaml
-sam build --template-file template.yaml
-sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
+go test ./...
+go run ./cmd/local
 ```
 
-Deployment berikutnya:
-
-```bash
-sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml --resolve-image-repos
-```
-
-## Environment Variables
-
-### Frontend
-
-Buat `frontend/.env` berdasarkan [frontend/.env.example](./frontend/.env.example):
+Base URL lokal:
 
 ```text
-VITE_API_BASE_URL=https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
+http://localhost:8080/v1
+```
+
+### Frontend
+
+Dari folder `frontend/`:
+
+```bash
+npm install
+npm run dev
+npm test -- --run
+npm run build
+```
+
+Buat `frontend/.env` berdasarkan [frontend/.env.example](./frontend/.env.example). Contoh jika frontend diarahkan ke backend lokal:
+
+```text
+VITE_API_BASE_URL=http://localhost:8080/v1
 VITE_COGNITO_REGION=ap-southeast-1
 VITE_COGNITO_USER_POOL_ID=ap-southeast-1_sMFqei7IT
 VITE_COGNITO_CLIENT_ID=3gtbp1t96krpj6t9hfon4ljujn
 ```
 
-Environment variable frontend wajib diisi secara eksplisit. Aplikasi tidak mengandalkan fallback tersembunyi untuk konfigurasi API maupun Cognito.
+Jika ingin menguji deployment aktif, gunakan nilai production yang sama dengan `.env.example`.
 
-### Backend
+## Ringkasan Deployment dan Infrastruktur
 
-Backend membaca environment variable berikut:
+Parameter SAM yang digunakan pada konfigurasi default:
 
-- `APP_ENV`
-- `API_BASE_PATH`
-- `LOG_LEVEL`
-- `TICKET_TABLE_NAME`
-- `PROFILE_TABLE_NAME`
-- `ATTACHMENT_BUCKET_NAME`
-- `COGNITO_REGION`
-- `COGNITO_USER_POOL_ID`
-- `COGNITO_APP_CLIENT_ID`
+- `ProjectName=opsdesk`
+- `StageName=dev`
+- `AppEnv=dev`
+- `ApiBasePath=/v1`
+- `FrontendOrigin=https://opsdesk-teal.vercel.app`
+- `LogLevel=info`
 
-Untuk stack yang telah dideploy, nilai standarnya adalah:
+Resource penting yang dapat diturunkan langsung dari template:
 
-```text
-APP_ENV=dev
-API_BASE_PATH=/v1
-LOG_LEVEL=info
-COGNITO_REGION=ap-southeast-1
-COGNITO_USER_POOL_ID=ap-southeast-1_sMFqei7IT
-COGNITO_APP_CLIENT_ID=3gtbp1t96krpj6t9hfon4ljujn
+- User Pool name: `opsdesk-dev-users`
+- User Pool groups: `reporter`, `agent`, `admin`
+- Tickets table: `opsdesk-dev-tickets`
+- Profiles table: `opsdesk-dev-profiles`
+- Attachment bucket: `opsdesk-dev-attachments-<AWS_ACCOUNT_ID>`
+
+Perintah deploy dari folder `infra/`:
+
+```bash
+sam validate --template-file template.yaml
+sam build --template-file template.yaml
+sam deploy --config-file samconfig.toml --resolve-image-repos
 ```
 
-`TICKET_TABLE_NAME`, `PROFILE_TABLE_NAME`, dan `ATTACHMENT_BUCKET_NAME` disediakan oleh stack SAM yang telah dideploy.
+## Dokumentasi Tambahan
 
-## Autentikasi dan Peran
+- Operator guide: [docs/operator-guide.md](./docs/operator-guide.md)
+- Demo flow: [docs/demo-guide.md](./docs/demo-guide.md)
+- Setup dan deployment: [docs/setup.md](./docs/setup.md)
+- Usage guide: [docs/usage-guide.md](./docs/usage-guide.md)
+- API reference: [docs/api.md](./docs/api.md)
+- OpenAPI YAML: [docs/openapi.yaml](./docs/openapi.yaml)
 
-Autentikasi diimplementasikan dengan Amazon Cognito. Frontend mengautentikasi pengguna terhadap user pool yang dikonfigurasi dan mengirim bearer token ke backend. Backend memvalidasi JWT dan menentukan otorisasi berdasarkan keanggotaan group Cognito.
+## Ringkasan Demo 3-5 Menit
 
-Peran yang didukung:
+Alur demo singkat yang aman untuk dosen atau recruiter:
 
-- `reporter`: membuat tiket, melihat tiket milik sendiri, dan memberi komentar pada tiket milik sendiri
-- `agent`: melihat tiket operasional, memperbarui status, memberi komentar, dan menugaskan tiket ke dirinya sendiri
-- `admin`: akses operasional penuh, termasuk self-assignment
+1. Login ke aplikasi.
+2. Tunjukkan dashboard operasional.
+3. Buka daftar tiket dan gunakan filter.
+4. Masuk ke detail tiket lalu ubah assignee atau status.
+5. Tambahkan komentar atau buka lampiran.
+6. Tutup dengan API docs dan ringkasan arsitektur cloud.
 
-Kebijakan assignment saat ini sengaja dibatasi:
+Versi narasi yang lebih detail tersedia di [docs/demo-guide.md](./docs/demo-guide.md).
 
-- belum ada direktori operator
-- assignment ke pengguna lain belum diimplementasikan
-- endpoint assignment menerapkan operator yang sedang terautentikasi
+## API dan Integrasi
 
-## Dokumentasi API
-
-Kontrak API yang machine-readable tersedia di [docs/openapi.yaml](./docs/openapi.yaml).
-Viewer Swagger UI yang terhubung ke kontrak yang sama tersedia di `https://opsdesk-teal.vercel.app/api-docs`.
-
-Referensi pendukung:
-
-- [docs/api.md](./docs/api.md)
-- [docs/architecture.md](./docs/architecture.md)
-- [docs/setup.md](./docs/setup.md)
-- [docs/usage-guide.md](./docs/usage-guide.md)
-- [docs/operations.md](./docs/operations.md)
-
-Endpoint HTTP yang tersedia mencakup:
+Endpoint yang tersedia pada implementasi saat ini mencakup:
 
 - `GET /v1/health`
 - `GET /v1/auth/me`
 - `GET /v1/profile/me`
 - `PATCH /v1/profile/me`
+- `GET /v1/profiles/assignable`
 - `POST /v1/tickets`
 - `GET /v1/tickets`
 - `GET /v1/tickets/{id}`
@@ -180,13 +234,21 @@ Endpoint HTTP yang tersedia mencakup:
 - `POST /v1/tickets/{id}/attachments`
 - `GET /v1/tickets/{id}/attachments/{attachmentId}/download`
 
-## Batasan Saat Ini
+## Catatan Teknis yang Penting untuk Operator
 
-- Assignment dibatasi pada operator yang sedang terautentikasi; assignment ke pengguna lain belum tersedia.
-- Malware scanning lanjutan atau pemrosesan lampiran pascaupload belum diimplementasikan.
-- Observability lanjutan seperti distributed tracing dan automated alerting belum disertakan.
-- Fitur workflow enterprise seperti SLA automation dan notification pipeline berada di luar cakupan saat ini.
-- Infrastruktur tetap dijaga ringkas dan belum mencakup custom domain, WAF, atau hardening produksi yang lebih luas.
+- Role sumber kebenaran ada di Cognito group, bukan di form profil frontend.
+- Profil pengguna tetap disimpan di DynamoDB agar nama tampilan, avatar, dan daftar assignable bisa dipakai aplikasi.
+- User baru akan mulai terlihat di picker assignment setelah profilnya pernah tersinkron ke tabel profil dan role tersimpannya termasuk `agent` atau `admin`.
+- Jika role user berubah setelah profilnya sudah pernah tersimpan, lakukan sinkronisasi profil sekali lagi agar daftar assignable mengikuti role baru. Langkah praktisnya dijelaskan di operator guide.
+
+## Batasan dan Ruang Pengembangan Lanjutan
+
+Implementasi saat ini sudah siap dipakai sebagai aplikasi internal skala kecil-menengah dan kuat untuk kebutuhan presentasi teknis. Meski begitu, ruang pengembangan berikut masih terbuka:
+
+- notifikasi real-time atau email operasional
+- otomasi SLA dan eskalasi
+- observability lanjutan seperti tracing dan alerting otomatis
+- hardening produksi tambahan seperti custom domain, WAF, atau IAM tightening yang lebih granular
 
 ## Lisensi
 

@@ -153,14 +153,16 @@ aws cognito-idp admin-add-user-to-group --user-pool-id <user-pool-id> --username
 Role yang didukung:
 
 - `reporter`: buat tiket, lihat tiket milik sendiri, detail tiket milik sendiri, komentar pada tiket milik sendiri
-- `agent`: lihat tiket operasional, ubah status, tambah komentar, dan ambil assignment tiket ke dirinya sendiri
-- `admin`: full access, termasuk assignment tiket ke dirinya sendiri
+- `agent`: lihat tiket operasional, ubah status, tambah komentar, dan mengelola assignment tiket
+- `admin`: full access, termasuk membuat tiket dan mengelola assignment tiket
 
 Catatan ownership dan assignment:
 
 - tiket baru yang dibuat pelapor akan menyimpan owner dari identitas Cognito yang sedang login
 - tiket lama tanpa field ownership baru tetap dibaca dengan fallback ke `reporterEmail`
-- batch ini belum membuat direktori operator, sehingga assignment masih memakai pola sederhana "Tugaskan ke Saya"
+- daftar assignable users dibaca dari tabel profil DynamoDB dan hanya memuat profil dengan role tersimpan `agent` atau `admin`
+- untuk user baru, login pertama akan membantu membuat record profil awal
+- untuk user yang role Cognito-nya baru berubah, lakukan sinkronisasi profil sekali lagi agar daftar assignable mengikuti role terbaru
 
 ## Build and Deploy Backend
 

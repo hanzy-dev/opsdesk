@@ -34,7 +34,7 @@ Checklist ini dipakai untuk verifikasi rilis final OpsDesk pada baseline impleme
 7. Verifikasi aksi sesuai role:
    agent dapat melihat tiket operasional, memperbarui status, dan menambah komentar.
 8. Verifikasi assignment:
-   agent atau admin dapat menekan "Tugaskan ke Saya" dan informasi petugas tersimpan.
+   agent atau admin dapat memperbarui penanggung jawab tiket ke dirinya sendiri atau ke operator lain yang eligible, lalu informasi petugas terbaru tersimpan.
 9. Verifikasi aksi sesuai role:
    admin memiliki akses penuh.
 10. Verifikasi lampiran:
