@@ -40,6 +40,7 @@ describe("Sidebar", () => {
           isCollapsed={false}
           isMobileOpen={false}
           onCloseMobile={() => undefined}
+          onRequestLogout={() => undefined}
         />
       </MemoryRouter>,
     );
@@ -66,6 +67,7 @@ describe("Sidebar", () => {
           isCollapsed={false}
           isMobileOpen={false}
           onCloseMobile={() => undefined}
+          onRequestLogout={() => undefined}
         />
       </MemoryRouter>,
     );

@@ -1,10 +1,11 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../../modules/auth/AuthContext";
 
 type SidebarProps = {
   isCollapsed: boolean;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
+  onRequestLogout: () => void;
 };
 
 type NavItem = {
@@ -39,9 +40,8 @@ const navItems: NavItem[] = [
   { to: "/settings", label: "Pengaturan", shortLabel: "PG", isVisible: () => true },
 ];
 
-export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
-  const { permissions, logout, isSigningOut } = useAuth();
-  const navigate = useNavigate();
+export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLogout }: SidebarProps) {
+  const { permissions, isSigningOut } = useAuth();
   const visibleItems = navItems.filter((item) => item.isVisible(permissions));
 
   return (
@@ -97,10 +97,9 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarPro
           <button
             className="button button--secondary sidebar__logout"
             disabled={isSigningOut}
-            onClick={async () => {
+            onClick={() => {
               onCloseMobile();
-              await logout();
-              navigate("/login");
+              onRequestLogout();
             }}
             type="button"
           >

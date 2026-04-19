@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { ApiError } from "../api/client";
 import { listTickets } from "../api/tickets";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
@@ -64,7 +65,7 @@ function resolvePreset(pathname: string): TicketViewPreset {
 }
 
 export function TicketsPage() {
-  const { permissions } = useAuth();
+  const { permissions, session } = useAuth();
   const location = useLocation();
   const preset = useMemo(() => resolvePreset(location.pathname), [location.pathname]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -109,15 +110,17 @@ export function TicketsPage() {
     setErrorReferenceId(null);
 
     try {
-      const data = await listTickets({
-        q: submittedQuery,
-        status: statusFilter,
-        priority: priorityFilter,
-        assignee: assigneeFilter,
+      const data = await fetchTicketsWithFallback({
+        assigneeFilter,
+        canUseAssignedFallback: preset.key === "assigned" && assigneeFilter === "me",
         page,
         pageSize: pagination.pageSize,
+        priorityFilter,
+        searchQuery: submittedQuery,
+        sessionSubject: session?.subject,
         sortBy,
         sortOrder,
+        statusFilter,
       });
       setTickets(data.items);
       setPagination({
@@ -138,7 +141,7 @@ export function TicketsPage() {
 
   useEffect(() => {
     void loadTickets();
-  }, [submittedQuery, statusFilter, priorityFilter, assigneeFilter, page, sortBy, sortOrder]);
+  }, [submittedQuery, statusFilter, priorityFilter, assigneeFilter, page, sortBy, sortOrder, preset.key, session?.subject]);
 
   const stats = useMemo(
     () => ({
@@ -427,5 +430,71 @@ export function TicketsPage() {
         </div>
       )}
     </section>
+  );
+}
+
+type TicketsFallbackOptions = {
+  assigneeFilter: "all" | "me" | "unassigned";
+  canUseAssignedFallback: boolean;
+  page: number;
+  pageSize: number;
+  priorityFilter: "all" | Ticket["priority"];
+  searchQuery: string;
+  sessionSubject?: string;
+  sortBy: "updated_at" | "created_at" | "priority" | "status";
+  sortOrder: "asc" | "desc";
+  statusFilter: "all" | Ticket["status"];
+};
+
+async function fetchTicketsWithFallback(options: TicketsFallbackOptions) {
+  try {
+    return await listTickets({
+      q: options.searchQuery,
+      status: options.statusFilter,
+      priority: options.priorityFilter,
+      assignee: options.assigneeFilter,
+      page: options.page,
+      pageSize: options.pageSize,
+      sortBy: options.sortBy,
+      sortOrder: options.sortOrder,
+    });
+  } catch (error) {
+    if (!shouldUseAssignedFallback(error, options)) {
+      throw error;
+    }
+
+    const fallbackData = await listTickets({
+      status: options.statusFilter,
+      priority: options.priorityFilter,
+      assignee: "all",
+      page: 1,
+      pageSize: 100,
+      sortBy: options.sortBy,
+      sortOrder: options.sortOrder,
+    });
+
+    const assignedTickets = fallbackData.items.filter((ticket) => ticket.assigneeId === options.sessionSubject);
+    const start = (options.page - 1) * options.pageSize;
+    const totalItems = assignedTickets.length;
+
+    return {
+      items: assignedTickets.slice(start, start + options.pageSize),
+      pagination: {
+        page: options.page,
+        page_size: options.pageSize,
+        total_items: totalItems,
+        total_pages: totalItems === 0 ? 0 : Math.ceil(totalItems / options.pageSize),
+        has_next: start + options.pageSize < totalItems,
+      },
+    };
+  }
+}
+
+function shouldUseAssignedFallback(error: unknown, options: TicketsFallbackOptions) {
+  return (
+    options.canUseAssignedFallback &&
+    error instanceof ApiError &&
+    error.status >= 500 &&
+    Boolean(options.sessionSubject)
   );
 }

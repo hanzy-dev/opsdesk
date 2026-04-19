@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { UserAvatar } from "../common/UserAvatar";
 import { useAuth } from "../../modules/auth/AuthContext";
 import { getRoleLabel } from "../../modules/auth/roles";
+import { getPreferredDisplayName } from "../../utils/identity";
 
 type AccountTopbarProps = {
   title: string;
   isMobileNavigation: boolean;
   isSidebarCollapsed: boolean;
   onNavigationToggle: () => void;
+  onRequestLogout: () => void;
 };
 
 export function AccountTopbar({
@@ -16,9 +18,9 @@ export function AccountTopbar({
   isMobileNavigation,
   isSidebarCollapsed,
   onNavigationToggle,
+  onRequestLogout,
 }: AccountTopbarProps) {
-  const { session, profile, logout, isSigningOut } = useAuth();
-  const navigate = useNavigate();
+  const { session, profile, isSigningOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
@@ -33,6 +35,7 @@ export function AccountTopbar({
           role: session.role,
         }
       : null;
+  const preferredDisplayName = getPreferredDisplayName(identity);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -79,13 +82,16 @@ export function AccountTopbar({
             onClick={() => setIsOpen((current) => !current)}
             type="button"
           >
-            <UserAvatar avatarUrl={identity?.avatarUrl} name={identity?.displayName ?? "Pengguna OpsDesk"} />
+            <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} />
             <div className="topbar__identity">
-              <strong>{identity?.displayName ?? "Pengguna OpsDesk"}</strong>
+              <strong>{preferredDisplayName}</strong>
               <p>{identity?.email ?? "Email akun belum tersedia"}</p>
               <small className="topbar__identity-subtle">{identity?.subject ?? "ID akun belum tersedia"}</small>
             </div>
             <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
+            <span aria-hidden="true" className={`topbar__chevron ${isOpen ? "topbar__chevron--open" : ""}`}>
+              v
+            </span>
           </button>
 
           {isOpen ? (
@@ -104,15 +110,14 @@ export function AccountTopbar({
                 role="menuitem"
                 to="/settings"
               >
-                Pengaturan Akun
+                Pengaturan
               </Link>
               <button
                 className="topbar__menu-link topbar__menu-link--button"
                 disabled={isSigningOut}
-                onClick={async () => {
+                onClick={() => {
                   setIsOpen(false);
-                  await logout();
-                  navigate("/login");
+                  onRequestLogout();
                 }}
                 role="menuitem"
                 type="button"

@@ -5,6 +5,7 @@ import { useToast } from "../components/common/ToastProvider";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
+import { getPreferredDisplayName } from "../utils/identity";
 
 export function ProfilePage() {
   const { profile, session, isProfileLoading, profileError, refreshProfile, saveProfile } = useAuth();
@@ -38,10 +39,10 @@ export function ProfilePage() {
 
   const preview = useMemo(
     () => ({
-      displayName: displayName.trim() || effectiveProfile?.displayName || "Pengguna OpsDesk",
+      displayName: displayName.trim() || getPreferredDisplayName(effectiveProfile),
       avatarUrl: avatarUrl.trim(),
     }),
-    [avatarUrl, displayName, effectiveProfile?.displayName],
+    [avatarUrl, displayName, effectiveProfile],
   );
 
   if (isProfileLoading && !effectiveProfile) {
@@ -106,12 +107,9 @@ export function ProfilePage() {
                 <span className="role-pill">{getRoleLabel(effectiveProfile.role)}</span>
                 <h3>{preview.displayName}</h3>
                 <p>{effectiveProfile.email}</p>
+                <small className="profile-summary__subtle">{effectiveProfile.subject}</small>
               </div>
               <div className="profile-summary__meta">
-                <div>
-                  <span>ID Cognito</span>
-                  <strong>{effectiveProfile.subject}</strong>
-                </div>
                 <div>
                   <span>Sumber avatar</span>
                   <strong>{preview.avatarUrl || "Fallback inisial"}</strong>

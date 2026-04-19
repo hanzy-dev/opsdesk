@@ -5,6 +5,7 @@ import { changeCurrentPassword } from "../modules/auth/authService";
 import { useAuth } from "../modules/auth/AuthContext";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { getRoleLabel } from "../modules/auth/roles";
+import { getPreferredDisplayName } from "../utils/identity";
 
 export function AccountSettingsPage() {
   const { profile, session } = useAuth();
@@ -32,6 +33,7 @@ export function AccountSettingsPage() {
     () => "Gunakan kata sandi baru yang kuat dan tidak sama dengan kata sandi sebelumnya.",
     [],
   );
+  const preferredDisplayName = getPreferredDisplayName(identity);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -106,18 +108,13 @@ export function AccountSettingsPage() {
       <div className="detail-grid">
         <article className="panel panel--section profile-summary profile-summary--dense">
           <div className="profile-summary__header">
-            <UserAvatar avatarUrl={identity?.avatarUrl} name={identity?.displayName ?? "Pengguna OpsDesk"} size="lg" />
+            <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} size="lg" />
             <div className="stack-md">
               <div>
                 <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
-                <h3>{identity?.displayName ?? "Pengguna OpsDesk"}</h3>
+                <h3>{preferredDisplayName}</h3>
                 <p>{identity?.email ?? "Email tidak tersedia"}</p>
-              </div>
-              <div className="profile-summary__meta">
-                <div>
-                  <span>ID Cognito</span>
-                  <strong>{identity?.subject ?? "Belum tersedia"}</strong>
-                </div>
+                <small className="profile-summary__subtle">{identity?.subject ?? "ID belum tersedia"}</small>
               </div>
               <div className="account-settings__links">
                 <Link className="button button--secondary" to="/profile">

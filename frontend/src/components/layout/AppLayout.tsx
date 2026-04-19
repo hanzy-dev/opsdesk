@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { ConfirmationDialog } from "../common/ConfirmationDialog";
+import { useAuth } from "../../modules/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { AccountTopbar } from "./AccountTopbar";
 
@@ -17,6 +19,8 @@ const sidebarPreferenceKey = "opsdesk.sidebar.collapsed";
 
 export function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout, isSigningOut } = useAuth();
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") {
@@ -27,6 +31,7 @@ export function AppLayout() {
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isRouteTransitioning, setIsRouteTransitioning] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -91,6 +96,7 @@ export function AppLayout() {
         isCollapsed={isSidebarCollapsed && !isMobileViewport}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        onRequestLogout={() => setIsLogoutDialogOpen(true)}
       />
       <div className="app-shell__main">
         <div
@@ -101,12 +107,27 @@ export function AppLayout() {
           isMobileNavigation={isMobileViewport}
           isSidebarCollapsed={isSidebarCollapsed && !isMobileViewport}
           onNavigationToggle={handleNavigationToggle}
+          onRequestLogout={() => setIsLogoutDialogOpen(true)}
           title={title}
         />
         <main className="page-content">
           <Outlet />
         </main>
       </div>
+      <ConfirmationDialog
+        cancelLabel="Batal"
+        confirmLabel="Keluar"
+        isOpen={isLogoutDialogOpen}
+        isSubmitting={isSigningOut}
+        message="Anda yakin ingin keluar dari sesi OpsDesk saat ini?"
+        onCancel={() => setIsLogoutDialogOpen(false)}
+        onConfirm={async () => {
+          await logout();
+          setIsLogoutDialogOpen(false);
+          navigate("/login");
+        }}
+        title="Keluar dari OpsDesk"
+      />
     </div>
   );
 }

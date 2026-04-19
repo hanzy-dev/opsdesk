@@ -9,6 +9,7 @@ import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
 import type { CreateTicketInput } from "../types/ticket";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
+import { getPreferredDisplayName } from "../utils/identity";
 
 const initialForm: CreateTicketInput = {
   title: "",
@@ -38,6 +39,7 @@ export function CreateTicketPage() {
           role: session.role,
         }
       : null;
+  const preferredDisplayName = getPreferredDisplayName(effectiveIdentity);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,7 +52,7 @@ export function CreateTicketPage() {
     try {
       const payload: CreateTicketInput = {
         ...form,
-        reporterName: effectiveIdentity?.displayName ?? "",
+        reporterName: preferredDisplayName,
         reporterEmail: effectiveIdentity?.email ?? "",
       };
 
@@ -106,11 +108,11 @@ export function CreateTicketPage() {
       <article className="panel panel--section profile-summary profile-summary--compact">
         <div className="profile-summary__header">
           <div className="profile-summary__identity">
-            <UserAvatar avatarUrl={profile?.avatarUrl ?? session?.avatarUrl} name={effectiveIdentity?.displayName ?? "Pengguna OpsDesk"} size="lg" />
+            <UserAvatar avatarUrl={profile?.avatarUrl ?? session?.avatarUrl} name={preferredDisplayName} size="lg" />
             <div className="profile-summary__meta">
               <div>
                 <span>Pelapor aktif</span>
-                <strong>{effectiveIdentity?.displayName ?? "Pengguna OpsDesk"}</strong>
+                <strong>{preferredDisplayName}</strong>
                 <p>{effectiveIdentity?.email ?? "Email belum tersedia"}</p>
               </div>
               <small className="profile-summary__subtle">{effectiveIdentity?.subject ?? "ID belum tersedia"}</small>

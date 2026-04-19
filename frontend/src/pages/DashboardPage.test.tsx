@@ -13,6 +13,9 @@ vi.mock("../api/tickets", () => ({
 
 vi.mock("../modules/auth/AuthContext", () => ({
   useAuth: () => ({
+    session: {
+      subject: "user-123",
+    },
     permissions: {
       canAssignTickets: true,
       canCreateTickets: true,
@@ -30,11 +33,28 @@ describe("DashboardPage", () => {
 
   it("renders operational sections and quick actions", async () => {
     listTicketsMock
-      .mockResolvedValueOnce({ items: [], pagination: { total_items: 8 } })
+      .mockResolvedValueOnce({
+        items: [
+          {
+            id: "TCK-1001",
+            title: "API timeout",
+            description: "Gangguan backend",
+            status: "open",
+            priority: "high",
+            reporterName: "Rina",
+            reporterEmail: "rina@example.com",
+            comments: [],
+            attachments: [],
+            assigneeId: "user-123",
+            updatedAt: "2026-04-19T09:00:00Z",
+            createdAt: "2026-04-19T08:00:00Z",
+          },
+        ],
+        pagination: { total_items: 8 },
+      })
       .mockResolvedValueOnce({ items: [], pagination: { total_items: 3 } })
       .mockResolvedValueOnce({ items: [], pagination: { total_items: 2 } })
       .mockResolvedValueOnce({ items: [], pagination: { total_items: 3 } })
-      .mockResolvedValueOnce({ items: [], pagination: { total_items: 2 } })
       .mockResolvedValueOnce({
         items: [
           {
@@ -52,7 +72,8 @@ describe("DashboardPage", () => {
           },
         ],
         pagination: { total_items: 8 },
-      });
+      })
+      .mockResolvedValueOnce({ items: [], pagination: { total_items: 2 } });
 
     getTicketActivitiesMock.mockResolvedValueOnce([
       {

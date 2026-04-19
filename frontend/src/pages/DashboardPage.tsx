@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { ApiError } from "../api/client";
 import { getTicketActivities, listTickets } from "../api/tickets";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
@@ -36,7 +37,7 @@ type DashboardData = {
 };
 
 export function DashboardPage() {
-  const { permissions } = useAuth();
+  const { permissions, session } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,26 +47,28 @@ export function DashboardPage() {
     setError(null);
 
     try {
-      const [allTickets, openTickets, inProgressTickets, resolvedTickets, assignedTickets, recentTicketsResponse] =
+      const [allTickets, openTickets, inProgressTickets, resolvedTickets, recentTicketsResponse] =
         await Promise.all([
-          listTickets({ page: 1, pageSize: 1, sortBy: "updated_at", sortOrder: "desc" }),
+          listTickets({ page: 1, pageSize: 100, sortBy: "updated_at", sortOrder: "desc" }),
           listTickets({ page: 1, pageSize: 1, status: "open", sortBy: "updated_at", sortOrder: "desc" }),
           listTickets({ page: 1, pageSize: 1, status: "in_progress", sortBy: "updated_at", sortOrder: "desc" }),
           listTickets({ page: 1, pageSize: 1, status: "resolved", sortBy: "updated_at", sortOrder: "desc" }),
-          permissions.canAssignTickets
-            ? listTickets({ page: 1, pageSize: 1, assignee: "me", sortBy: "updated_at", sortOrder: "desc" })
-            : Promise.resolve({
-                items: [],
-                pagination: {
-                  page: 1,
-                  page_size: 1,
-                  total_items: 0,
-                  total_pages: 0,
-                  has_next: false,
-                },
-              }),
           listTickets({ page: 1, pageSize: 6, sortBy: "updated_at", sortOrder: "desc" }),
         ]);
+
+      let assignedToMeCount = 0;
+      if (permissions.canAssignTickets) {
+        try {
+          const assignedTickets = await listTickets({ page: 1, pageSize: 1, assignee: "me", sortBy: "updated_at", sortOrder: "desc" });
+          assignedToMeCount = assignedTickets.pagination.total_items;
+        } catch (error) {
+          if (error instanceof ApiError && error.status >= 500 && session?.subject) {
+            assignedToMeCount = allTickets.items.filter((ticket) => ticket.assigneeId === session.subject).length;
+          } else {
+            throw error;
+          }
+        }
+      }
 
       const recentTickets = recentTicketsResponse.items;
       const recentActivityResults = await Promise.allSettled(
@@ -102,7 +105,7 @@ export function DashboardPage() {
           open: openTickets.pagination.total_items,
           inProgress: inProgressTickets.pagination.total_items,
           resolved: resolvedTickets.pagination.total_items,
-          assignedToMe: assignedTickets.pagination.total_items,
+          assignedToMe: assignedToMeCount,
         },
         recentTickets,
         recentActivities,
@@ -117,7 +120,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     void loadDashboard();
-  }, [permissions.canAssignTickets]);
+  }, [permissions.canAssignTickets, session?.subject]);
 
   const statusSegments = useMemo(() => {
     if (!data) {
@@ -328,7 +331,7 @@ export function DashboardPage() {
                       <div>
                         <strong>{ticket.title}</strong>
                         <p>
-                          {ticket.id} • {ticket.reporterName}
+                          {ticket.id} - {ticket.reporterName}
                         </p>
                       </div>
                       <StatusBadge status={ticket.status} />
@@ -368,7 +371,7 @@ export function DashboardPage() {
                         <strong>{activity.summary}</strong>
                         <p>{activity.ticketTitle}</p>
                         <span>
-                          {activity.actorLabel} • {formatDateTime(activity.timestamp)}
+                          {activity.actorLabel} - {formatDateTime(activity.timestamp)}
                         </span>
                       </div>
                     </Link>
