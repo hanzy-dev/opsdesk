@@ -124,41 +124,42 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 	}
 
 	expressionValues := map[string]types.AttributeValue{}
+	expressionNames := map[string]string{}
 	filterExpressions := make([]string, 0, 5)
 
 	if filter.Status != "" {
 		filterExpressions = append(filterExpressions, "#status = :status")
+		expressionNames["#status"] = "status"
 		expressionValues[":status"] = &types.AttributeValueMemberS{Value: string(filter.Status)}
 	}
 
 	if filter.Priority != "" {
 		filterExpressions = append(filterExpressions, "#priority = :priority")
+		expressionNames["#priority"] = "priority"
 		expressionValues[":priority"] = &types.AttributeValueMemberS{Value: string(filter.Priority)}
 	}
 
 	if strings.TrimSpace(filter.ReporterEmail) != "" {
 		filterExpressions = append(filterExpressions, "#reporterEmail = :reporterEmail")
+		expressionNames["#reporterEmail"] = "reporterEmail"
 		expressionValues[":reporterEmail"] = &types.AttributeValueMemberS{Value: strings.TrimSpace(filter.ReporterEmail)}
 	}
 
 	if strings.TrimSpace(filter.AssigneeID) != "" {
 		filterExpressions = append(filterExpressions, "#assigneeId = :assigneeId")
+		expressionNames["#assigneeId"] = "assigneeId"
 		expressionValues[":assigneeId"] = &types.AttributeValueMemberS{Value: strings.TrimSpace(filter.AssigneeID)}
 	}
 
 	if filter.UnassignedOnly {
 		filterExpressions = append(filterExpressions, "(attribute_not_exists(#assigneeId) OR #assigneeId = :emptyAssigneeId)")
+		expressionNames["#assigneeId"] = "assigneeId"
 		expressionValues[":emptyAssigneeId"] = &types.AttributeValueMemberS{Value: ""}
 	}
 
 	if len(filterExpressions) > 0 {
 		input.FilterExpression = aws.String(joinFilterExpressions(filterExpressions))
-		input.ExpressionAttributeNames = map[string]string{
-			"#status":        "status",
-			"#priority":      "priority",
-			"#reporterEmail": "reporterEmail",
-			"#assigneeId":    "assigneeId",
-		}
+		input.ExpressionAttributeNames = expressionNames
 		input.ExpressionAttributeValues = expressionValues
 	}
 

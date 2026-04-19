@@ -6,7 +6,7 @@ type TopbarProps = {
 };
 
 export function Topbar({ title }: TopbarProps) {
-  const { session, roleLabel, logout, isLoading } = useAuth();
+  const { session, roleLabel, logout, isSigningOut } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -26,14 +26,14 @@ export function Topbar({ title }: TopbarProps) {
         </div>
         <button
           className="button button--secondary"
-          disabled={isLoading}
+          disabled={isSigningOut}
           onClick={async () => {
             await logout();
             navigate("/login");
           }}
           type="button"
         >
-          {isLoading ? "Memproses..." : "Keluar"}
+          {isSigningOut ? "Keluar dari sesi..." : "Keluar"}
         </button>
       </div>
     </header>

@@ -17,7 +17,7 @@ export function AccountTopbar({
   isSidebarCollapsed,
   onNavigationToggle,
 }: AccountTopbarProps) {
-  const { session, profile, logout, isLoading } = useAuth();
+  const { session, profile, logout, isSigningOut } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -57,8 +57,8 @@ export function AccountTopbar({
             isMobileNavigation
               ? "Buka navigasi"
               : isSidebarCollapsed
-                ? "Perluas navigasi"
-                : "Ciutkan navigasi"
+                ? "Perluas sidebar"
+                : "Ciutkan sidebar"
           }
           className="topbar__nav-trigger"
           onClick={onNavigationToggle}
@@ -83,9 +83,7 @@ export function AccountTopbar({
             <div className="topbar__identity">
               <strong>{identity?.displayName ?? "Pengguna OpsDesk"}</strong>
               <p>{identity?.email ?? "Email akun belum tersedia"}</p>
-              <small className="topbar__identity-subtle">
-                {identity ? `Peran ${getRoleLabel(identity.role)}` : "Sesi akun aktif"}
-              </small>
+              <small className="topbar__identity-subtle">{identity?.subject ?? "ID akun belum tersedia"}</small>
             </div>
             <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
           </button>
@@ -110,7 +108,7 @@ export function AccountTopbar({
               </Link>
               <button
                 className="topbar__menu-link topbar__menu-link--button"
-                disabled={isLoading}
+                disabled={isSigningOut}
                 onClick={async () => {
                   setIsOpen(false);
                   await logout();
@@ -119,7 +117,7 @@ export function AccountTopbar({
                 role="menuitem"
                 type="button"
               >
-                {isLoading ? "Memproses..." : "Keluar"}
+                {isSigningOut ? "Keluar dari sesi..." : "Keluar"}
               </button>
             </div>
           ) : null}

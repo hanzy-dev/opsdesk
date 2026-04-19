@@ -10,6 +10,8 @@ import type { UpdateProfileInput, UserProfile } from "../../types/profile";
 type AuthContextValue = {
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAuthenticating: boolean;
+  isSigningOut: boolean;
   session: AuthSession | null;
   profile: UserProfile | null;
   isProfileLoading: boolean;
@@ -32,6 +34,8 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -113,22 +117,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         canUpdateTicketStatus: session ? canUpdateTicketStatus(session.role) : false,
         canViewOperationalTickets: session ? canViewOperationalTickets(session.role) : false,
       },
+      isAuthenticating,
+      isSigningOut,
       login: async (email: string, password: string) => {
-        setIsLoading(true);
+        setIsAuthenticating(true);
         try {
           await loginWithCredentials(email, password);
         } finally {
-          setIsLoading(false);
+          setIsAuthenticating(false);
         }
       },
       logout: async () => {
-        setIsLoading(true);
+        setIsSigningOut(true);
         try {
           await logoutCurrentSession();
           setProfile(null);
           setProfileError(null);
         } finally {
-          setIsLoading(false);
+          setIsSigningOut(false);
         }
       },
       refreshProfile: async () => {
@@ -165,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return nextProfile;
       },
     }),
-    [isLoading, isProfileLoading, profile, profileError, session],
+    [isAuthenticating, isLoading, isProfileLoading, isSigningOut, profile, profileError, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

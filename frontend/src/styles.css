@@ -105,6 +105,8 @@ textarea:focus-visible {
 
 .sidebar {
   position: relative;
+  display: flex;
+  flex-direction: column;
   padding: 32px 24px;
   border-right: 1px solid var(--border);
   background:
@@ -147,6 +149,7 @@ textarea:focus-visible {
 .sidebar__controls {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 .sidebar__icon-button,
@@ -215,6 +218,18 @@ textarea:focus-visible {
 .sidebar__nav {
   display: grid;
   gap: 12px;
+}
+
+.sidebar__footer {
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.sidebar__logout {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 18px;
+  justify-content: center;
 }
 
 .sidebar__link {
@@ -433,6 +448,35 @@ textarea:focus-visible {
   backdrop-filter: blur(24px);
 }
 
+.page-progress {
+  position: sticky;
+  top: 0;
+  z-index: 19;
+  height: 2px;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events: none;
+}
+
+.page-progress::after {
+  content: "";
+  display: block;
+  width: 26%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(239, 142, 83, 0), rgba(239, 142, 83, 0.92), rgba(121, 184, 255, 0.72));
+  transform: translateX(-120%);
+}
+
+.page-progress--active {
+  opacity: 1;
+}
+
+.page-progress--active::after {
+  animation: page-progress-slide 0.9s ease infinite;
+}
+
 .topbar h1,
 .hero-card h2,
 .table-panel h2,
@@ -551,6 +595,13 @@ textarea:focus-visible {
   display: flex;
   justify-content: space-between;
   gap: 16px;
+}
+
+.hero-card__supporting {
+  margin-top: 12px;
+  max-width: 60ch;
+  color: var(--muted);
+  line-height: 1.65;
 }
 
 .metrics-grid {
@@ -752,6 +803,10 @@ textarea:focus-visible {
   gap: 14px;
 }
 
+.loading-state--compact {
+  padding: 22px;
+}
+
 .empty-state__icon {
   width: 64px;
   height: 64px;
@@ -876,6 +931,26 @@ textarea:focus-visible {
 .filter-summary {
   margin: 0;
   color: var(--muted);
+}
+
+.inline-feedback {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.inline-feedback strong,
+.inline-feedback p,
+.inline-feedback small {
+  margin: 0;
+}
+
+.inline-feedback--error {
+  border-color: rgba(255, 143, 126, 0.26);
+  background: rgba(255, 143, 126, 0.08);
 }
 
 .form-success {
@@ -1186,7 +1261,7 @@ textarea:focus-visible {
 .topbar__identity {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 4px;
 }
 
 .topbar__identity strong,
@@ -1196,8 +1271,12 @@ textarea:focus-visible {
 
 .topbar__identity-subtle {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   line-height: 1.4;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .topbar__menu {
@@ -1263,11 +1342,19 @@ textarea:focus-visible {
   display: flex;
   align-items: flex-start;
   gap: 18px;
+  justify-content: space-between;
+}
+
+.profile-summary__identity {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  min-width: 0;
 }
 
 .profile-summary__meta {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .profile-summary__meta span {
@@ -1280,9 +1367,21 @@ textarea:focus-visible {
 .profile-summary__meta strong {
   display: block;
   color: var(--text);
-  font-size: 0.92rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.35;
   word-break: break-word;
+}
+
+.profile-summary__meta p,
+.profile-summary__note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.profile-summary__note {
+  margin-top: 16px;
+  max-width: 72ch;
+  line-height: 1.6;
 }
 
 .account-settings__links {
@@ -1459,6 +1558,16 @@ textarea:focus-visible {
   }
 }
 
+@keyframes page-progress-slide {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(420%);
+  }
+}
+
 @media (max-width: 1080px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -1520,7 +1629,8 @@ textarea:focus-visible {
   .table-panel__header,
   .ticket-summary__header,
   .topbar__actions,
-  .profile-summary__header {
+  .profile-summary__header,
+  .profile-summary__identity {
     flex-direction: column;
     align-items: flex-start;
   }

@@ -76,6 +76,7 @@ export function TicketsPage() {
     hasNext: false,
   });
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorReferenceId, setErrorReferenceId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +100,11 @@ export function TicketsPage() {
   }, [preset]);
 
   async function loadTickets() {
-    setLoading(true);
+    if (loading) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     setError(null);
     setErrorReferenceId(null);
 
@@ -127,6 +132,7 @@ export function TicketsPage() {
       setErrorReferenceId(getErrorReferenceId(error) ?? null);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   }
 
@@ -144,13 +150,18 @@ export function TicketsPage() {
   );
 
   if (loading) {
-    return <LoadingState label="Memuat daftar tiket operasional..." lines={6} />;
+    return (
+      <LoadingState
+        label={preset.key === "assigned" ? "Menyiapkan tiket yang ditugaskan kepada Anda..." : "Memuat daftar tiket operasional..."}
+        lines={6}
+      />
+    );
   }
 
-  if (error) {
+  if (error && tickets.length === 0) {
     return (
       <ErrorState
-        title="Daftar tiket belum tersedia"
+        title={preset.key === "assigned" ? "Daftar penugasan belum tersedia" : "Daftar tiket belum tersedia"}
         message={error}
         referenceId={errorReferenceId ?? undefined}
         onRetry={() => void loadTickets()}
@@ -164,6 +175,9 @@ export function TicketsPage() {
         <div>
           <p className="section-eyebrow">{preset.eyebrow}</p>
           <h2>{preset.title}</h2>
+          {preset.key === "assigned" ? (
+            <p className="hero-card__supporting">Pantau beban kerja aktif Anda tanpa hasil kosong, blank, atau status yang membingungkan.</p>
+          ) : null}
         </div>
         {permissions.canCreateTickets ? (
           <Link className="button button--primary" to="/tickets/new">
@@ -197,6 +211,15 @@ export function TicketsPage() {
             Menampilkan {tickets.length} dari {pagination.totalItems} tiket
           </p>
         </div>
+
+        {isRefreshing ? <p className="filter-summary">Memperbarui daftar tiket...</p> : null}
+        {error && tickets.length > 0 ? (
+          <div className="inline-feedback inline-feedback--error">
+            <strong>Daftar belum sepenuhnya diperbarui.</strong>
+            <p>{error}</p>
+            {errorReferenceId ? <small>Kode referensi: {errorReferenceId}</small> : null}
+          </div>
+        ) : null}
 
         <div className="filter-grid">
           <label className="field field--search">
@@ -326,9 +349,11 @@ export function TicketsPage() {
           eyebrow={preset.key === "assigned" ? "Penugasan" : preset.key === "mine" ? "Akun Saya" : "Daftar Tiket"}
           title={preset.emptyTitle}
           description={
-            permissions.canCreateTickets
-              ? preset.emptyDescription
-              : "Belum ada tiket yang dapat Anda akses saat ini."
+            preset.key === "assigned"
+              ? "Belum ada tiket yang sedang menjadi tanggung jawab Anda. Ambil tiket dari antrean utama saat siap menangani."
+              : permissions.canCreateTickets
+                ? preset.emptyDescription
+                : "Belum ada tiket yang dapat Anda akses saat ini."
           }
           action={permissions.canCreateTickets ? (
             <Link className="button button--primary" to="/tickets/new">

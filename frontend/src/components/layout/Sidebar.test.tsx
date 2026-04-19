@@ -10,6 +10,8 @@ const useAuthMock = vi.fn(() => ({
     canUpdateTicketStatus: false,
     canViewOperationalTickets: false,
   },
+  logout: vi.fn(),
+  isSigningOut: false,
 }));
 
 vi.mock("../../modules/auth/AuthContext", () => ({
@@ -26,6 +28,8 @@ describe("Sidebar", () => {
         canUpdateTicketStatus: false,
         canViewOperationalTickets: false,
       },
+      logout: vi.fn(),
+      isSigningOut: false,
     });
   });
 
@@ -36,7 +40,6 @@ describe("Sidebar", () => {
           isCollapsed={false}
           isMobileOpen={false}
           onCloseMobile={() => undefined}
-          onToggleCollapsed={() => undefined}
         />
       </MemoryRouter>,
     );
@@ -53,6 +56,8 @@ describe("Sidebar", () => {
         canUpdateTicketStatus: true,
         canViewOperationalTickets: true,
       },
+      logout: vi.fn(),
+      isSigningOut: false,
     });
 
     render(
@@ -61,7 +66,6 @@ describe("Sidebar", () => {
           isCollapsed={false}
           isMobileOpen={false}
           onCloseMobile={() => undefined}
-          onToggleCollapsed={() => undefined}
         />
       </MemoryRouter>,
     );

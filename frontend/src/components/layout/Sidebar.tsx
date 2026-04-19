@@ -1,11 +1,10 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../modules/auth/AuthContext";
 
 type SidebarProps = {
   isCollapsed: boolean;
   isMobileOpen: boolean;
   onCloseMobile: () => void;
-  onToggleCollapsed: () => void;
 };
 
 type NavItem = {
@@ -40,8 +39,9 @@ const navItems: NavItem[] = [
   { to: "/settings", label: "Pengaturan", shortLabel: "PG", isVisible: () => true },
 ];
 
-export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onToggleCollapsed }: SidebarProps) {
-  const { permissions } = useAuth();
+export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile }: SidebarProps) {
+  const { permissions, logout, isSigningOut } = useAuth();
+  const navigate = useNavigate();
   const visibleItems = navItems.filter((item) => item.isVisible(permissions));
 
   return (
@@ -65,14 +65,6 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onToggleColl
             </div>
           </div>
           <div className="sidebar__controls">
-            <button
-              aria-label={isCollapsed ? "Perluas navigasi" : "Ciutkan navigasi"}
-              className="sidebar__icon-button sidebar__icon-button--desktop"
-              onClick={onToggleCollapsed}
-              type="button"
-            >
-              {isCollapsed ? ">>" : "<<"}
-            </button>
             <button
               aria-label="Tutup navigasi"
               className="sidebar__icon-button sidebar__icon-button--mobile"
@@ -100,6 +92,21 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onToggleColl
             </NavLink>
           ))}
         </nav>
+
+        <div className="sidebar__footer">
+          <button
+            className="button button--secondary sidebar__logout"
+            disabled={isSigningOut}
+            onClick={async () => {
+              onCloseMobile();
+              await logout();
+              navigate("/login");
+            }}
+            type="button"
+          >
+            {isSigningOut ? "Keluar dari sesi..." : "Keluar dari OpsDesk"}
+          </button>
+        </div>
       </aside>
     </>
   );

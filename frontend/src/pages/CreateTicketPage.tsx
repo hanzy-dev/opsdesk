@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { createTicket } from "../api/tickets";
 import { ErrorState } from "../components/common/ErrorState";
+import { UserAvatar } from "../components/common/UserAvatar";
 import { useToast } from "../components/common/ToastProvider";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
@@ -104,22 +105,20 @@ export function CreateTicketPage() {
 
       <article className="panel panel--section profile-summary profile-summary--compact">
         <div className="profile-summary__header">
-          <div className="profile-summary__meta">
-            <div>
-              <span>Pelapor aktif</span>
-              <strong>{effectiveIdentity?.displayName ?? "Pengguna OpsDesk"}</strong>
-            </div>
-            <div>
-              <span>Email akun</span>
-              <strong>{effectiveIdentity?.email ?? "Email belum tersedia"}</strong>
-            </div>
-            <div>
-              <span>ID akun</span>
-              <strong className="profile-summary__subtle">{effectiveIdentity?.subject ?? "ID belum tersedia"}</strong>
+          <div className="profile-summary__identity">
+            <UserAvatar avatarUrl={profile?.avatarUrl ?? session?.avatarUrl} name={effectiveIdentity?.displayName ?? "Pengguna OpsDesk"} size="lg" />
+            <div className="profile-summary__meta">
+              <div>
+                <span>Pelapor aktif</span>
+                <strong>{effectiveIdentity?.displayName ?? "Pengguna OpsDesk"}</strong>
+                <p>{effectiveIdentity?.email ?? "Email belum tersedia"}</p>
+              </div>
+              <small className="profile-summary__subtle">{effectiveIdentity?.subject ?? "ID belum tersedia"}</small>
             </div>
           </div>
           <span className="role-pill">{effectiveIdentity ? getRoleLabel(effectiveIdentity.role) : "Akun"}</span>
         </div>
+        <p className="profile-summary__note">Identitas pelapor akan terpasang otomatis pada tiket agar audit trail tetap rapi dan konsisten.</p>
       </article>
 
       <form className="panel panel--section form-panel" onSubmit={handleSubmit}>
@@ -163,20 +162,6 @@ export function CreateTicketPage() {
               rows={6}
             />
             {fieldErrors.description ? <small>{fieldErrors.description}</small> : null}
-          </label>
-
-          <label className="field">
-            <span>Nama pelapor</span>
-            <input readOnly value={effectiveIdentity?.displayName ?? ""} />
-            <small>Diambil langsung dari identitas akun yang sedang masuk.</small>
-            {fieldErrors.reporterName ? <small>{fieldErrors.reporterName}</small> : null}
-          </label>
-
-          <label className="field">
-            <span>Email pelapor</span>
-            <input readOnly type="email" value={effectiveIdentity?.email ?? ""} />
-            <small>Email ini akan digunakan pada metadata tiket.</small>
-            {fieldErrors.reporterEmail ? <small>{fieldErrors.reporterEmail}</small> : null}
           </label>
         </div>
 

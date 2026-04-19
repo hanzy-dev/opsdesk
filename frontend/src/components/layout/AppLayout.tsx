@@ -26,6 +26,7 @@ export function AppLayout() {
     return window.localStorage.getItem(sidebarPreferenceKey) === "true";
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isRouteTransitioning, setIsRouteTransitioning] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -59,6 +60,17 @@ export function AppLayout() {
     setIsMobileSidebarOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    setIsRouteTransitioning(true);
+    const timer = window.setTimeout(() => {
+      setIsRouteTransitioning(false);
+    }, 280);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [location.pathname]);
+
   const title =
     location.pathname.startsWith("/tickets/") && location.pathname !== "/tickets/new"
       ? (pageTitles[location.pathname] ?? "Detail Tiket")
@@ -79,9 +91,12 @@ export function AppLayout() {
         isCollapsed={isSidebarCollapsed && !isMobileViewport}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
-        onToggleCollapsed={() => setIsSidebarCollapsed((current) => !current)}
       />
       <div className="app-shell__main">
+        <div
+          aria-hidden="true"
+          className={`page-progress ${isRouteTransitioning ? "page-progress--active" : ""}`}
+        />
         <AccountTopbar
           isMobileNavigation={isMobileViewport}
           isSidebarCollapsed={isSidebarCollapsed && !isMobileViewport}

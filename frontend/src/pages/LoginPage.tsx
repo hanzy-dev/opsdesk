@@ -5,7 +5,7 @@ import { useAuth } from "../modules/auth/AuthContext";
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading } = useAuth();
+  const { login, isAuthenticating } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -37,6 +37,7 @@ export function LoginPage() {
             <span>Email</span>
             <input
               autoComplete="email"
+              disabled={isAuthenticating}
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -47,6 +48,7 @@ export function LoginPage() {
             <span>Kata sandi</span>
             <input
               autoComplete="current-password"
+              disabled={isAuthenticating}
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -56,8 +58,10 @@ export function LoginPage() {
 
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-          <button className="button button--primary button--wide" disabled={isLoading} type="submit">
-            {isLoading ? "Memproses..." : "Masuk"}
+          {isAuthenticating ? <p className="form-hint">Memverifikasi kredensial dan menyiapkan sesi aman...</p> : null}
+
+          <button className="button button--primary button--wide" disabled={isAuthenticating} type="submit">
+            {isAuthenticating ? "Masuk ke OpsDesk..." : "Masuk"}
           </button>
         </form>
 

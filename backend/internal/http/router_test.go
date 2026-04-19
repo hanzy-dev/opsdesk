@@ -574,6 +574,60 @@ func TestListTicketsSupportsSearchSortingAndPagination(t *testing.T) {
 	}
 }
 
+func TestAgentCanListAssignedTicketsForCurrentIdentity(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
+
+	for _, ticket := range []domain.Ticket{
+		{
+			ID:           "TCK-2001",
+			Title:        "Gangguan jaringan lantai 2",
+			Description:  "Perlu tindak lanjut cepat",
+			Status:       domain.TicketStatusInProgress,
+			Priority:     domain.TicketPriorityHigh,
+			AssigneeID:   "agent-123",
+			AssigneeName: "OpsDesk Agent",
+			AssignedAt:   time.Now().UTC().Add(-30 * time.Minute),
+			CreatedAt:    time.Now().UTC().Add(-2 * time.Hour),
+			UpdatedAt:    time.Now().UTC().Add(-15 * time.Minute),
+		},
+		{
+			ID:           "TCK-2002",
+			Title:        "Permintaan akses printer",
+			Description:  "Belum diambil petugas",
+			Status:       domain.TicketStatusOpen,
+			Priority:     domain.TicketPriorityLow,
+			AssigneeID:   "agent-999",
+			AssigneeName: "Petugas Lain",
+			AssignedAt:   time.Now().UTC().Add(-45 * time.Minute),
+			CreatedAt:    time.Now().UTC().Add(-90 * time.Minute),
+			UpdatedAt:    time.Now().UTC().Add(-20 * time.Minute),
+		},
+	} {
+		if err := repo.CreateTicket(context.Background(), ticket); err != nil {
+			t.Fatalf("expected seeded ticket, got error %v", err)
+		}
+	}
+
+	recorder := performRequest(t, agentRouter, http.MethodGet, "/v1/tickets?assignee=me", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.TicketListResponse]
+	decodeResponse(t, recorder, &response)
+
+	if len(response.Data.Items) != 1 {
+		t.Fatalf("expected 1 assigned ticket, got %d", len(response.Data.Items))
+	}
+
+	if response.Data.Items[0].AssigneeID != "agent-123" {
+		t.Fatalf("expected assignee agent-123, got %q", response.Data.Items[0].AssigneeID)
+	}
+}
+
 func TestAgentCannotCreateTicket(t *testing.T) {
 	t.Parallel()
 

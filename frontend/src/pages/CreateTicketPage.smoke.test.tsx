@@ -86,9 +86,13 @@ describe("CreateTicketPage smoke tests", () => {
   it("shows reporter identity as derived read-only fields", () => {
     render(<CreateTicketPage />);
 
-    expect(screen.getByDisplayValue("Aulia Rahman")).toHaveAttribute("readonly");
-    expect(screen.getByDisplayValue("aulia@example.com")).toHaveAttribute("readonly");
-    expect(screen.getByText("Diambil langsung dari identitas akun yang sedang masuk.")).toBeInTheDocument();
+    expect(screen.getByText("Pelapor aktif")).toBeInTheDocument();
+    expect(screen.getByText("Aulia Rahman")).toBeInTheDocument();
+    expect(screen.getByText("aulia@example.com")).toBeInTheDocument();
+    expect(screen.getByText("admin-123")).toBeInTheDocument();
+    expect(
+      screen.getByText("Identitas pelapor akan terpasang otomatis pada tiket agar audit trail tetap rapi dan konsisten."),
+    ).toBeInTheDocument();
   });
 
   it("shows backend reference code when ticket creation fails", async () => {
