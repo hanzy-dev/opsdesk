@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { requestProfileAvatarUploadUrl } from "../api/profile";
 import { uploadAttachmentFile } from "../api/tickets";
+import { AppIcon } from "../components/common/AppIcon";
 import { ConfirmationDialog } from "../components/common/ConfirmationDialog";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -264,6 +265,7 @@ export function ProfilePage() {
                 onClick={() => fileInputRef.current?.click()}
                 type="button"
               >
+                <AppIcon name="plus" size="sm" />
                 {isSaving ? "Menyiapkan perubahan..." : hasAvatar ? "Ganti Avatar" : "Unggah Avatar"}
               </button>
               {hasAvatar ? (
@@ -274,6 +276,7 @@ export function ProfilePage() {
                   onClick={() => setIsRemoveDialogOpen(true)}
                   type="button"
                 >
+                  <AppIcon name="close" size="sm" />
                   Hapus Avatar
                 </button>
               ) : null}
@@ -335,9 +338,11 @@ export function ProfilePage() {
 
             <div className="form-actions">
               <button aria-busy={isSaving} className="button button--primary" disabled={isSaving} type="submit">
+                <AppIcon name="profile" size="sm" />
                 {isSaving ? "Menyimpan..." : "Simpan Profil"}
               </button>
               <button aria-busy={isSaving} className="button button--secondary" disabled={isSaving} onClick={resetDraftChanges} type="button">
+                <AppIcon name="reset" size="sm" />
                 Kembalikan Perubahan
               </button>
             </div>

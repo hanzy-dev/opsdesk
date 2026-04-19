@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { createTicket } from "../api/tickets";
+import { AppIcon } from "../components/common/AppIcon";
 import { ErrorState } from "../components/common/ErrorState";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { useToast } from "../components/common/ToastProvider";
@@ -178,6 +179,7 @@ export function CreateTicketPage() {
 
         <div className="form-actions">
           <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
+            <AppIcon name="plus" size="sm" />
             {isSubmitting ? "Menyimpan tiket..." : "Simpan Tiket"}
           </button>
         </div>

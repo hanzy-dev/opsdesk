@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { AppIcon } from "../components/common/AppIcon";
 import { useToast } from "../components/common/ToastProvider";
 import { changeCurrentPassword } from "../modules/auth/authService";
 import { useAuth } from "../modules/auth/AuthContext";
@@ -121,9 +122,11 @@ export function AccountSettingsPage() {
               </p>
               <div className="account-settings__links">
                 <Link className="button button--secondary" to="/profile">
+                  <AppIcon name="profile" size="sm" />
                   Buka Profil
                 </Link>
                 <Link className="button button--ghost" to="/api-docs">
+                  <AppIcon name="api" size="sm" />
                   Dokumentasi API
                 </Link>
               </div>
@@ -181,6 +184,7 @@ export function AccountSettingsPage() {
 
           <div className="form-actions">
             <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
+              <AppIcon name="settings" size="sm" />
               {isSubmitting ? "Menyimpan..." : "Ubah Kata Sandi"}
             </button>
           </div>

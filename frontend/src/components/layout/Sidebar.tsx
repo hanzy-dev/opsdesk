@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { AppIcon } from "../common/AppIcon";
 import { useAuth } from "../../modules/auth/AuthContext";
 
 type SidebarProps = {
@@ -11,33 +12,33 @@ type SidebarProps = {
 type NavItem = {
   to: string;
   label: string;
-  shortLabel: string;
+  icon: "dashboard" | "tickets" | "plus" | "mine" | "assigned" | "profile" | "settings";
   isVisible: (permissions: ReturnType<typeof useAuth>["permissions"]) => boolean;
 };
 
 const navItems: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", shortLabel: "DS", isVisible: () => true },
-  { to: "/tickets", label: "Daftar Tiket", shortLabel: "DT", isVisible: () => true },
+  { to: "/dashboard", label: "Dashboard", icon: "dashboard", isVisible: () => true },
+  { to: "/tickets", label: "Daftar Tiket", icon: "tickets", isVisible: () => true },
   {
     to: "/tickets/new",
     label: "Buat Tiket",
-    shortLabel: "BT",
+    icon: "plus",
     isVisible: (permissions) => permissions.canCreateTickets,
   },
   {
     to: "/tickets/mine",
     label: "Tiket Saya",
-    shortLabel: "TS",
+    icon: "mine",
     isVisible: (permissions) => !permissions.canViewOperationalTickets,
   },
   {
     to: "/tickets/assigned",
     label: "Ditugaskan ke Saya",
-    shortLabel: "DM",
+    icon: "assigned",
     isVisible: (permissions) => permissions.canAssignTickets,
   },
-  { to: "/profile", label: "Profil", shortLabel: "PR", isVisible: () => true },
-  { to: "/settings", label: "Pengaturan", shortLabel: "PG", isVisible: () => true },
+  { to: "/profile", label: "Profil", icon: "profile", isVisible: () => true },
+  { to: "/settings", label: "Pengaturan", icon: "settings", isVisible: () => true },
 ];
 
 export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLogout }: SidebarProps) {
@@ -71,6 +72,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
               onClick={onCloseMobile}
               type="button"
             >
+              <AppIcon name="close" size="sm" />
               Tutup
             </button>
           </div>
@@ -86,9 +88,12 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
               className={({ isActive }) => (isActive ? "sidebar__link sidebar__link--active" : "sidebar__link")}
             >
               <span aria-hidden="true" className="sidebar__link-icon">
-                {item.shortLabel}
+                <AppIcon name={item.icon} />
               </span>
               <span className="sidebar__link-label">{item.label}</span>
+              <span aria-hidden="true" className="sidebar__link-cue">
+                <AppIcon name="chevronRight" size="sm" />
+              </span>
             </NavLink>
           ))}
         </nav>
@@ -103,6 +108,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
             }}
             type="button"
           >
+            <AppIcon name="logout" size="sm" />
             {isSigningOut ? "Keluar dari sesi..." : "Keluar dari OpsDesk"}
           </button>
         </div>

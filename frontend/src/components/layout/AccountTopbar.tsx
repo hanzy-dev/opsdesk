@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { AppIcon } from "../common/AppIcon";
 import { UserAvatar } from "../common/UserAvatar";
 import { useAuth } from "../../modules/auth/AuthContext";
 import { getRoleLabel } from "../../modules/auth/roles";
@@ -85,7 +86,8 @@ export function AccountTopbar({
           onClick={onNavigationToggle}
           type="button"
         >
-          {isMobileNavigation ? "Menu" : isSidebarCollapsed ? ">>" : "<<"}
+          <AppIcon name={isMobileNavigation ? "menu" : isSidebarCollapsed ? "panelOpen" : "panelClose"} size="sm" />
+          <span>{isMobileNavigation ? "Menu" : isSidebarCollapsed ? "Buka" : "Ciutkan"}</span>
         </button>
         <div>
           <p className="section-eyebrow">Operasional</p>
@@ -114,28 +116,26 @@ export function AccountTopbar({
             <div className="topbar__account-side">
               <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
               <span aria-hidden="true" className={`topbar__chevron ${isOpen ? "topbar__chevron--open" : ""}`}>
-                ▾
+                <AppIcon name="chevronDown" size="sm" />
               </span>
             </div>
           </button>
 
           {isOpen ? (
             <div className="topbar__menu topbar__menu--open" id={menuId} role="menu">
-              <Link
-                className="topbar__menu-link"
-                onClick={() => setIsOpen(false)}
-                role="menuitem"
-                to="/profile"
-              >
-                Profil
+              <Link className="topbar__menu-link" onClick={() => setIsOpen(false)} role="menuitem" to="/profile">
+                <span className="topbar__menu-item">
+                  <AppIcon name="profile" size="sm" />
+                  <span>Profil</span>
+                </span>
+                <AppIcon name="chevronRight" size="sm" />
               </Link>
-              <Link
-                className="topbar__menu-link"
-                onClick={() => setIsOpen(false)}
-                role="menuitem"
-                to="/settings"
-              >
-                Pengaturan
+              <Link className="topbar__menu-link" onClick={() => setIsOpen(false)} role="menuitem" to="/settings">
+                <span className="topbar__menu-item">
+                  <AppIcon name="settings" size="sm" />
+                  <span>Pengaturan</span>
+                </span>
+                <AppIcon name="chevronRight" size="sm" />
               </Link>
               <button
                 className="topbar__menu-link topbar__menu-link--button"
@@ -147,7 +147,11 @@ export function AccountTopbar({
                 role="menuitem"
                 type="button"
               >
-                {isSigningOut ? "Keluar dari sesi..." : "Keluar"}
+                <span className="topbar__menu-item">
+                  <AppIcon name="logout" size="sm" />
+                  <span>{isSigningOut ? "Keluar dari sesi..." : "Keluar"}</span>
+                </span>
+                <AppIcon name="chevronRight" size="sm" />
               </button>
             </div>
           ) : null}

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { AppIcon } from "../common/AppIcon";
 import type { Ticket } from "../../types/ticket";
 import { formatDateTime } from "../../utils/date";
 import { StatusBadge } from "./StatusBadge";
@@ -24,7 +25,10 @@ export function TicketTable({
           <h2>{title}</h2>
           {helperText ? <p className="table-panel__helper">{helperText}</p> : null}
         </div>
-        <p className="table-panel__count">{tickets.length} tiket</p>
+        <p className="table-panel__count">
+          <AppIcon name="tickets" size="sm" />
+          <span>{tickets.length} tiket</span>
+        </p>
       </div>
 
       <div className="ticket-table-wrap">
@@ -45,7 +49,8 @@ export function TicketTable({
               <tr key={ticket.id}>
                 <td>
                   <Link to={`/tickets/${ticket.id}`} className="table-link">
-                    {ticket.id}
+                    <span>{ticket.id}</span>
+                    <AppIcon name="chevronRight" size="sm" />
                   </Link>
                 </td>
                 <td>
@@ -57,7 +62,10 @@ export function TicketTable({
                   <StatusBadge status={ticket.status} />
                 </td>
                 <td>
-                  <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
+                  <span className={`priority-pill priority-pill--${ticket.priority}`}>
+                    <AppIcon name="dashboard" size="sm" />
+                    <span>{formatPriority(ticket.priority)}</span>
+                  </span>
                 </td>
                 <td className="ticket-table__meta-cell">{ticket.reporterName}</td>
                 <td className="ticket-table__meta-cell">{ticket.assigneeName || "Belum ditugaskan"}</td>

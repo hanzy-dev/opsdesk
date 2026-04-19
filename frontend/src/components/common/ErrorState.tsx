@@ -1,3 +1,5 @@
+import { AppIconBadge } from "./AppIcon";
+
 type ErrorStateProps = {
   title?: string;
   message: string;
@@ -20,7 +22,7 @@ export function ErrorState({
   return (
     <div className="panel error-state state-card">
       <div className="state-card__body">
-        <div className="empty-state__icon state-card__icon">!</div>
+        <AppIconBadge className="state-card__icon" name="error" tone="accent" />
         <p className="section-eyebrow">{eyebrow}</p>
         <h3>{title}</h3>
         <p>{message}</p>

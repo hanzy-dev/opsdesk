@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { AppIconBadge } from "./AppIcon";
 
 type EmptyStateProps = {
   title: string;
@@ -11,7 +12,7 @@ type EmptyStateProps = {
 export function EmptyState({ title, description, action, eyebrow, supportText }: EmptyStateProps) {
   return (
     <div className="panel empty-state state-card">
-      <div className="empty-state__icon state-card__icon">O</div>
+      <AppIconBadge className="state-card__icon" name="empty" tone="cool" />
       {eyebrow ? <span className="empty-state__eyebrow">{eyebrow}</span> : null}
       <h3>{title}</h3>
       <p>{description}</p>

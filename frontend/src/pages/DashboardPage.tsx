@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { getTicketActivities, listTickets } from "../api/tickets";
+import { AppIcon, AppIconBadge, type AppIconName } from "../components/common/AppIcon";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -158,28 +159,33 @@ export function DashboardPage() {
               title: "Buat tiket baru",
               description: "Catat insiden atau permintaan baru tanpa meninggalkan alur kerja utama.",
               to: "/tickets/new",
+              icon: "plus" as const,
             }
           : null,
         {
           title: "Lihat semua tiket",
           description: "Masuk ke antrean utama untuk triase, filter, dan tindak lanjut operasional.",
           to: "/tickets",
+          icon: "tickets" as const,
         },
         permissions.canAssignTickets
           ? {
               title: "Tiket yang ditugaskan",
               description: "Fokus pada beban kerja yang sedang menjadi tanggung jawab Anda.",
               to: "/tickets/assigned",
+              icon: "assigned" as const,
             }
           : {
               title: "Tiket saya",
               description: "Tinjau tiket yang Anda ajukan dan pantau progres penanganannya.",
               to: "/tickets/mine",
+              icon: "mine" as const,
             },
         {
           title: "Buka dokumentasi API",
           description: "Akses referensi endpoint saat perlu validasi integrasi atau demo teknis.",
           to: "/api-docs",
+          icon: "api" as const,
         },
       ].filter((item): item is NonNullable<typeof item> => item !== null),
     [permissions.canAssignTickets, permissions.canCreateTickets],
@@ -276,6 +282,7 @@ export function DashboardPage() {
           <div className="dashboard-hero__actions">
             {quickActions.slice(0, 2).map((action) => (
               <Link className={action.to === "/tickets/new" ? "button button--primary" : "button button--secondary"} key={action.to} to={action.to}>
+                <AppIcon name={action.icon} size="sm" />
                 {action.title}
               </Link>
             ))}
@@ -287,8 +294,14 @@ export function DashboardPage() {
         {statCards.map((card) => (
           <Link className={`metric-card metric-card--premium dashboard-stat ${card.tone}`} key={card.label} to={card.to}>
             <div className="dashboard-stat__header">
-              <p>{card.label}</p>
-              <span className="dashboard-stat__link">Buka</span>
+              <div className="dashboard-stat__title">
+                <AppIconBadge name={getStatIcon(card.label)} size="sm" tone={card.tone === "is-blue" ? "cool" : "accent"} />
+                <p>{card.label}</p>
+              </div>
+              <span className="dashboard-stat__link">
+                <span>Buka</span>
+                <AppIcon name="chevronRight" size="sm" />
+              </span>
             </div>
             <strong>{card.value}</strong>
             <span className="dashboard-stat__meta">{card.description}</span>
@@ -309,8 +322,15 @@ export function DashboardPage() {
             <div className="dashboard-actions-grid">
               {quickActions.map((action) => (
                 <Link className="dashboard-action-card" key={action.to} to={action.to}>
-                  <strong>{action.title}</strong>
+                  <div className="dashboard-action-card__header">
+                    <AppIconBadge name={action.icon} size="sm" tone={action.icon === "api" ? "cool" : "neutral"} />
+                    <strong>{action.title}</strong>
+                  </div>
                   <p>{action.description}</p>
+                  <span className="dashboard-action-card__cue">
+                    <span>Buka</span>
+                    <AppIcon name="chevronRight" size="sm" />
+                  </span>
                 </Link>
               ))}
             </div>
@@ -357,7 +377,10 @@ export function DashboardPage() {
                           {ticket.id} - {ticket.reporterName}
                         </p>
                       </div>
-                      <StatusBadge status={ticket.status} />
+                      <div className="dashboard-ticket-card__status">
+                        <StatusBadge status={ticket.status} />
+                        <AppIcon name="chevronRight" size="sm" />
+                      </div>
                     </div>
                     <div className="dashboard-ticket-card__meta">
                       <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
@@ -444,12 +467,19 @@ export function DashboardPage() {
               </div>
 
               <div className="dashboard-actions-grid">
-                {quickActions.map((action) => (
-                  <Link className="dashboard-action-card" key={action.to} to={action.to}>
+              {quickActions.map((action) => (
+                <Link className="dashboard-action-card" key={action.to} to={action.to}>
+                  <div className="dashboard-action-card__header">
+                    <AppIconBadge name={action.icon} size="sm" tone={action.icon === "api" ? "cool" : "neutral"} />
                     <strong>{action.title}</strong>
-                    <p>{action.description}</p>
-                  </Link>
-                ))}
+                  </div>
+                  <p>{action.description}</p>
+                  <span className="dashboard-action-card__cue">
+                    <span>Buka</span>
+                    <AppIcon name="chevronRight" size="sm" />
+                  </span>
+                </Link>
+              ))}
               </div>
             </section>
           </div>
@@ -457,6 +487,26 @@ export function DashboardPage() {
       )}
     </section>
   );
+}
+
+function getStatIcon(label: string): AppIconName {
+  if (label.includes("triase")) {
+    return "tickets";
+  }
+
+  if (label.includes("berjalan")) {
+    return "assigned";
+  }
+
+  if (label.includes("Ditugaskan")) {
+    return "mine";
+  }
+
+  if (label.includes("selesai")) {
+    return "dashboard";
+  }
+
+  return "dashboard";
 }
 
 function formatActivityActor(activity: TicketActivity) {

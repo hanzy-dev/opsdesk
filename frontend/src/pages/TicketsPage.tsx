@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { listTickets } from "../api/tickets";
+import { AppIcon, AppIconBadge } from "../components/common/AppIcon";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -199,6 +200,7 @@ export function TicketsPage() {
         </div>
         {permissions.canCreateTickets ? (
           <Link className="button button--primary" to="/tickets/new">
+            <AppIcon name="plus" size="sm" />
             Buat Tiket
           </Link>
         ) : null}
@@ -206,15 +208,24 @@ export function TicketsPage() {
 
       <div className="metrics-grid metrics-grid--compact">
         <article className="metric-card metric-card--premium">
-          <p>Total tiket</p>
+          <p className="metric-card__label">
+            <AppIconBadge name="tickets" size="sm" />
+            <span>Total tiket</span>
+          </p>
           <strong>{stats.total}</strong>
         </article>
         <article className="metric-card metric-card--premium">
-          <p>Tiket terbuka</p>
+          <p className="metric-card__label">
+            <AppIconBadge name="search" size="sm" tone="accent" />
+            <span>Tiket terbuka</span>
+          </p>
           <strong>{stats.open}</strong>
         </article>
         <article className="metric-card metric-card--premium">
-          <p>Tiket selesai</p>
+          <p className="metric-card__label">
+            <AppIconBadge name="dashboard" size="sm" tone="cool" />
+            <span>Tiket selesai</span>
+          </p>
           <strong>{stats.resolved}</strong>
         </article>
       </div>
@@ -341,6 +352,7 @@ export function TicketsPage() {
             }}
             type="button"
           >
+            <AppIcon name="search" size="sm" />
             Cari
           </button>
           <button
@@ -357,6 +369,7 @@ export function TicketsPage() {
             }}
             type="button"
           >
+            <AppIcon name="reset" size="sm" />
             Reset Filter
           </button>
         </div>
@@ -438,6 +451,7 @@ export function TicketsPage() {
                 onClick={() => setPage((current) => Math.max(1, current - 1))}
                 type="button"
               >
+                <AppIcon name="panelClose" size="sm" />
                 Sebelumnya
               </button>
               <button
@@ -447,6 +461,7 @@ export function TicketsPage() {
                 type="button"
               >
                 Berikutnya
+                <AppIcon name="panelOpen" size="sm" />
               </button>
             </div>
           </div>
