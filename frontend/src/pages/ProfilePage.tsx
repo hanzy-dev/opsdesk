@@ -88,7 +88,7 @@ export function ProfilePage() {
   }
 
   return (
-    <section className="stack-lg">
+    <section className="stack-lg page-shell page-shell--narrow">
       <div className="hero-card hero-card--compact hero-card--spotlight">
         <div>
           <p className="section-eyebrow">Akun</p>
@@ -98,7 +98,7 @@ export function ProfilePage() {
       </div>
 
       <div className="detail-grid">
-        <article className="panel panel--section profile-summary">
+        <article className="panel panel--section profile-summary profile-summary--dense">
           <div className="profile-summary__header">
             <UserAvatar avatarUrl={preview.avatarUrl} name={preview.displayName} size="lg" />
             <div className="stack-md">
@@ -121,7 +121,7 @@ export function ProfilePage() {
           </div>
         </article>
 
-        <form className="panel panel--section stack-md" onSubmit={handleSubmit}>
+        <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
           <div className="section-heading">
             <div>
               <p className="section-eyebrow">Profil</p>

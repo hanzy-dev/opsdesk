@@ -96,7 +96,7 @@ export function CreateTicketPage() {
   }
 
   return (
-    <section className="stack-lg">
+    <section className="stack-lg page-shell page-shell--narrow">
       <div className="hero-card hero-card--spotlight">
         <p className="section-eyebrow">Input tiket</p>
         <h2>Buat tiket baru</h2>
@@ -121,7 +121,7 @@ export function CreateTicketPage() {
         <p className="profile-summary__note">Identitas pelapor akan terpasang otomatis pada tiket agar audit trail tetap rapi dan konsisten.</p>
       </article>
 
-      <form className="panel panel--section form-panel" onSubmit={handleSubmit}>
+      <form className="panel panel--section form-panel form-panel--compact" onSubmit={handleSubmit}>
         <div className="form-intro">
           <p>
             Isi informasi inti tiket secara singkat dan jelas. Identitas pelapor diambil dari sesi masuk yang aktif agar

@@ -17,7 +17,7 @@ export function TicketTable({
   helperText,
 }: TicketTableProps) {
   return (
-    <div className="panel table-panel">
+    <div className="panel panel--section table-panel">
       <div className="table-panel__header">
         <div>
           <p className="section-eyebrow">{eyebrow}</p>
@@ -48,16 +48,20 @@ export function TicketTable({
                     {ticket.id}
                   </Link>
                 </td>
-                <td>{ticket.title}</td>
+                <td>
+                  <div className="ticket-table__title-cell">
+                    <strong>{ticket.title}</strong>
+                  </div>
+                </td>
                 <td>
                   <StatusBadge status={ticket.status} />
                 </td>
                 <td>
                   <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
                 </td>
-                <td>{ticket.reporterName}</td>
-                <td>{ticket.assigneeName || "Belum ditugaskan"}</td>
-                <td>{formatDateTime(ticket.updatedAt)}</td>
+                <td className="ticket-table__meta-cell">{ticket.reporterName}</td>
+                <td className="ticket-table__meta-cell">{ticket.assigneeName || "Belum ditugaskan"}</td>
+                <td className="ticket-table__meta-cell">{formatDateTime(ticket.updatedAt)}</td>
               </tr>
             ))}
           </tbody>

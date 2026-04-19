@@ -170,7 +170,7 @@ export function TicketsPage() {
   }
 
   return (
-    <section className="stack-lg">
+    <section className="stack-lg page-shell page-shell--wide tickets-page">
       <div className="hero-card hero-card--compact hero-card--spotlight">
         <div>
           <p className="section-eyebrow">{preset.eyebrow}</p>
@@ -201,7 +201,7 @@ export function TicketsPage() {
         </article>
       </div>
 
-      <div className="panel panel--section stack-md">
+      <div className="panel panel--section stack-md tickets-toolbar">
         <div className="section-heading">
           <div>
             <p className="section-eyebrow">Pencarian cepat</p>
@@ -221,8 +221,8 @@ export function TicketsPage() {
           </div>
         ) : null}
 
-        <div className="filter-grid">
-          <label className="field field--search">
+        <div className="filter-grid filter-grid--tickets">
+          <label className="field field--search field--span-2">
             <span>Cari tiket</span>
             <input
               disabled={preset.isSearchLocked}
@@ -313,7 +313,7 @@ export function TicketsPage() {
           </label>
         </div>
 
-        <div className="form-actions">
+        <div className="form-actions form-actions--compact">
           <button
             className="button button--secondary"
             disabled={preset.isSearchLocked}
@@ -394,7 +394,7 @@ export function TicketsPage() {
             helperText="Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
           />
 
-          <div className="panel">
+          <div className="panel panel--section">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">Navigasi halaman</p>
