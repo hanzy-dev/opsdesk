@@ -196,6 +196,10 @@ sam deploy --config-file samconfig.toml --resolve-image-repos
 
 - Operator guide: [docs/operator-guide.md](./docs/operator-guide.md)
 - Demo flow: [docs/demo-guide.md](./docs/demo-guide.md)
+- Portfolio pack: [docs/portfolio-pack.md](./docs/portfolio-pack.md)
+- Project summary: [docs/project-summary.md](./docs/project-summary.md)
+- CV dan LinkedIn bullets: [docs/cv-linkedin-bullets.md](./docs/cv-linkedin-bullets.md)
+- Presentation script: [docs/presentation-script.md](./docs/presentation-script.md)
 - Setup dan deployment: [docs/setup.md](./docs/setup.md)
 - Usage guide: [docs/usage-guide.md](./docs/usage-guide.md)
 - API reference: [docs/api.md](./docs/api.md)
