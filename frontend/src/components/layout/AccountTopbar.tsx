@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { UserAvatar } from "../common/UserAvatar";
 import { useAuth } from "../../modules/auth/AuthContext";
@@ -23,6 +23,7 @@ export function AccountTopbar({
   const { session, profile, isSigningOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuId = useId();
 
   const identity = profile
     ? profile
@@ -52,6 +53,23 @@ export function AccountTopbar({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
   return (
     <header className="topbar">
       <div className="topbar__leading">
@@ -78,24 +96,31 @@ export function AccountTopbar({
       <div className="topbar__actions">
         <div className="topbar__account-wrap" ref={menuRef}>
           <button
+            aria-controls={menuId}
+            aria-expanded={isOpen}
+            aria-haspopup="menu"
             className="topbar__account-trigger"
             onClick={() => setIsOpen((current) => !current)}
             type="button"
           >
-            <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} />
-            <div className="topbar__identity">
-              <strong>{preferredDisplayName}</strong>
-              <p>{identity?.email ?? "Email akun belum tersedia"}</p>
-              <small className="topbar__identity-subtle">{identity?.subject ?? "ID akun belum tersedia"}</small>
+            <div className="topbar__account-main">
+              <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} />
+              <div className="topbar__identity">
+                <strong>{preferredDisplayName}</strong>
+                <p>{identity?.email ?? "Email akun belum tersedia"}</p>
+                <small className="topbar__identity-subtle">{identity?.subject ?? "ID akun belum tersedia"}</small>
+              </div>
             </div>
-            <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
-            <span aria-hidden="true" className={`topbar__chevron ${isOpen ? "topbar__chevron--open" : ""}`}>
-              v
-            </span>
+            <div className="topbar__account-side">
+              <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
+              <span aria-hidden="true" className={`topbar__chevron ${isOpen ? "topbar__chevron--open" : ""}`}>
+                ▾
+              </span>
+            </div>
           </button>
 
           {isOpen ? (
-            <div className="topbar__menu" role="menu">
+            <div className="topbar__menu topbar__menu--open" id={menuId} role="menu">
               <Link
                 className="topbar__menu-link"
                 onClick={() => setIsOpen(false)}

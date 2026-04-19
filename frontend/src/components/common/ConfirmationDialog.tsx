@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 type ConfirmationDialogProps = {
   title: string;
   message: string;
@@ -19,17 +21,42 @@ export function ConfirmationDialog({
   onCancel,
   onConfirm,
 }: ConfirmationDialogProps) {
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isSubmitting) {
+        onCancel();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, isSubmitting, onCancel]);
+
   if (!isOpen) {
     return null;
   }
 
   return (
-    <div className="dialog-backdrop" role="presentation">
+    <div
+      className="dialog-backdrop dialog-backdrop--open"
+      onClick={(event) => {
+        if (event.target === event.currentTarget && !isSubmitting) {
+          onCancel();
+        }
+      }}
+      role="presentation"
+    >
       <div
         aria-describedby="confirmation-dialog-description"
         aria-labelledby="confirmation-dialog-title"
         aria-modal="true"
-        className="dialog"
+        className="dialog dialog--open"
         role="dialog"
       >
         <div className="dialog__content">
@@ -41,7 +68,13 @@ export function ConfirmationDialog({
           <button className="button button--secondary" disabled={isSubmitting} onClick={onCancel} type="button">
             {cancelLabel}
           </button>
-          <button className="button button--primary" disabled={isSubmitting} onClick={() => void onConfirm()} type="button">
+          <button
+            aria-busy={isSubmitting}
+            className="button button--primary"
+            disabled={isSubmitting}
+            onClick={() => void onConfirm()}
+            type="button"
+          >
             {isSubmitting ? "Memproses..." : confirmLabel}
           </button>
         </div>

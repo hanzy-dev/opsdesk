@@ -258,15 +258,17 @@ export function ProfilePage() {
                 type="file"
               />
               <button
+                aria-busy={isSaving}
                 className="button button--secondary"
                 disabled={isSaving}
                 onClick={() => fileInputRef.current?.click()}
                 type="button"
               >
-                {hasAvatar ? "Ganti Avatar" : "Unggah Avatar"}
+                {isSaving ? "Menyiapkan perubahan..." : hasAvatar ? "Ganti Avatar" : "Unggah Avatar"}
               </button>
               {hasAvatar ? (
                 <button
+                  aria-busy={isSaving}
                   className="button button--ghost"
                   disabled={isSaving}
                   onClick={() => setIsRemoveDialogOpen(true)}
@@ -319,16 +321,23 @@ export function ProfilePage() {
 
             {profileError ? <p className="form-hint">Sinkronisasi profil sementara tertunda. Data lokal akun masih digunakan sampai koneksi profil kembali normal.</p> : null}
             {isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
-            {isUploadingAvatar && uploadProgress > 0 ? <p className="form-hint">Progres upload avatar: {uploadProgress}%</p> : null}
+            {isUploadingAvatar && uploadProgress > 0 ? (
+              <div aria-label={`Progres upload avatar ${uploadProgress}%`} className="inline-progress" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={uploadProgress}>
+                <div className="inline-progress__track">
+                  <span className="inline-progress__bar" style={{ width: `${uploadProgress}%` }} />
+                </div>
+                <p className="form-hint">Progres upload avatar: {uploadProgress}%</p>
+              </div>
+            ) : null}
             {!isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
             {feedback ? <p className="form-success">{feedback}</p> : null}
             {submitError ? <p className="form-error">{submitError}</p> : null}
 
             <div className="form-actions">
-              <button className="button button--primary" disabled={isSaving} type="submit">
+              <button aria-busy={isSaving} className="button button--primary" disabled={isSaving} type="submit">
                 {isSaving ? "Menyimpan..." : "Simpan Profil"}
               </button>
-              <button className="button button--secondary" onClick={resetDraftChanges} type="button">
+              <button aria-busy={isSaving} className="button button--secondary" disabled={isSaving} onClick={resetDraftChanges} type="button">
                 Kembalikan Perubahan
               </button>
             </div>

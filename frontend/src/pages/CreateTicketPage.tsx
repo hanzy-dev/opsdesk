@@ -177,7 +177,7 @@ export function CreateTicketPage() {
         {submitNotice ? <p className="form-hint">{submitNotice}</p> : null}
 
         <div className="form-actions">
-          <button className="button button--primary" disabled={isSubmitting} type="submit">
+          <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Menyimpan tiket..." : "Simpan Tiket"}
           </button>
         </div>

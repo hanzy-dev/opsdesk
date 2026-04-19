@@ -553,6 +553,7 @@ export function TicketDetailPage() {
                       <span>{attachment.uploadedByRole ? getRoleLabel(attachment.uploadedByRole) : "Akun"}</span>
                     </div>
                     <button
+                      aria-busy={downloadingAttachmentId === attachment.id}
                       className="button button--secondary"
                       disabled={downloadingAttachmentId === attachment.id}
                       onClick={() => void handleOpenAttachment(attachment)}
@@ -692,6 +693,7 @@ export function TicketDetailPage() {
                 {assignmentErrorReferenceId ? <p className="form-hint">Kode referensi: {assignmentErrorReferenceId}</p> : null}
                 {assignmentMessage ? <p className="form-success">{assignmentMessage}</p> : null}
                 <button
+                  aria-busy={isSavingAssignment}
                   className="button button--secondary"
                   disabled={
                     isSavingAssignment ||
@@ -730,7 +732,7 @@ export function TicketDetailPage() {
                 {statusError ? <p className="form-error">{statusError}</p> : null}
                 {statusErrorReferenceId ? <p className="form-hint">Kode referensi: {statusErrorReferenceId}</p> : null}
                 {statusMessage ? <p className="form-success">{statusMessage}</p> : null}
-                <button className="button button--primary" disabled={isSavingStatus} type="submit">
+                <button aria-busy={isSavingStatus} className="button button--primary" disabled={isSavingStatus} type="submit">
                   {isSavingStatus ? "Menyimpan status..." : "Perbarui Status"}
                 </button>
               </form>
@@ -753,11 +755,18 @@ export function TicketDetailPage() {
                 />
               </label>
               {selectedFile ? <p className="form-hint">{selectedFile.name} | {formatFileSize(selectedFile.size)}</p> : null}
-              {isUploadingAttachment ? <p className="form-hint">Progres upload: {uploadProgress}%</p> : null}
+              {isUploadingAttachment && uploadProgress > 0 ? (
+                <div aria-label={`Progres upload lampiran ${uploadProgress}%`} className="inline-progress" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={uploadProgress}>
+                  <div className="inline-progress__track">
+                    <span className="inline-progress__bar" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                  <p className="form-hint">Progres upload: {uploadProgress}%</p>
+                </div>
+              ) : null}
               {attachmentError ? <p className="form-error">{attachmentError}</p> : null}
               {attachmentErrorReferenceId ? <p className="form-hint">Kode referensi: {attachmentErrorReferenceId}</p> : null}
               {attachmentMessage ? <p className="form-success">{attachmentMessage}</p> : null}
-              <button className="button button--primary" disabled={isUploadingAttachment} type="submit">
+              <button aria-busy={isUploadingAttachment} className="button button--primary" disabled={isUploadingAttachment} type="submit">
                 {isUploadingAttachment ? "Mengunggah lampiran..." : "Unggah Lampiran"}
               </button>
             </form>
@@ -789,7 +798,7 @@ export function TicketDetailPage() {
               {commentError ? <p className="form-error">{commentError}</p> : null}
               {commentErrorReferenceId ? <p className="form-hint">Kode referensi: {commentErrorReferenceId}</p> : null}
               {commentMessage ? <p className="form-success">{commentMessage}</p> : null}
-              <button className="button button--primary" disabled={isSavingComment} type="submit">
+              <button aria-busy={isSavingComment} className="button button--primary" disabled={isSavingComment} type="submit">
                 {isSavingComment ? "Mengirim komentar..." : "Tambah Komentar"}
               </button>
             </form>

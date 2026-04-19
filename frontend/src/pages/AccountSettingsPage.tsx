@@ -180,7 +180,7 @@ export function AccountSettingsPage() {
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
           <div className="form-actions">
-            <button className="button button--primary" disabled={isSubmitting} type="submit">
+            <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
               {isSubmitting ? "Menyimpan..." : "Ubah Kata Sandi"}
             </button>
           </div>
