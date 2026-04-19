@@ -50,6 +50,7 @@ func (r *Router) registerRoutes() {
 	r.basePathMux.HandleFunc("/health", r.handleHealth)
 	r.basePathMux.HandleFunc("/auth/me", r.requireAuth(r.handleAuthMe))
 	r.basePathMux.HandleFunc("/profile/me", r.requireAuth(r.handleProfileMe))
+	r.basePathMux.HandleFunc("/profiles/assignable", r.requireAuth(r.handleAssignableProfiles))
 	r.basePathMux.HandleFunc("/tickets", r.requireAuth(r.handleTickets))
 	r.basePathMux.HandleFunc("/tickets/", r.requireAuth(r.handleTicketByPath))
 }
@@ -164,6 +165,44 @@ func (r *Router) handleProfileMe(w http.ResponseWriter, req *http.Request) {
 	default:
 		writeMethodNotAllowed(w, req)
 	}
+}
+
+func (r *Router) handleAssignableProfiles(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
+	if req.Method != http.MethodGet {
+		writeMethodNotAllowed(w, req)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
+		return
+	}
+
+	if !canAssignTicket(identity) {
+		writeForbidden(w, req, "forbidden", "you do not have permission to list assignable users")
+		return
+	}
+
+	users, err := r.profileSvc.ListAssignableUsers(req.Context())
+	if err != nil {
+		writeInternalError(w, req, "failed to load assignable users")
+		return
+	}
+
+	response := make([]dto.AssignableUserResponse, 0, len(users))
+	for _, user := range users {
+		response = append(response, toAssignableUserResponse(user))
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[[]dto.AssignableUserResponse]{
+		Data: response,
+	})
 }
 
 func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
@@ -494,10 +533,41 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 		return
 	}
 
+	assigneeID := identity.Subject
+	assigneeName := r.currentProfile(req.Context(), identity).DisplayName
+	if strings.TrimSpace(payload.AssigneeID) != "" {
+		assignableUsers, err := r.profileSvc.ListAssignableUsers(req.Context())
+		if err != nil {
+			writeInternalError(w, req, "failed to load assignable users")
+			return
+		}
+
+		targetAssigneeID := strings.TrimSpace(payload.AssigneeID)
+		found := false
+		for _, user := range assignableUsers {
+			if strings.TrimSpace(user.Subject) != targetAssigneeID {
+				continue
+			}
+
+			assigneeID = user.Subject
+			assigneeName = user.DisplayName
+			found = true
+			break
+		}
+
+		if !found {
+			writeBadRequest(w, req, "validation_failed", "request validation failed", []dto.FieldError{
+				{Field: "assigneeId", Message: "assigneeId must reference an eligible operator"},
+			})
+			return
+		}
+	}
+
 	ticket, err := r.ticketSvc.AssignTicket(req.Context(), ticketID, service.AssignTicketInput{
-		AssigneeID:   identity.Subject,
-		AssigneeName: r.currentProfile(req.Context(), identity).DisplayName,
+		AssigneeID:   assigneeID,
+		AssigneeName: assigneeName,
 		ActorID:      identity.Subject,
+		ActorName:    r.currentProfile(req.Context(), identity).DisplayName,
 		ActorRole:    string(identity.Role),
 	})
 	if err != nil {

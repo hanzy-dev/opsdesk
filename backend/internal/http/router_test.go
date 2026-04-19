@@ -300,6 +300,56 @@ func TestGetProfileMeReturnsIdentityBasedProfile(t *testing.T) {
 	}
 }
 
+func TestGetAssignableProfilesReturnsEligibleOperators(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	profileRepo := memory.NewProfileRepository()
+	if err := profileRepo.UpsertProfile(context.Background(), domain.Profile{
+		Subject:     "agent-123",
+		DisplayName: "OpsDesk Agent",
+		Email:       "agent@example.com",
+		Role:        "agent",
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("expected agent profile insert, got %v", err)
+	}
+	if err := profileRepo.UpsertProfile(context.Background(), domain.Profile{
+		Subject:     "admin-123",
+		DisplayName: "OpsDesk Admin",
+		Email:       "admin@example.com",
+		Role:        "admin",
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("expected admin profile insert, got %v", err)
+	}
+	if err := profileRepo.UpsertProfile(context.Background(), domain.Profile{
+		Subject:     "user-123",
+		DisplayName: "OpsDesk User",
+		Email:       "opsdesk.user@example.com",
+		Role:        "reporter",
+		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
+	}); err != nil {
+		t.Fatalf("expected reporter profile insert, got %v", err)
+	}
+
+	router := newTestRouterWithRepos(testAgentIdentity(), repo, profileRepo)
+	recorder := performRequest(t, router, http.MethodGet, "/v1/profiles/assignable", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[[]dto.AssignableUserResponse]
+	decodeResponse(t, recorder, &response)
+
+	if len(response.Data) != 2 {
+		t.Fatalf("expected 2 assignable users, got %d", len(response.Data))
+	}
+}
+
 func TestPatchProfilePersistsDisplayNameAndAvatar(t *testing.T) {
 	t.Parallel()
 
@@ -397,6 +447,70 @@ func TestAgentCanAssignTicketToSelf(t *testing.T) {
 
 	if activitiesResponse.Data[1].Action != "assignment_changed" {
 		t.Fatalf("expected assignment_changed action, got %q", activitiesResponse.Data[1].Action)
+	}
+}
+
+func TestAgentCanAssignTicketToAnotherEligibleUser(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	profileRepo := memory.NewProfileRepository()
+	for _, profile := range []domain.Profile{
+		{
+			Subject:     "agent-123",
+			DisplayName: "OpsDesk Agent",
+			Email:       "agent@example.com",
+			Role:        "agent",
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+		},
+		{
+			Subject:     "admin-123",
+			DisplayName: "OpsDesk Admin",
+			Email:       "admin@example.com",
+			Role:        "admin",
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+		},
+	} {
+		if err := profileRepo.UpsertProfile(context.Background(), profile); err != nil {
+			t.Fatalf("expected profile insert, got %v", err)
+		}
+	}
+
+	reporterRouter := newTestRouterWithRepos(testReporterIdentity(), repo, profileRepo)
+	ticket := createTestTicket(t, reporterRouter)
+	agentRouter := newTestRouterWithRepos(testAgentIdentity(), repo, profileRepo)
+
+	recorder := performRequest(t, agentRouter, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/assignment", dto.AssignTicketRequest{
+		AssigneeID: "admin-123",
+	})
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.TicketResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.AssigneeID != "admin-123" {
+		t.Fatalf("expected assignee admin-123, got %q", response.Data.AssigneeID)
+	}
+
+	if response.Data.AssigneeName != "OpsDesk Admin" {
+		t.Fatalf("expected assignee name OpsDesk Admin, got %q", response.Data.AssigneeName)
+	}
+
+	activitiesRecorder := performRequest(t, agentRouter, http.MethodGet, "/v1/tickets/"+ticket.ID+"/activities", nil)
+	if activitiesRecorder.Code != http.StatusOK {
+		t.Fatalf("expected activities status 200, got %d", activitiesRecorder.Code)
+	}
+
+	var activitiesResponse dto.SuccessResponse[[]dto.TicketActivityResponse]
+	decodeResponse(t, activitiesRecorder, &activitiesResponse)
+
+	if activitiesResponse.Data[1].Metadata["afterAssigneeName"] != "OpsDesk Admin" {
+		t.Fatalf("expected audit trail assignee name OpsDesk Admin, got %q", activitiesResponse.Data[1].Metadata["afterAssigneeName"])
 	}
 }
 
@@ -734,11 +848,14 @@ func TestReporterCanUploadAndOpenAttachment(t *testing.T) {
 }
 
 func newTestRouter(identity auth.Identity) http.Handler {
-	return newTestRouterWithRepository(identity, memory.NewTicketRepository())
+	return newTestRouterWithRepos(identity, memory.NewTicketRepository(), memory.NewProfileRepository())
 }
 
 func newTestRouterWithRepository(identity auth.Identity, repo *memory.TicketRepository, attachmentStorages ...storage.AttachmentStorage) http.Handler {
-	profileRepo := memory.NewProfileRepository()
+	return newTestRouterWithRepos(identity, repo, memory.NewProfileRepository(), attachmentStorages...)
+}
+
+func newTestRouterWithRepos(identity auth.Identity, repo *memory.TicketRepository, profileRepo *memory.ProfileRepository, attachmentStorages ...storage.AttachmentStorage) http.Handler {
 	cfg := config.Config{
 		AppEnv:               "test",
 		APIBasePath:          "/v1",

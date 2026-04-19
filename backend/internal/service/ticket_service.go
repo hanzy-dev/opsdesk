@@ -15,6 +15,7 @@ import (
 
 var ErrNotImplemented = errors.New("not implemented")
 var ErrTicketNotFound = errors.New("ticket not found")
+var ErrAssigneeRequired = errors.New("assignee is required")
 
 type CreateTicketInput struct {
 	Title          string
@@ -70,6 +71,7 @@ type AssignTicketInput struct {
 	AssigneeID   string
 	AssigneeName string
 	ActorID      string
+	ActorName    string
 	ActorRole    string
 }
 
@@ -316,7 +318,7 @@ func (s *ticketService) AssignTicket(ctx context.Context, ticketID string, input
 	ticket.Activities = append(ticket.Activities, s.newActivityEntry(
 		ticket.ID,
 		strings.TrimSpace(input.ActorID),
-		strings.TrimSpace(input.AssigneeName),
+		strings.TrimSpace(input.ActorName),
 		strings.TrimSpace(input.ActorRole),
 		domain.TicketActivityAssignmentChanged,
 		"Tiket ditugaskan",

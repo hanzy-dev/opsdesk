@@ -5,6 +5,7 @@ import { TicketDetailPage } from "./TicketDetailScreen";
 
 const getTicketMock = vi.fn();
 const getTicketActivitiesMock = vi.fn();
+const listAssignableUsersMock = vi.fn();
 
 vi.mock("../api/tickets", () => ({
   addComment: vi.fn(),
@@ -16,6 +17,10 @@ vi.mock("../api/tickets", () => ({
   saveAttachment: vi.fn(),
   updateTicketStatus: vi.fn(),
   uploadAttachmentFile: vi.fn(),
+}));
+
+vi.mock("../api/profile", () => ({
+  listAssignableUsers: () => listAssignableUsersMock(),
 }));
 
 vi.mock("../modules/auth/AuthContext", () => ({
@@ -45,6 +50,7 @@ describe("TicketDetailScreen", () => {
   afterEach(() => {
     getTicketMock.mockReset();
     getTicketActivitiesMock.mockReset();
+    listAssignableUsersMock.mockReset();
   });
 
   it("renders operational metadata and auth-derived comment identity", async () => {
@@ -105,6 +111,20 @@ describe("TicketDetailScreen", () => {
         timestamp: "2026-04-17T10:45:00Z",
       },
     ]);
+    listAssignableUsersMock.mockResolvedValue([
+      {
+        subject: "agent-123",
+        displayName: "Dina Petugas",
+        email: "petugas@example.com",
+        role: "agent",
+      },
+      {
+        subject: "agent-222",
+        displayName: "Budi Operator",
+        email: "budi@example.com",
+        role: "agent",
+      },
+    ]);
 
     render(
       <MemoryRouter initialEntries={["/tickets/TCK-3001"]}>
@@ -118,12 +138,15 @@ describe("TicketDetailScreen", () => {
     expect(screen.getAllByText("Prioritas Tinggi")).toHaveLength(2);
     expect(screen.getByText("Tindakan yang tersedia")).toBeInTheDocument();
     expect(screen.getByText("Timeline aktivitas tiket")).toBeInTheDocument();
+    expect(await screen.findByText("Ubah penanggung jawab")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Budi Operator/ })).toBeInTheDocument();
     expect(screen.getByDisplayValue("Dina Petugas")).toHaveAttribute("readonly");
     expect(screen.getByText("Dikirim sebagai Dina Petugas (Petugas)")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(getTicketMock).toHaveBeenCalledWith("TCK-3001");
       expect(getTicketActivitiesMock).toHaveBeenCalledWith("TCK-3001");
+      expect(listAssignableUsersMock).toHaveBeenCalled();
     });
   });
 });

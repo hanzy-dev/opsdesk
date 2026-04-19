@@ -31,6 +31,18 @@ func (r *ProfileRepository) GetProfileBySubject(_ context.Context, subject strin
 	return profile, nil
 }
 
+func (r *ProfileRepository) ListProfiles(_ context.Context) ([]domain.Profile, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	items := make([]domain.Profile, 0, len(r.profiles))
+	for _, profile := range r.profiles {
+		items = append(items, profile)
+	}
+
+	return items, nil
+}
+
 func (r *ProfileRepository) UpsertProfile(_ context.Context, profile domain.Profile) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()

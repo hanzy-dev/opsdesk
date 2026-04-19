@@ -57,6 +57,32 @@ func (r *ProfileRepository) GetProfileBySubject(ctx context.Context, subject str
 	return toDomainProfile(item)
 }
 
+func (r *ProfileRepository) ListProfiles(ctx context.Context) ([]domain.Profile, error) {
+	output, err := r.client.Scan(ctx, &dynamodb.ScanInput{
+		TableName: aws.String(r.tableName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var items []profileItem
+	if err := attributevalue.UnmarshalListOfMaps(output.Items, &items); err != nil {
+		return nil, err
+	}
+
+	profiles := make([]domain.Profile, 0, len(items))
+	for _, item := range items {
+		profile, err := toDomainProfile(item)
+		if err != nil {
+			return nil, err
+		}
+
+		profiles = append(profiles, profile)
+	}
+
+	return profiles, nil
+}
+
 func (r *ProfileRepository) UpsertProfile(ctx context.Context, profile domain.Profile) error {
 	item, err := attributevalue.MarshalMap(toProfileItem(profile))
 	if err != nil {

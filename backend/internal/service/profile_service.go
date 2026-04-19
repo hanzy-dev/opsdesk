@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"time"
 
@@ -19,6 +20,14 @@ type UpdateProfileInput struct {
 	AvatarURL   string
 }
 
+type AssignableUser struct {
+	Subject     string
+	DisplayName string
+	Email       string
+	AvatarURL   string
+	Role        string
+}
+
 func NewProfileService(repository repository.ProfileRepository) ProfileService {
 	return ProfileService{repository: repository}
 }
@@ -27,7 +36,11 @@ func (s ProfileService) GetCurrentProfile(ctx context.Context, identity auth.Ide
 	profile, err := s.repository.GetProfileBySubject(ctx, identity.Subject)
 	if err != nil {
 		if err == repository.ErrProfileNotFound {
-			return DefaultProfile(identity), nil
+			defaultProfile := DefaultProfile(identity)
+			if upsertErr := s.repository.UpsertProfile(ctx, defaultProfile); upsertErr != nil {
+				return domain.Profile{}, upsertErr
+			}
+			return defaultProfile, nil
 		}
 		return domain.Profile{}, err
 	}
@@ -61,6 +74,40 @@ func (s ProfileService) UpdateCurrentProfile(ctx context.Context, identity auth.
 	}
 
 	return current, nil
+}
+
+func (s ProfileService) ListAssignableUsers(ctx context.Context) ([]AssignableUser, error) {
+	profiles, err := s.repository.ListProfiles(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	assignable := make([]AssignableUser, 0, len(profiles))
+	for _, profile := range profiles {
+		role := strings.ToLower(strings.TrimSpace(profile.Role))
+		if role != string(auth.RoleAgent) && role != string(auth.RoleAdmin) {
+			continue
+		}
+
+		assignable = append(assignable, AssignableUser{
+			Subject:     profile.Subject,
+			DisplayName: strings.TrimSpace(profile.DisplayName),
+			Email:       strings.TrimSpace(profile.Email),
+			AvatarURL:   strings.TrimSpace(profile.AvatarURL),
+			Role:        role,
+		})
+	}
+
+	sort.Slice(assignable, func(i, j int) bool {
+		left := strings.ToLower(strings.TrimSpace(assignable[i].DisplayName))
+		right := strings.ToLower(strings.TrimSpace(assignable[j].DisplayName))
+		if left == right {
+			return strings.ToLower(assignable[i].Email) < strings.ToLower(assignable[j].Email)
+		}
+		return left < right
+	})
+
+	return assignable, nil
 }
 
 func DefaultProfile(identity auth.Identity) domain.Profile {

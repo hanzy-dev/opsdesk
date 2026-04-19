@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import { listAssignableUsers } from "../api/profile";
 import {
   addComment,
   assignTicket,
@@ -15,9 +16,11 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { useToast } from "../components/common/ToastProvider";
+import { UserAvatar } from "../components/common/UserAvatar";
 import { StatusBadge } from "../components/tickets/StatusBadge";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
+import type { AssignableUser } from "../types/profile";
 import type { Attachment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
@@ -60,8 +63,11 @@ export function TicketDetailPage() {
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
   const [isSavingAssignment, setIsSavingAssignment] = useState(false);
+  const [isLoadingAssignableUsers, setIsLoadingAssignableUsers] = useState(false);
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<string | null>(null);
+  const [assignableUsers, setAssignableUsers] = useState<AssignableUser[]>([]);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState("");
 
   const currentIdentity = profile
     ? profile
@@ -112,6 +118,46 @@ export function TicketDetailPage() {
   useEffect(() => {
     void loadTicket();
   }, [ticketId]);
+
+  useEffect(() => {
+    setSelectedAssigneeId(ticket?.assigneeId ?? "");
+  }, [ticket?.assigneeId]);
+
+  useEffect(() => {
+    if (!permissions.canAssignTickets) {
+      setAssignableUsers([]);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingAssignableUsers(true);
+
+    void (async () => {
+      try {
+        const users = await listAssignableUsers();
+        if (cancelled) {
+          return;
+        }
+
+        setAssignableUsers(users);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setAssignmentError(getErrorMessage(error, "Daftar petugas belum bisa dimuat."));
+        setAssignmentErrorReferenceId(getErrorReferenceId(error) ?? null);
+      } finally {
+        if (!cancelled) {
+          setIsLoadingAssignableUsers(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [permissions.canAssignTickets]);
 
   const actionItems = useMemo(
     () => [
@@ -204,19 +250,30 @@ export function TicketDetailPage() {
     }
   }
 
-  async function handleAssignToMe() {
+  async function handleAssignTicket() {
     setIsSavingAssignment(true);
     setAssignmentMessage(null);
     setAssignmentError(null);
     setAssignmentErrorReferenceId(null);
 
     try {
-      const updatedTicket = await assignTicket(ticketId);
+      const updatedTicket = await assignTicket(
+        ticketId,
+        selectedAssigneeId && selectedAssigneeId !== session?.subject ? { assigneeId: selectedAssigneeId } : {},
+      );
       setTicket(updatedTicket);
-      setAssignmentMessage("Tiket berhasil ditugaskan kepada Anda.");
+      setSelectedAssigneeId(updatedTicket.assigneeId ?? "");
+      setAssignmentMessage(
+        updatedTicket.assigneeId === session?.subject
+          ? "Tiket berhasil ditugaskan kepada Anda."
+          : `Tiket berhasil ditugaskan kepada ${updatedTicket.assigneeName || "petugas terpilih"}.`,
+      );
       showToast({
         title: "Penugasan berhasil diperbarui",
-        description: "Tiket ini sekarang tercatat atas nama Anda.",
+        description:
+          updatedTicket.assigneeId === session?.subject
+            ? "Tiket ini sekarang tercatat atas nama Anda."
+            : `Penanggung jawab tiket kini adalah ${updatedTicket.assigneeName || "petugas terpilih"}.`,
         tone: "success",
       });
       await loadTicket({ preserveView: true });
@@ -574,23 +631,66 @@ export function TicketDetailPage() {
             <h3>Tanggung jawab tiket</h3>
             {permissions.canAssignTickets ? (
               <div className="stack-md">
-                <p className="form-hint">
-                  {ticket.assigneeId === session?.subject
-                    ? "Tiket ini sudah tercatat atas nama Anda."
-                    : ticket.assigneeName
-                      ? `Saat ini ditangani oleh ${ticket.assigneeName}.`
-                      : "Tiket ini belum memiliki petugas yang bertanggung jawab."}
-                </p>
+                <div className="assignment-card">
+                  <div className="assignment-card__current">
+                    <div>
+                      <span className="field-label">Penanggung jawab saat ini</span>
+                      <strong>{ticket.assigneeName || "Belum ditugaskan"}</strong>
+                      <p>{ticket.assigneeId === session?.subject ? "Tiket ini sedang berada dalam antrean kerja Anda." : ticket.assigneeName ? "Petugas yang dipilih saat ini bertanggung jawab atas tindak lanjut tiket." : "Pilih petugas agar kepemilikan penanganan lebih jelas."}</p>
+                      {ticket.assigneeId ? <small>{ticket.assigneeId}</small> : null}
+                    </div>
+                    <UserAvatar
+                      avatarUrl={assignableUsers.find((user) => user.subject === ticket.assigneeId)?.avatarUrl}
+                      name={ticket.assigneeName || "Belum ditugaskan"}
+                      size="sm"
+                    />
+                  </div>
+
+                  <label className="field" htmlFor="ticket-assignee-select">
+                    <span>Ubah penanggung jawab</span>
+                    <select
+                      id="ticket-assignee-select"
+                      disabled={isSavingAssignment || isLoadingAssignableUsers}
+                      value={selectedAssigneeId}
+                      onChange={(event) => setSelectedAssigneeId(event.target.value)}
+                    >
+                      {assignableUsers.some((user) => user.subject === session?.subject) ? null : (
+                        <option value={session?.subject ?? ""}>
+                          {currentIdentity?.displayName ?? "Saya"} • {currentIdentity?.email ?? ""}
+                        </option>
+                      )}
+                      {assignableUsers.map((user) => (
+                        <option key={user.subject} value={user.subject}>
+                          {user.displayName} • {user.email}
+                        </option>
+                      ))}
+                    </select>
+                    <small>
+                      {isLoadingAssignableUsers
+                        ? "Memuat daftar petugas dan admin..."
+                        : "Hanya petugas dan admin yang tersedia untuk penugasan."}
+                    </small>
+                  </label>
+                </div>
                 {assignmentError ? <p className="form-error">{assignmentError}</p> : null}
                 {assignmentErrorReferenceId ? <p className="form-hint">Kode referensi: {assignmentErrorReferenceId}</p> : null}
                 {assignmentMessage ? <p className="form-success">{assignmentMessage}</p> : null}
                 <button
                   className="button button--secondary"
-                  disabled={isSavingAssignment || ticket.assigneeId === session?.subject}
-                  onClick={() => void handleAssignToMe()}
+                  disabled={
+                    isSavingAssignment ||
+                    isLoadingAssignableUsers ||
+                    !selectedAssigneeId ||
+                    selectedAssigneeId === ticket.assigneeId
+                  }
+                  onClick={() => void handleAssignTicket()}
                   type="button"
                 >
-                  {isSavingAssignment ? "Menyimpan penugasan..." : "Tugaskan ke Saya"}
+                  {isSavingAssignment
+                    ? "Menyimpan penugasan..."
+                    : selectedAssigneeId === session?.subject
+                      ? "Tugaskan ke Saya"
+                      : "Simpan Penugasan"}
                 </button>
               </div>
             ) : (

@@ -72,6 +72,14 @@ type TicketActivityResponse struct {
 	Timestamp string            `json:"timestamp"`
 }
 
+type AssignableUserResponse struct {
+	Subject     string `json:"subject"`
+	DisplayName string `json:"displayName"`
+	Email       string `json:"email"`
+	AvatarURL   string `json:"avatarUrl,omitempty"`
+	Role        string `json:"role"`
+}
+
 type TicketResponse struct {
 	ID             string               `json:"id"`
 	Title          string               `json:"title"`

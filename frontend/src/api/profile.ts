@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { UpdateProfileInput, UserProfile } from "../types/profile";
+import type { AssignableUser, UpdateProfileInput, UserProfile } from "../types/profile";
 
 export function getMyProfile() {
   return apiRequest<UserProfile>("/profile/me");
@@ -13,4 +13,8 @@ export function updateMyProfile(input: UpdateProfileInput) {
       avatarUrl: input.avatarUrl,
     }),
   });
+}
+
+export function listAssignableUsers() {
+  return apiRequest<AssignableUser[]>("/profiles/assignable");
 }

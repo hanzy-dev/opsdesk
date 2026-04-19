@@ -1798,6 +1798,59 @@ textarea:focus-visible {
   gap: 12px;
 }
 
+.assignment-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.assignment-card__current {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+.assignment-card__current strong,
+.assignment-card__current p,
+.assignment-card__current small {
+  display: block;
+  margin: 0;
+}
+
+.assignment-card__current strong {
+  margin-top: 6px;
+}
+
+.assignment-card__current p {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.assignment-card__current small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.field-label {
+  display: inline-block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .action-overview__item {
   display: flex;
   justify-content: space-between;
@@ -1976,7 +2029,8 @@ textarea:focus-visible {
   }
 
   .dashboard-hero__copy,
-  .dashboard-ticket-card__top {
+  .dashboard-ticket-card__top,
+  .assignment-card__current {
     flex-direction: column;
     align-items: flex-start;
   }

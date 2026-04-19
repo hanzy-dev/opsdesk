@@ -5,6 +5,7 @@ import (
 
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
+	"opsdesk/backend/internal/service"
 )
 
 func toTicketResponse(ticket domain.Ticket) dto.TicketResponse {
@@ -76,6 +77,16 @@ func toTicketActivityResponse(activity domain.ActivityEntry) dto.TicketActivityR
 		Summary:   activity.Summary,
 		Metadata:  activity.Metadata,
 		Timestamp: domain.FormatTimestamp(activity.Timestamp),
+	}
+}
+
+func toAssignableUserResponse(user service.AssignableUser) dto.AssignableUserResponse {
+	return dto.AssignableUserResponse{
+		Subject:     user.Subject,
+		DisplayName: user.DisplayName,
+		Email:       user.Email,
+		AvatarURL:   user.AvatarURL,
+		Role:        user.Role,
 	}
 }
 
