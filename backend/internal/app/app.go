@@ -46,7 +46,7 @@ func New(cfg config.Config) (*App, error) {
 	profileRepository := dynamorepo.NewProfileRepository(dynamodb.NewFromConfig(awsCfg), cfg.ProfileTableName)
 	attachmentStorage := storage.NewS3AttachmentStorage(s3.NewFromConfig(awsCfg), cfg.AttachmentBucketName)
 	ticketService := service.NewTicketService(ticketRepository, attachmentStorage)
-	profileService := service.NewProfileService(profileRepository)
+	profileService := service.NewProfileService(profileRepository, attachmentStorage)
 	authVerifier, err := auth.NewCognitoVerifier(cfg.CognitoRegion, cfg.CognitoUserPoolID, cfg.CognitoAppClientID)
 	if err != nil {
 		return nil, err

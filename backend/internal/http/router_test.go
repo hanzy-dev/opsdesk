@@ -353,11 +353,20 @@ func TestGetAssignableProfilesReturnsEligibleOperators(t *testing.T) {
 func TestPatchProfilePersistsDisplayNameAndAvatar(t *testing.T) {
 	t.Parallel()
 
-	router := newTestRouter(testReporterIdentity())
+	router := newTestRouterWithRepository(testReporterIdentity(), memory.NewTicketRepository(), staticAttachmentStorage{
+		presignedDownload: storage.PresignedDownload{
+			URL:       "https://example-avatar-view",
+			ExpiresAt: time.Date(2026, 4, 19, 10, 5, 0, 0, time.UTC),
+		},
+		headMetadata: storage.ObjectMetadata{
+			ContentType: "image/png",
+			SizeBytes:   2048,
+		},
+	})
 
 	updateRecorder := performRequest(t, router, http.MethodPatch, "/v1/profile/me", dto.UpdateProfileRequest{
 		DisplayName: "Rina Aulia",
-		AvatarURL:   "https://images.example.com/rina.jpg",
+		AvatarURL:   "profiles/user-123/avatar/1713513600-rina.png",
 	})
 
 	if updateRecorder.Code != http.StatusOK {
@@ -371,7 +380,7 @@ func TestPatchProfilePersistsDisplayNameAndAvatar(t *testing.T) {
 		t.Fatalf("expected updated displayName, got %q", updateResponse.Data.DisplayName)
 	}
 
-	if updateResponse.Data.AvatarURL != "https://images.example.com/rina.jpg" {
+	if updateResponse.Data.AvatarURL != "https://example-avatar-view" {
 		t.Fatalf("expected avatar URL to persist, got %q", updateResponse.Data.AvatarURL)
 	}
 
@@ -387,9 +396,45 @@ func TestPatchProfilePersistsDisplayNameAndAvatar(t *testing.T) {
 		t.Fatalf("expected persisted displayName, got %q", profileResponse.Data.DisplayName)
 	}
 
+	if profileResponse.Data.AvatarURL != "https://example-avatar-view" {
+		t.Fatalf("expected hydrated avatar URL, got %q", profileResponse.Data.AvatarURL)
+	}
+
 	ticket := createTestTicket(t, router)
 	if ticket.CreatedByName != "Rina Aulia" {
 		t.Fatalf("expected createdByName to use updated profile, got %q", ticket.CreatedByName)
+	}
+}
+
+func TestProfileAvatarUploadURLReturnsPresignedTarget(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	router := newTestRouterWithRepository(testReporterIdentity(), repo, staticAttachmentStorage{
+		presignedUpload: storage.PresignedUpload{
+			ObjectKey: "profiles/user-123/avatar/1713513600-rina.png",
+			URL:       "https://example-avatar-upload",
+			Method:    "PUT",
+			Headers:   map[string]string{"Content-Type": "image/png"},
+			ExpiresAt: time.Date(2026, 4, 19, 10, 0, 0, 0, time.UTC),
+		},
+	})
+
+	recorder := performRequest(t, router, http.MethodPost, "/v1/profile/me/avatar/upload-url", dto.RequestProfileAvatarUploadURLRequest{
+		FileName:    "rina.png",
+		ContentType: "image/png",
+		SizeBytes:   2048,
+	})
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.RequestProfileAvatarUploadURLResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.UploadURL != "https://example-avatar-upload" {
+		t.Fatalf("expected upload URL to match presigned target, got %q", response.Data.UploadURL)
 	}
 }
 
@@ -867,7 +912,7 @@ func newTestRouterWithRepos(identity auth.Identity, repo *memory.TicketRepositor
 		cfg,
 		validation.New(),
 		service.NewTicketService(repo, attachmentStorages...),
-		service.NewProfileService(profileRepo),
+		service.NewProfileService(profileRepo, attachmentStorages...),
 		staticVerifier{identity: identity},
 		observability.NewLogger("error", "test"),
 	)

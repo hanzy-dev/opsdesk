@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { requestProfileAvatarUploadUrl } from "../api/profile";
+import { uploadAttachmentFile } from "../api/tickets";
+import { ConfirmationDialog } from "../components/common/ConfirmationDialog";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { useToast } from "../components/common/ToastProvider";
@@ -7,14 +10,23 @@ import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
 import { getPreferredDisplayName } from "../utils/identity";
 
+const allowedAvatarTypes = ["image/jpeg", "image/png", "image/webp"];
+const maxAvatarSizeBytes = 5 * 1024 * 1024;
+
 export function ProfilePage() {
   const { profile, session, isProfileLoading, profileError, refreshProfile, saveProfile } = useAuth();
   const { showToast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState("");
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const effectiveProfile = profile
     ? profile
@@ -35,15 +47,33 @@ export function ProfilePage() {
 
     setDisplayName(effectiveProfile.displayName);
     setAvatarUrl(effectiveProfile.avatarUrl ?? "");
+    setAvatarPreviewUrl(effectiveProfile.avatarUrl ?? "");
+    setSelectedAvatarFile(null);
+    setUploadStatus(null);
+    setUploadProgress(0);
   }, [effectiveProfile?.avatarUrl, effectiveProfile?.displayName, effectiveProfile?.subject]);
 
-  const preview = useMemo(
-    () => ({
-      displayName: displayName.trim() || getPreferredDisplayName(effectiveProfile),
-      avatarUrl: avatarUrl.trim(),
-    }),
-    [avatarUrl, displayName, effectiveProfile],
+  useEffect(() => {
+    if (!selectedAvatarFile || !avatarPreviewUrl.startsWith("blob:")) {
+      return;
+    }
+
+    return () => {
+      URL.revokeObjectURL(avatarPreviewUrl);
+    };
+  }, [avatarPreviewUrl, selectedAvatarFile]);
+
+  const preferredDisplayName = useMemo(
+    () =>
+      displayName.trim() || getPreferredDisplayName({
+        displayName: effectiveProfile?.displayName,
+        email: effectiveProfile?.email,
+        subject: effectiveProfile?.subject,
+      }),
+    [displayName, effectiveProfile?.displayName, effectiveProfile?.email, effectiveProfile?.subject],
   );
+  const hasAvatar = Boolean(avatarPreviewUrl);
+  const isUploadingAvatar = selectedAvatarFile !== null;
 
   if (isProfileLoading && !effectiveProfile) {
     return <LoadingState label="Memuat informasi akun Anda..." lines={4} />;
@@ -59,6 +89,8 @@ export function ProfilePage() {
     );
   }
 
+  const currentProfile = effectiveProfile;
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
@@ -66,10 +98,33 @@ export function ProfilePage() {
     setSubmitError(null);
 
     try {
-      await saveProfile({
+      let nextAvatarValue = avatarUrl;
+
+      if (selectedAvatarFile) {
+        setUploadStatus("Menyiapkan upload avatar...");
+        setUploadProgress(0);
+
+        const uploadTarget = await requestProfileAvatarUploadUrl({
+          fileName: selectedAvatarFile.name,
+          contentType: selectedAvatarFile.type,
+          sizeBytes: selectedAvatarFile.size,
+        });
+
+        setUploadStatus("Mengunggah avatar ke penyimpanan aman...");
+        await uploadAttachmentFile(uploadTarget, selectedAvatarFile, setUploadProgress, "Upload avatar ke penyimpanan belum berhasil.");
+        nextAvatarValue = uploadTarget.objectKey;
+      }
+
+      const nextProfile = await saveProfile({
         displayName: displayName.trim(),
-        avatarUrl: avatarUrl.trim(),
+        avatarUrl: nextAvatarValue,
       });
+
+      setAvatarUrl(nextProfile.avatarUrl ?? "");
+      setAvatarPreviewUrl(nextProfile.avatarUrl ?? "");
+      setSelectedAvatarFile(null);
+      setUploadStatus(null);
+      setUploadProgress(0);
       setFeedback("Profil berhasil diperbarui.");
       showToast({
         title: "Profil berhasil diperbarui",
@@ -77,10 +132,12 @@ export function ProfilePage() {
         tone: "success",
       });
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : "Profil belum dapat diperbarui.");
+      const message = error instanceof Error ? error.message : "Profil belum dapat diperbarui.";
+      setSubmitError(message);
+      setUploadStatus(null);
       showToast({
         title: "Profil belum dapat diperbarui",
-        description: error instanceof Error ? error.message : "Silakan coba kembali beberapa saat lagi.",
+        description: message,
         tone: "error",
       });
     } finally {
@@ -88,105 +145,197 @@ export function ProfilePage() {
     }
   }
 
-  return (
-    <section className="stack-lg page-shell page-shell--narrow">
-      <div className="hero-card hero-card--compact hero-card--spotlight">
-        <div>
-          <p className="section-eyebrow">Akun</p>
-          <h2>Kelola identitas akun</h2>
-          <p>Perbarui nama tampilan dan avatar agar identitas akun tampil konsisten di seluruh aplikasi.</p>
-        </div>
-      </div>
+  function handleAvatarSelection(event: React.ChangeEvent<HTMLInputElement>) {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) {
+      return;
+    }
 
-      <div className="detail-grid">
-        <article className="panel panel--section profile-summary profile-summary--dense">
-          <div className="profile-summary__header">
-            <UserAvatar avatarUrl={preview.avatarUrl} name={preview.displayName} size="lg" />
-            <div className="stack-md">
-              <div>
-                <span className="role-pill">{getRoleLabel(effectiveProfile.role)}</span>
-                <h3>{preview.displayName}</h3>
-                <p>{effectiveProfile.email}</p>
-                <small className="profile-summary__subtle">{effectiveProfile.subject}</small>
-              </div>
-              <div className="profile-summary__meta">
-                <div>
-                  <span>Sumber avatar</span>
-                  <strong>{preview.avatarUrl || "Fallback inisial"}</strong>
+    if (!allowedAvatarTypes.includes(selectedFile.type)) {
+      setSubmitError("Format avatar belum didukung. Gunakan JPG, PNG, atau WEBP.");
+      showToast({
+        title: "Format avatar belum didukung",
+        description: "Gunakan file JPG, PNG, atau WEBP agar avatar bisa dipakai.",
+        tone: "error",
+      });
+      event.target.value = "";
+      return;
+    }
+
+    if (selectedFile.size > maxAvatarSizeBytes) {
+      setSubmitError("Ukuran avatar terlalu besar. Maksimal 5 MB.");
+      showToast({
+        title: "Ukuran avatar terlalu besar",
+        description: "Gunakan file avatar dengan ukuran maksimal 5 MB.",
+        tone: "error",
+      });
+      event.target.value = "";
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(selectedFile);
+    setSelectedAvatarFile(selectedFile);
+    setAvatarPreviewUrl(previewUrl);
+    setSubmitError(null);
+    setFeedback(null);
+    setUploadStatus("Avatar baru siap disimpan.");
+    setUploadProgress(0);
+  }
+
+  function resetDraftChanges() {
+    setDisplayName(currentProfile.displayName);
+    setAvatarUrl(currentProfile.avatarUrl ?? "");
+    setAvatarPreviewUrl(currentProfile.avatarUrl ?? "");
+    setSelectedAvatarFile(null);
+    setFeedback(null);
+    setSubmitError(null);
+    setUploadStatus(null);
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function handleConfirmAvatarRemoval() {
+    setIsRemoveDialogOpen(false);
+    setAvatarUrl("");
+    setAvatarPreviewUrl("");
+    setSelectedAvatarFile(null);
+    setFeedback(null);
+    setSubmitError(null);
+    setUploadStatus("Avatar akan dikembalikan ke inisial setelah profil disimpan.");
+    setUploadProgress(0);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  return (
+    <>
+      <section className="stack-lg page-shell page-shell--narrow">
+        <div className="hero-card hero-card--compact hero-card--spotlight">
+          <div>
+            <p className="section-eyebrow">Akun</p>
+            <h2>Kelola identitas akun</h2>
+            <p>Perbarui nama tampilan dan avatar agar akun Anda terasa lebih personal, rapi, dan konsisten di seluruh aplikasi.</p>
+          </div>
+        </div>
+
+        <div className="detail-grid">
+          <article className="panel panel--section profile-summary profile-summary--dense">
+            <div className="profile-summary__header">
+              <div className="profile-summary__identity">
+                <UserAvatar avatarUrl={avatarPreviewUrl} name={preferredDisplayName} size="lg" />
+                <div className="stack-md">
+                  <div>
+                    <span className="role-pill">{getRoleLabel(currentProfile.role)}</span>
+                    <h3>{preferredDisplayName}</h3>
+                    <p>{currentProfile.email}</p>
+                    <small className="profile-summary__subtle">{currentProfile.subject}</small>
+                  </div>
+                  <p className="profile-summary__helper">
+                    Foto profil akan tampil di area akun dan ringkasan identitas agar akun terasa lebih personal dan mudah dikenali.
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
-        </article>
 
-        <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
-          <div className="section-heading">
-            <div>
-              <p className="section-eyebrow">Profil</p>
-              <h3>Informasi akun</h3>
+            <div className="profile-summary__actions">
+              <input
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                className="avatar-upload__input"
+                onChange={handleAvatarSelection}
+                ref={fileInputRef}
+                type="file"
+              />
+              <button
+                className="button button--secondary"
+                disabled={isSaving}
+                onClick={() => fileInputRef.current?.click()}
+                type="button"
+              >
+                {hasAvatar ? "Ganti Avatar" : "Unggah Avatar"}
+              </button>
+              {hasAvatar ? (
+                <button
+                  className="button button--ghost"
+                  disabled={isSaving}
+                  onClick={() => setIsRemoveDialogOpen(true)}
+                  type="button"
+                >
+                  Hapus Avatar
+                </button>
+              ) : null}
             </div>
-          </div>
 
-          <div className="form-grid">
-            <label className="field">
-              <span>Nama tampilan</span>
-              <input
-                maxLength={80}
-                onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="Masukkan nama profesional Anda"
-                value={displayName}
-              />
-            </label>
+            <p className="profile-summary__note">
+              Format yang didukung: JPG, PNG, WEBP. Ukuran maksimum 5 MB.
+            </p>
+          </article>
 
-            <label className="field">
-              <span>Email</span>
-              <input readOnly type="email" value={effectiveProfile.email} />
-            </label>
+          <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Profil</p>
+                <h3>Informasi akun</h3>
+              </div>
+            </div>
 
-            <label className="field field--full">
-              <span>URL avatar</span>
-              <input
-                onChange={(event) => setAvatarUrl(event.target.value)}
-                placeholder="https://contoh.com/avatar.jpg"
-                value={avatarUrl}
-              />
-              <small>Kosongkan jika ingin menggunakan fallback inisial secara otomatis.</small>
-            </label>
+            <div className="form-grid">
+              <label className="field">
+                <span>Nama tampilan</span>
+                <input
+                  maxLength={80}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  placeholder="Masukkan nama profesional Anda"
+                  value={displayName}
+                />
+              </label>
 
-            <label className="field">
-              <span>Peran</span>
-              <input readOnly value={getRoleLabel(effectiveProfile.role)} />
-            </label>
+              <label className="field">
+                <span>Email</span>
+                <input readOnly type="email" value={currentProfile.email} />
+              </label>
 
-            <label className="field">
-              <span>ID Cognito</span>
-              <input readOnly value={effectiveProfile.subject} />
-            </label>
-          </div>
+              <label className="field">
+                <span>Peran</span>
+                <input readOnly value={getRoleLabel(currentProfile.role)} />
+              </label>
 
-          {profileError ? <p className="form-hint">Sinkronisasi profil terakhir: {profileError}</p> : null}
-          {feedback ? <p className="form-success">{feedback}</p> : null}
-          {submitError ? <p className="form-error">{submitError}</p> : null}
+              <label className="field">
+                <span>ID Cognito</span>
+                <input readOnly value={currentProfile.subject} />
+              </label>
+            </div>
 
-          <div className="form-actions">
-            <button className="button button--primary" disabled={isSaving} type="submit">
-              {isSaving ? "Menyimpan..." : "Simpan Profil"}
-            </button>
-            <button
-              className="button button--secondary"
-              onClick={() => {
-                setDisplayName(effectiveProfile.displayName);
-                setAvatarUrl(effectiveProfile.avatarUrl ?? "");
-                setFeedback(null);
-                setSubmitError(null);
-              }}
-              type="button"
-            >
-              Kembalikan Perubahan
-            </button>
-          </div>
-        </form>
-      </div>
-    </section>
+            {profileError ? <p className="form-hint">Sinkronisasi profil terakhir: {profileError}</p> : null}
+            {isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
+            {isUploadingAvatar && uploadProgress > 0 ? <p className="form-hint">Progres upload avatar: {uploadProgress}%</p> : null}
+            {!isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
+            {feedback ? <p className="form-success">{feedback}</p> : null}
+            {submitError ? <p className="form-error">{submitError}</p> : null}
+
+            <div className="form-actions">
+              <button className="button button--primary" disabled={isSaving} type="submit">
+                {isSaving ? "Menyimpan..." : "Simpan Profil"}
+              </button>
+              <button className="button button--secondary" onClick={resetDraftChanges} type="button">
+                Kembalikan Perubahan
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <ConfirmationDialog
+        cancelLabel="Batal"
+        confirmLabel="Hapus Avatar"
+        isOpen={isRemoveDialogOpen}
+        message="Avatar akan dikembalikan ke tampilan inisial default. Lanjutkan?"
+        onCancel={() => setIsRemoveDialogOpen(false)}
+        onConfirm={handleConfirmAvatarRemoval}
+        title="Hapus avatar profil"
+      />
+    </>
   );
 }

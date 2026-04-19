@@ -149,11 +149,29 @@ func (v *Validator) ValidateUpdateProfileRequest(input dto.UpdateProfileRequest)
 	}
 
 	avatarURL := strings.TrimSpace(input.AvatarURL)
-	if avatarURL != "" {
+	if avatarURL != "" && !strings.HasPrefix(avatarURL, "profiles/") {
 		parsed, err := url.ParseRequestURI(avatarURL)
 		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
 			errs = append(errs, dto.FieldError{Field: "avatarUrl", Message: "avatarUrl must be a valid http or https URL"})
 		}
+	}
+
+	return errs
+}
+
+func (v *Validator) ValidateRequestProfileAvatarUploadURLRequest(input dto.RequestProfileAvatarUploadURLRequest) []dto.FieldError {
+	var errs []dto.FieldError
+
+	if strings.TrimSpace(input.FileName) == "" {
+		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName is required"})
+	}
+
+	if strings.TrimSpace(input.ContentType) == "" {
+		errs = append(errs, dto.FieldError{Field: "contentType", Message: "contentType is required"})
+	}
+
+	if input.SizeBytes <= 0 {
+		errs = append(errs, dto.FieldError{Field: "sizeBytes", Message: "sizeBytes must be greater than 0"})
 	}
 
 	return errs

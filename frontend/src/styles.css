@@ -1745,9 +1745,28 @@ textarea:focus-visible {
   line-height: 1.5;
 }
 
+.profile-summary__helper {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  max-width: 58ch;
+}
+
 .profile-summary__note {
   margin-top: 12px;
   max-width: 72ch;
+}
+
+.profile-summary__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.avatar-upload__input {
+  display: none;
 }
 
 .account-settings__links {

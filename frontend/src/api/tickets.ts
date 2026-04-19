@@ -108,9 +108,10 @@ export function getAttachmentDownloadUrl(ticketId: string, attachmentId: string)
 }
 
 export function uploadAttachmentFile(
-  target: AttachmentUploadTarget,
+  target: Pick<AttachmentUploadTarget, "uploadUrl" | "uploadMethod" | "uploadHeaders">,
   file: File,
   onProgress?: (progress: number) => void,
+  errorMessage = "Upload lampiran ke penyimpanan belum berhasil.",
 ) {
   return new Promise<void>((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -129,7 +130,7 @@ export function uploadAttachmentFile(
     };
 
     request.onerror = () => {
-      reject(new ApiError("Upload lampiran ke penyimpanan belum berhasil.", 0, "attachment_upload_failed"));
+      reject(new ApiError(errorMessage, 0, "attachment_upload_failed"));
     };
 
     request.onload = () => {
@@ -139,7 +140,7 @@ export function uploadAttachmentFile(
         return;
       }
 
-      reject(new ApiError("Upload lampiran ke penyimpanan belum berhasil.", request.status, "attachment_upload_failed"));
+      reject(new ApiError(errorMessage, request.status, "attachment_upload_failed"));
     };
 
     request.send(file);

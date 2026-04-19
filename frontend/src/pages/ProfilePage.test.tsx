@@ -49,7 +49,7 @@ describe("ProfilePage", () => {
       subject: "user-123",
       displayName: "Rina Aulia",
       email: "opsdesk.user@example.com",
-      avatarUrl: "https://images.example.com/rina.jpg",
+      avatarUrl: "",
       role: "reporter" as const,
     });
 
@@ -60,15 +60,12 @@ describe("ProfilePage", () => {
     expect(screen.getByDisplayValue("user-123")).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Nama tampilan"), { target: { value: "Rina Aulia" } });
-    fireEvent.change(screen.getByPlaceholderText("https://contoh.com/avatar.jpg"), {
-      target: { value: "https://images.example.com/rina.jpg" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Simpan Profil" }));
 
     await waitFor(() =>
       expect(saveProfileMock).toHaveBeenCalledWith({
         displayName: "Rina Aulia",
-        avatarUrl: "https://images.example.com/rina.jpg",
+        avatarUrl: "",
       }),
     );
 

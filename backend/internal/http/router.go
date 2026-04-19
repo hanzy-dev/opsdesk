@@ -49,6 +49,7 @@ func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc ser
 func (r *Router) registerRoutes() {
 	r.basePathMux.HandleFunc("/health", r.handleHealth)
 	r.basePathMux.HandleFunc("/auth/me", r.requireAuth(r.handleAuthMe))
+	r.basePathMux.HandleFunc("/profile/me/avatar/upload-url", r.requireAuth(r.handleProfileAvatarUploadURL))
 	r.basePathMux.HandleFunc("/profile/me", r.requireAuth(r.handleProfileMe))
 	r.basePathMux.HandleFunc("/profiles/assignable", r.requireAuth(r.handleAssignableProfiles))
 	r.basePathMux.HandleFunc("/tickets", r.requireAuth(r.handleTickets))
@@ -165,6 +166,55 @@ func (r *Router) handleProfileMe(w http.ResponseWriter, req *http.Request) {
 	default:
 		writeMethodNotAllowed(w, req)
 	}
+}
+
+func (r *Router) handleProfileAvatarUploadURL(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
+	if req.Method != http.MethodPost {
+		writeMethodNotAllowed(w, req)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
+		return
+	}
+
+	var payload dto.RequestProfileAvatarUploadURLRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
+	if fieldErrors := r.validator.ValidateRequestProfileAvatarUploadURLRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
+	upload, err := r.profileSvc.CreateAvatarUploadURL(req.Context(), identity, service.AvatarUploadURLInput{
+		FileName:    strings.TrimSpace(payload.FileName),
+		ContentType: strings.TrimSpace(payload.ContentType),
+		SizeBytes:   payload.SizeBytes,
+	})
+	if err != nil {
+		writeServiceError(w, req, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.RequestProfileAvatarUploadURLResponse]{
+		Data: dto.RequestProfileAvatarUploadURLResponse{
+			ObjectKey:     upload.ObjectKey,
+			UploadURL:     upload.UploadURL,
+			UploadMethod:  upload.UploadMethod,
+			UploadHeaders: upload.UploadHeaders,
+			ExpiresAt:     upload.ExpiresAt,
+		},
+	})
 }
 
 func (r *Router) handleAssignableProfiles(w http.ResponseWriter, req *http.Request) {
@@ -855,6 +905,16 @@ func writeServiceError(w http.ResponseWriter, req *http.Request, err error) {
 		writeError(w, req, http.StatusBadRequest, "attachment_upload_missing", "attachment upload was not found in storage", nil)
 	case errors.Is(err, service.ErrAttachmentStorageUnavailable):
 		writeError(w, req, http.StatusInternalServerError, "attachment_storage_unavailable", "attachment storage is not configured", nil)
+	case errors.Is(err, service.ErrProfileAvatarInvalid):
+		writeError(w, req, http.StatusBadRequest, "avatar_invalid", "profile avatar request is invalid", nil)
+	case errors.Is(err, service.ErrProfileAvatarTooLarge):
+		writeError(w, req, http.StatusBadRequest, "avatar_too_large", "profile avatar exceeds the allowed size limit", nil)
+	case errors.Is(err, service.ErrProfileAvatarContentTypeNotAllowed):
+		writeError(w, req, http.StatusBadRequest, "avatar_content_type_not_allowed", "profile avatar content type is not allowed", nil)
+	case errors.Is(err, service.ErrProfileAvatarUploadMissing):
+		writeError(w, req, http.StatusBadRequest, "avatar_upload_missing", "profile avatar upload was not found in storage", nil)
+	case errors.Is(err, service.ErrProfileAvatarStorageUnavailable):
+		writeError(w, req, http.StatusInternalServerError, "avatar_storage_unavailable", "profile avatar storage is not configured", nil)
 	default:
 		writeInternalError(w, req, "internal server error")
 	}

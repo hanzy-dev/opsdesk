@@ -116,6 +116,9 @@ export function AccountSettingsPage() {
                 <p>{identity?.email ?? "Email tidak tersedia"}</p>
                 <small className="profile-summary__subtle">{identity?.subject ?? "ID belum tersedia"}</small>
               </div>
+              <p className="profile-summary__helper">
+                Ringkasan ini mengikuti identitas profil aktif Anda. Pengelolaan nama tampilan dan avatar tersedia di halaman Profil.
+              </p>
               <div className="account-settings__links">
                 <Link className="button button--secondary" to="/profile">
                   Buka Profil
