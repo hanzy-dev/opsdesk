@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { AppIcon } from "../common/AppIcon";
 import { UserAvatar } from "../common/UserAvatar";
 import { useAuth } from "../../modules/auth/AuthContext";
@@ -22,6 +22,7 @@ export function AccountTopbar({
   onRequestLogout,
 }: AccountTopbarProps) {
   const { session, profile, isSigningOut } = useAuth();
+  const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
@@ -53,6 +54,10 @@ export function AccountTopbar({
       window.removeEventListener("mousedown", handlePointerDown);
     };
   }, []);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!isOpen) {

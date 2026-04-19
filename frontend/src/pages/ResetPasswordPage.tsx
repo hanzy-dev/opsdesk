@@ -66,6 +66,7 @@ export function ResetPasswordPage() {
             <span>Email</span>
             <input
               autoComplete="email"
+              disabled={isSubmitting}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="nama@perusahaan.com"
               type="email"
@@ -77,6 +78,7 @@ export function ResetPasswordPage() {
             <span>Kode verifikasi</span>
             <input
               autoComplete="one-time-code"
+              disabled={isSubmitting}
               onChange={(event) => setConfirmationCode(event.target.value)}
               placeholder="Masukkan kode dari email"
               value={confirmationCode}
@@ -87,6 +89,7 @@ export function ResetPasswordPage() {
             <span>Kata sandi baru</span>
             <input
               autoComplete="new-password"
+              disabled={isSubmitting}
               onChange={(event) => setNextPassword(event.target.value)}
               placeholder="Masukkan kata sandi baru"
               type="password"
@@ -98,6 +101,7 @@ export function ResetPasswordPage() {
             <span>Konfirmasi kata sandi baru</span>
             <input
               autoComplete="new-password"
+              disabled={isSubmitting}
               onChange={(event) => setConfirmPassword(event.target.value)}
               placeholder="Ulangi kata sandi baru"
               type="password"
@@ -108,7 +112,7 @@ export function ResetPasswordPage() {
           {successMessage ? <p className="form-success">{successMessage}</p> : null}
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-          <button className="button button--primary button--wide" disabled={isSubmitting} type="submit">
+          <button aria-busy={isSubmitting} className="button button--primary button--wide" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Memperbarui..." : "Perbarui kata sandi"}
           </button>
         </form>

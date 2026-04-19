@@ -60,7 +60,7 @@ export function LoginPage() {
 
           {isAuthenticating ? <p className="form-hint">Memverifikasi kredensial dan menyiapkan sesi aman...</p> : null}
 
-          <button className="button button--primary button--wide" disabled={isAuthenticating} type="submit">
+          <button aria-busy={isAuthenticating} className="button button--primary button--wide" disabled={isAuthenticating} type="submit">
             {isAuthenticating ? "Masuk ke OpsDesk..." : "Masuk"}
           </button>
         </form>

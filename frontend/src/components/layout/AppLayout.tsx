@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ConfirmationDialog } from "../common/ConfirmationDialog";
+import { useToast } from "../common/ToastProvider";
 import { useAuth } from "../../modules/auth/AuthContext";
 import { Sidebar } from "./Sidebar";
 import { AccountTopbar } from "./AccountTopbar";
@@ -20,6 +21,7 @@ const sidebarPreferenceKey = "opsdesk.sidebar.collapsed";
 export function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const { logout, isSigningOut } = useAuth();
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -122,9 +124,20 @@ export function AppLayout() {
         message="Anda yakin ingin keluar dari sesi OpsDesk saat ini?"
         onCancel={() => setIsLogoutDialogOpen(false)}
         onConfirm={async () => {
-          await logout();
-          setIsLogoutDialogOpen(false);
-          navigate("/login");
+          try {
+            await logout();
+            setIsLogoutDialogOpen(false);
+            navigate("/login");
+          } catch (error) {
+            showToast({
+              title: "Sesi belum berhasil ditutup",
+              description:
+                error instanceof Error
+                  ? error.message
+                  : "Keluar dari sesi belum berhasil. Silakan coba beberapa saat lagi.",
+              tone: "error",
+            });
+          }
         }}
         title="Keluar dari OpsDesk"
       />

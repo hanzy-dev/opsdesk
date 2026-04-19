@@ -49,6 +49,7 @@ export function ForgotPasswordPage() {
             <span>Email</span>
             <input
               autoComplete="email"
+              disabled={isSubmitting}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="nama@perusahaan.com"
               type="email"
@@ -59,7 +60,7 @@ export function ForgotPasswordPage() {
           {successMessage ? <p className="form-success">{successMessage}</p> : null}
           {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-          <button className="button button--primary button--wide" disabled={isSubmitting} type="submit">
+          <button aria-busy={isSubmitting} className="button button--primary button--wide" disabled={isSubmitting} type="submit">
             {isSubmitting ? "Mengirim kode..." : "Kirim Kode Verifikasi"}
           </button>
         </form>
