@@ -239,7 +239,7 @@ export function DashboardPage() {
   ];
 
   return (
-    <section className="stack-lg page-shell page-shell--wide dashboard-page">
+    <section className="stack-lg page-shell page-shell--wide page-flow dashboard-page">
       <div className="hero-card hero-card--spotlight dashboard-hero">
         <div className="dashboard-hero__copy">
           <div>

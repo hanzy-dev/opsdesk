@@ -212,7 +212,7 @@ export function ProfilePage() {
 
   return (
     <>
-      <section className="stack-lg page-shell page-shell--narrow">
+      <section className="stack-lg page-shell page-shell--narrow page-flow profile-page">
         <div className="hero-card hero-card--compact hero-card--spotlight">
           <div>
             <p className="section-eyebrow">Akun</p>

@@ -98,7 +98,7 @@ export function CreateTicketPage() {
   }
 
   return (
-    <section className="stack-lg page-shell page-shell--narrow">
+    <section className="stack-lg page-shell page-shell--narrow page-flow create-ticket-page">
       <div className="hero-card hero-card--spotlight">
         <p className="section-eyebrow">Input tiket</p>
         <h2>Buat tiket baru</h2>

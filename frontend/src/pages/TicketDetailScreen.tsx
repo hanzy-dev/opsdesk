@@ -409,7 +409,7 @@ export function TicketDetailPage() {
   }
 
   return (
-    <section className="stack-lg">
+    <section className="stack-lg page-shell page-shell--wide page-flow ticket-detail-page">
       <article className="panel panel--section ticket-summary ticket-summary--hero">
         <div className="ticket-summary__header">
           <div>

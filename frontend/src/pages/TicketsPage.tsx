@@ -173,7 +173,7 @@ export function TicketsPage() {
   }
 
   return (
-    <section className="stack-lg page-shell page-shell--wide tickets-page">
+    <section className="stack-lg page-shell page-shell--wide page-flow tickets-page">
       <div className="hero-card hero-card--compact hero-card--spotlight">
         <div>
           <p className="section-eyebrow">{preset.eyebrow}</p>

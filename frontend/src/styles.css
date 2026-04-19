@@ -34,6 +34,13 @@
   --space-md: 18px;
   --space-lg: 24px;
   --space-xl: 32px;
+  --page-gap: 22px;
+  --page-gap-tight: 18px;
+  --section-gap: 16px;
+  --section-gap-loose: 20px;
+  --page-bottom-space: 18px;
+  --panel-padding: 22px;
+  --panel-padding-compact: 20px;
   --radius-sm: 14px;
   --radius-md: 18px;
   --radius-lg: 24px;
@@ -543,7 +550,7 @@ textarea:focus-visible {
 }
 
 .page-content {
-  padding: 24px 28px 44px;
+  padding: 22px 28px 56px;
 }
 
 .page-content > * {
@@ -565,12 +572,12 @@ textarea:focus-visible {
 
 .stack-lg {
   display: grid;
-  gap: var(--space-lg);
+  gap: var(--page-gap);
 }
 
 .stack-md {
   display: grid;
-  gap: var(--space-md);
+  gap: var(--section-gap);
 }
 
 .panel,
@@ -589,11 +596,11 @@ textarea:focus-visible {
 .metric-card,
 .login-card {
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: var(--panel-padding);
 }
 
 .hero-card {
-  padding: 26px;
+  padding: 24px 26px;
   border-radius: var(--radius-xl);
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 24%),
@@ -633,7 +640,7 @@ textarea:focus-visible {
 }
 
 .hero-card__supporting {
-  margin-top: 10px;
+  margin-top: 8px;
   max-width: 60ch;
   color: var(--muted);
   line-height: 1.58;
@@ -642,7 +649,7 @@ textarea:focus-visible {
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: var(--space-sm);
 }
 
 .metrics-grid--compact {
@@ -655,7 +662,7 @@ textarea:focus-visible {
 
 .metric-card strong {
   display: block;
-  margin-top: 12px;
+  margin-top: 10px;
   font-size: 2.08rem;
   letter-spacing: -0.04em;
 }
@@ -663,7 +670,7 @@ textarea:focus-visible {
 .metric-card--premium {
   position: relative;
   overflow: hidden;
-  min-height: 132px;
+  min-height: 126px;
 }
 
 .metric-card--premium::before {
@@ -938,15 +945,15 @@ textarea:focus-visible {
 
 .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px 14px;
 }
 
 .form-panel--compact {
-  gap: 16px;
+  gap: 14px;
 }
 
 .form-intro {
-  margin-bottom: 2px;
+  margin-bottom: 0;
   color: var(--muted);
   line-height: 1.6;
   font-size: 0.92rem;
@@ -1042,7 +1049,7 @@ textarea:focus-visible {
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px 14px;
 }
 
 .filter-grid--tickets {
@@ -1054,8 +1061,8 @@ textarea:focus-visible {
 }
 
 .tickets-toolbar {
-  gap: 16px;
-  padding-top: 18px;
+  gap: 14px;
+  padding-top: 14px;
 }
 
 .form-actions--compact {
@@ -1063,7 +1070,8 @@ textarea:focus-visible {
 }
 
 .dashboard-page {
-  gap: 20px;
+  gap: var(--section-gap-loose);
+  padding-bottom: var(--page-bottom-space);
 }
 
 .dashboard-hero {
@@ -1073,7 +1081,7 @@ textarea:focus-visible {
 .dashboard-hero__copy {
   display: flex;
   justify-content: space-between;
-  gap: 18px;
+  gap: 16px;
   align-items: flex-start;
   flex-wrap: wrap;
 }
@@ -1119,7 +1127,7 @@ textarea:focus-visible {
 .dashboard-main-grid,
 .dashboard-support-grid {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .dashboard-main-grid {
@@ -1131,14 +1139,14 @@ textarea:focus-visible {
 }
 
 .dashboard-panel {
-  gap: 14px;
+  gap: 12px;
 }
 
 .dashboard-ticket-list,
 .dashboard-activity-list,
 .dashboard-actions-grid {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dashboard-ticket-card,
@@ -1148,12 +1156,12 @@ textarea:focus-visible {
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
     rgba(255, 255, 255, 0.025);
   border-radius: 18px;
-  padding: 14px 16px;
+  padding: 13px 15px;
 }
 
 .dashboard-ticket-card {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .dashboard-ticket-card__top {
@@ -1190,7 +1198,7 @@ textarea:focus-visible {
 .dashboard-ticket-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px 10px;
   align-items: center;
 }
 
@@ -1242,7 +1250,7 @@ textarea:focus-visible {
 
 .dashboard-distribution {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .dashboard-distribution__bar {
@@ -1339,6 +1347,7 @@ textarea:focus-visible {
 }
 
 .detail-grid {
+  gap: var(--section-gap);
   align-items: flex-start;
 }
 
@@ -1348,7 +1357,7 @@ textarea:focus-visible {
 
 .ticket-summary__description {
   color: var(--muted);
-  margin-top: 16px;
+  margin-top: 14px;
   line-height: 1.7;
 }
 
@@ -1398,12 +1407,12 @@ textarea:focus-visible {
 .ticket-overview-grid,
 .ticket-layout {
   display: grid;
-  gap: 16px;
+  gap: var(--section-gap);
 }
 
 .ticket-overview-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .ticket-overview-card,
@@ -1417,7 +1426,7 @@ textarea:focus-visible {
 }
 
 .ticket-overview-card {
-  padding: 20px;
+  padding: 18px;
 }
 
 .ticket-overview-card span,
@@ -1456,14 +1465,14 @@ textarea:focus-visible {
 .ticket-layout {
   grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.95fr);
   align-items: start;
-  gap: 18px;
+  gap: var(--section-gap);
 }
 
 .meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  margin-top: 24px;
+  gap: 16px;
+  margin-top: 18px;
 }
 
 .meta-grid--detail dd {
@@ -1476,12 +1485,12 @@ textarea:focus-visible {
 }
 
 .comment-list {
-  gap: 14px;
+  gap: 12px;
 }
 
 .comment-card {
   gap: 8px;
-  padding: 16px;
+  padding: 15px 16px;
   border-radius: 20px;
   border: 1px solid var(--border);
   background:
@@ -1490,7 +1499,7 @@ textarea:focus-visible {
 }
 
 .comment-card--rich {
-  gap: 12px;
+  gap: 10px;
 }
 
 .comment-card__header {
@@ -1696,17 +1705,17 @@ textarea:focus-visible {
 }
 
 .profile-summary--compact {
-  padding: 18px 20px;
+  padding: var(--panel-padding-compact);
 }
 
 .profile-summary--dense {
-  padding: 20px 22px;
+  padding: var(--panel-padding);
 }
 
 .profile-summary__header {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: 14px;
   justify-content: space-between;
 }
 
@@ -1762,7 +1771,7 @@ textarea:focus-visible {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-top: 16px;
+  margin-top: 14px;
 }
 
 .avatar-upload__input {
@@ -1875,13 +1884,13 @@ textarea:focus-visible {
 
 .action-overview {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .assignment-card {
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 15px 16px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
@@ -1936,7 +1945,7 @@ textarea:focus-visible {
   justify-content: space-between;
   gap: 14px;
   align-items: flex-start;
-  padding: 18px;
+  padding: 16px;
 }
 
 .action-state--allowed {
@@ -1951,13 +1960,13 @@ textarea:focus-visible {
 
 .timeline-list {
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .timeline-item {
   display: grid;
   grid-template-columns: 18px minmax(0, 1fr);
-  gap: 14px;
+  gap: 12px;
   align-items: start;
 }
 
@@ -1971,7 +1980,7 @@ textarea:focus-visible {
 }
 
 .timeline-item__content {
-  padding: 18px;
+  padding: 16px;
 }
 
 .table-panel__count {
@@ -1994,16 +2003,16 @@ textarea:focus-visible {
 }
 
 .tickets-page {
-  gap: 18px;
-  padding-bottom: 8px;
+  gap: var(--page-gap-tight);
+  padding-bottom: var(--page-bottom-space);
 }
 
 .tickets-page .hero-card {
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .tickets-page .metrics-grid--compact {
-  margin-top: -2px;
+  margin-top: 0;
 }
 
 .tickets-toolbar .section-heading {
@@ -2011,7 +2020,101 @@ textarea:focus-visible {
 }
 
 .tickets-page .panel.panel--section:last-child {
-  margin-bottom: 6px;
+  margin-bottom: 0;
+}
+
+.page-flow {
+  padding-bottom: var(--page-bottom-space);
+}
+
+.page-flow > .hero-card:first-child {
+  margin-bottom: -2px;
+}
+
+.page-flow > .metrics-grid {
+  margin-top: -4px;
+}
+
+.page-flow > .panel,
+.page-flow > .detail-grid,
+.page-flow > .ticket-layout,
+.page-flow > .dashboard-main-grid,
+.page-flow > .dashboard-support-grid {
+  scroll-margin-top: 104px;
+}
+
+.tickets-page .hero-card--compact {
+  padding-bottom: 22px;
+}
+
+.tickets-page .metrics-grid {
+  align-items: stretch;
+}
+
+.tickets-page .tickets-toolbar {
+  position: relative;
+}
+
+.tickets-page .tickets-toolbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 22%);
+  pointer-events: none;
+}
+
+.tickets-page .table-panel,
+.tickets-page .panel.panel--section {
+  overflow: hidden;
+}
+
+.tickets-page .empty-state,
+.tickets-page .error-state {
+  padding: 30px 24px;
+}
+
+.ticket-detail-page {
+  gap: var(--section-gap-loose);
+  padding-bottom: var(--page-bottom-space);
+}
+
+.ticket-detail-page .ticket-summary--hero {
+  margin-bottom: 2px;
+}
+
+.ticket-detail-page .stack-lg > .panel {
+  gap: 14px;
+}
+
+.ticket-detail-page aside.stack-lg {
+  gap: var(--section-gap);
+}
+
+.create-ticket-page,
+.profile-page,
+.settings-page {
+  gap: var(--section-gap-loose);
+  padding-bottom: var(--page-bottom-space);
+}
+
+.create-ticket-page .profile-summary,
+.profile-page .profile-summary,
+.settings-page .profile-summary {
+  margin-top: -2px;
+}
+
+.create-ticket-page .detail-grid,
+.profile-page .detail-grid,
+.settings-page .detail-grid {
+  gap: var(--section-gap);
+}
+
+.create-ticket-page .form-panel,
+.profile-page .form-panel,
+.settings-page .form-panel {
+  padding-top: var(--panel-padding-compact);
+  padding-bottom: var(--panel-padding-compact);
 }
 
 @keyframes spin {
@@ -2185,5 +2288,19 @@ textarea:focus-visible {
   .login-card,
   .hero-card {
     padding: 20px;
+  }
+
+  .page-content {
+    padding-bottom: 36px;
+  }
+
+  .page-flow > .hero-card:first-child,
+  .page-flow > .metrics-grid,
+  .create-ticket-page .profile-summary,
+  .profile-page .profile-summary,
+  .settings-page .profile-summary,
+  .ticket-detail-page .ticket-summary--hero {
+    margin-bottom: 0;
+    margin-top: 0;
   }
 }
