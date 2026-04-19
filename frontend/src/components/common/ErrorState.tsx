@@ -3,21 +3,36 @@ type ErrorStateProps = {
   message: string;
   referenceId?: string;
   onRetry?: () => void;
+  eyebrow?: string;
+  actionLabel?: string;
+  supportText?: string;
 };
 
-export function ErrorState({ title = "Terjadi kendala", message, referenceId, onRetry }: ErrorStateProps) {
+export function ErrorState({
+  title = "Terjadi kendala",
+  message,
+  referenceId,
+  onRetry,
+  eyebrow = "Status",
+  actionLabel = "Coba Lagi",
+  supportText,
+}: ErrorStateProps) {
   return (
-    <div className="panel error-state">
-      <div>
-        <p className="section-eyebrow">Status</p>
+    <div className="panel error-state state-card">
+      <div className="state-card__body">
+        <div className="empty-state__icon state-card__icon">!</div>
+        <p className="section-eyebrow">{eyebrow}</p>
         <h3>{title}</h3>
         <p>{message}</p>
-        {referenceId ? <p className="form-hint">Kode referensi: {referenceId}</p> : null}
+        {supportText ? <p className="state-card__support">{supportText}</p> : null}
+        {referenceId ? <p className="state-card__reference">Kode referensi: {referenceId}</p> : null}
       </div>
       {onRetry ? (
-        <button className="button button--secondary" onClick={onRetry} type="button">
-          Coba Lagi
-        </button>
+        <div className="state-card__actions">
+          <button className="button button--secondary" onClick={onRetry} type="button">
+            {actionLabel}
+          </button>
+        </div>
       ) : null}
     </div>
   );

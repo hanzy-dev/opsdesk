@@ -76,14 +76,23 @@ export function ProfilePage() {
   const isUploadingAvatar = selectedAvatarFile !== null;
 
   if (isProfileLoading && !effectiveProfile) {
-    return <LoadingState label="Memuat informasi akun Anda..." lines={4} />;
+    return (
+      <LoadingState
+        eyebrow="Profil"
+        label="Memuat identitas akun Anda..."
+        supportText="Kami sedang menyiapkan ringkasan profil, avatar, dan informasi akun terbaru."
+        lines={4}
+      />
+    );
   }
 
   if (!effectiveProfile) {
     return (
       <ErrorState
-        title="Profil belum tersedia"
-        message={profileError ?? "Informasi akun belum dapat dimuat saat ini."}
+        eyebrow="Profil"
+        title="Profil belum siap ditampilkan"
+        message="Informasi profil belum bisa ditampilkan sepenuhnya untuk saat ini."
+        supportText="Coba muat ulang profil beberapa saat lagi. Setelah tersambung kembali, perubahan identitas dapat dikelola seperti biasa."
         onRetry={() => void refreshProfile()}
       />
     );
@@ -308,7 +317,7 @@ export function ProfilePage() {
               </label>
             </div>
 
-            {profileError ? <p className="form-hint">Sinkronisasi profil terakhir: {profileError}</p> : null}
+            {profileError ? <p className="form-hint">Sinkronisasi profil sementara tertunda. Data lokal akun masih digunakan sampai koneksi profil kembali normal.</p> : null}
             {isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
             {isUploadingAvatar && uploadProgress > 0 ? <p className="form-hint">Progres upload avatar: {uploadProgress}%</p> : null}
             {!isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}

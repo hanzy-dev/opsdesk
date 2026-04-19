@@ -92,7 +92,8 @@ export function CreateTicketPage() {
     return (
       <ErrorState
         title="Aksi belum diizinkan"
-        message="Akun petugas tidak dapat membuat tiket baru pada tahap ini."
+        message="Akun ini belum dapat membuat tiket baru dari halaman ini."
+        supportText="Gunakan akun pelapor untuk membuat tiket baru, atau lanjutkan penanganan dari tiket yang sudah ada."
       />
     );
   }

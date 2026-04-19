@@ -390,22 +390,38 @@ export function TicketDetailPage() {
   }
 
   if (loading) {
-    return <LoadingState label="Memuat detail tiket..." lines={6} />;
+    return (
+      <LoadingState
+        eyebrow="Detail tiket"
+        label="Memuat detail tiket..."
+        supportText="Kami sedang menyiapkan informasi inti, riwayat aktivitas, komentar, dan lampiran tiket ini."
+        lines={6}
+      />
+    );
   }
 
   if (pageError) {
     return (
       <ErrorState
+        eyebrow="Detail tiket"
         title="Detail tiket belum tersedia"
-        message={pageError}
+        message="Informasi tiket ini belum bisa ditampilkan sepenuhnya untuk saat ini."
         referenceId={pageErrorReferenceId ?? undefined}
+        supportText="Coba muat ulang halaman ini. Jika kendala berlanjut, buka kembali daftar tiket lalu masuk ke detail tiket ini dari sana."
         onRetry={() => void loadTicket()}
       />
     );
   }
 
   if (!ticket) {
-    return <EmptyState title="Tiket tidak ditemukan" description="Data tiket yang diminta tidak tersedia." />;
+    return (
+      <EmptyState
+        eyebrow="Detail tiket"
+        title="Tiket tidak ditemukan"
+        description="Data tiket yang diminta belum tersedia atau sudah tidak dapat diakses."
+        supportText="Kembali ke daftar tiket untuk memilih tiket lain atau muat ulang halaman jika Anda baru saja melakukan perubahan."
+      />
+    );
   }
 
   return (

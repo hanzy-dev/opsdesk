@@ -53,8 +53,11 @@ describe("TicketsPage error handling", () => {
     );
 
     expect(await screen.findByText("Daftar tiket belum tersedia")).toBeInTheDocument();
+    expect(screen.getByText("Daftar tiket belum bisa ditampilkan untuk saat ini.")).toBeInTheDocument();
     expect(
-      screen.getByText("Layanan backend sedang mengalami kendala. Silakan coba beberapa saat lagi."),
+      screen.getByText(
+        "Coba muat ulang halaman ini atau sesuaikan filter setelah data berhasil dimuat kembali.",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByText("Kode referensi: req-list-123")).toBeInTheDocument();
   });

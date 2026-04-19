@@ -875,6 +875,43 @@ textarea:focus-visible {
   gap: 14px;
 }
 
+.state-card {
+  padding: 26px 24px;
+}
+
+.state-card__body {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.state-card__icon {
+  margin-bottom: 2px;
+}
+
+.state-card__support,
+.state-card__reference {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.state-card__support {
+  max-width: 56ch;
+  font-size: 0.86rem;
+}
+
+.state-card__reference {
+  font-size: 0.76rem;
+  opacity: 0.9;
+}
+
+.state-card__actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .loading-state--compact {
   padding: 22px;
 }

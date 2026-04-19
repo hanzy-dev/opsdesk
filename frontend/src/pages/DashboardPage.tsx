@@ -186,15 +186,38 @@ export function DashboardPage() {
   );
 
   if (loading) {
-    return <LoadingState label="Menyiapkan command center operasional..." lines={6} />;
+    return (
+      <LoadingState
+        eyebrow="Dashboard"
+        label="Menyiapkan ringkasan operasional..."
+        supportText="Kami sedang merapikan data tiket, aktivitas terbaru, dan jalur aksi utama untuk sesi Anda."
+        lines={6}
+      />
+    );
   }
 
   if (error) {
-    return <ErrorState title="Dashboard belum siap ditampilkan" message={error} onRetry={() => void loadDashboard()} />;
+    return (
+      <ErrorState
+        eyebrow="Dashboard"
+        title="Dashboard belum siap ditampilkan"
+        message="Ringkasan operasional belum bisa dimuat sepenuhnya untuk saat ini."
+        supportText="Coba muat ulang beberapa saat lagi. Jika kendala berlanjut, Anda masih bisa melanjutkan pekerjaan dari halaman tiket."
+        onRetry={() => void loadDashboard()}
+      />
+    );
   }
 
   if (!data) {
-    return <ErrorState title="Dashboard belum siap ditampilkan" message="Data dashboard belum tersedia." onRetry={() => void loadDashboard()} />;
+    return (
+      <ErrorState
+        eyebrow="Dashboard"
+        title="Dashboard belum siap ditampilkan"
+        message="Data dashboard belum tersedia untuk sesi ini."
+        supportText="Muat ulang halaman untuk mencoba mengambil ringkasan terbaru."
+        onRetry={() => void loadDashboard()}
+      />
+    );
   }
 
   const statCards = [
@@ -361,6 +384,7 @@ export function DashboardPage() {
                   eyebrow="Aktivitas"
                   title="Belum ada sorotan aktivitas"
                   description="Aktivitas terbaru pada tiket akan muncul di sini untuk membantu pemantauan cepat."
+                  supportText="Begitu ada perubahan status, komentar, penugasan, atau lampiran baru, sorotannya akan tampil otomatis."
                 />
               ) : (
                 <div className="dashboard-activity-list">

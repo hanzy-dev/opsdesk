@@ -155,7 +155,13 @@ export function TicketsPage() {
   if (loading) {
     return (
       <LoadingState
+        eyebrow={preset.key === "assigned" ? "Penugasan" : "Daftar tiket"}
         label={preset.key === "assigned" ? "Menyiapkan tiket yang ditugaskan kepada Anda..." : "Memuat daftar tiket operasional..."}
+        supportText={
+          preset.key === "assigned"
+            ? "Kami sedang mengambil tiket yang menjadi tanggung jawab aktif Anda."
+            : "Kami sedang mengambil data tiket terbaru beserta filter yang sedang aktif."
+        }
         lines={6}
       />
     );
@@ -165,8 +171,17 @@ export function TicketsPage() {
     return (
       <ErrorState
         title={preset.key === "assigned" ? "Daftar penugasan belum tersedia" : "Daftar tiket belum tersedia"}
-        message={error}
+        message={
+          preset.key === "assigned"
+            ? "Tiket yang ditugaskan ke Anda belum bisa ditampilkan untuk saat ini."
+            : "Daftar tiket belum bisa ditampilkan untuk saat ini."
+        }
         referenceId={errorReferenceId ?? undefined}
+        supportText={
+          preset.key === "assigned"
+            ? "Coba muat ulang halaman ini. Jika perlu, Anda juga bisa membuka antrean utama untuk melihat tiket secara manual."
+            : "Coba muat ulang halaman ini atau sesuaikan filter setelah data berhasil dimuat kembali."
+        }
         onRetry={() => void loadTickets()}
       />
     );
@@ -358,6 +373,13 @@ export function TicketsPage() {
                 ? preset.emptyDescription
                 : "Belum ada tiket yang dapat Anda akses saat ini."
           }
+          supportText={
+            preset.key === "assigned"
+              ? "Saat tiket baru ditugaskan atau Anda mengambil tiket dari antrean utama, daftarnya akan muncul di sini."
+              : preset.key === "mine"
+                ? "Gunakan halaman ini untuk memantau tiket yang Anda kirim begitu ada data yang tercatat."
+                : "Daftar ini akan mulai terisi setelah tiket baru dibuat atau diimpor ke alur operasional."
+          }
           action={permissions.canCreateTickets ? (
             <Link className="button button--primary" to="/tickets/new">
               Buat Tiket Sekarang
@@ -369,6 +391,7 @@ export function TicketsPage() {
           eyebrow="Pencarian"
           title="Tidak ada tiket yang cocok"
           description="Coba ubah kata kunci, filter, atau urutan agar hasil pencarian lebih relevan."
+          supportText="Tidak ada tiket yang sesuai dengan kombinasi filter saat ini, tetapi data lain mungkin tetap tersedia di antrean utama."
           action={
             <button
               className="button button--secondary"
