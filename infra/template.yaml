@@ -55,6 +55,7 @@ Globals:
       Variables:
         APP_ENV: !Ref AppEnv
         API_BASE_PATH: !Ref ApiBasePath
+        FRONTEND_ORIGIN: !Ref FrontendOrigin
         LOG_LEVEL: !Ref LogLevel
     Tags:
       Project: !Ref ProjectName

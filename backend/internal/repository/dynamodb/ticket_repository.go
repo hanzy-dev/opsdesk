@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -168,16 +169,16 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 		return repository.ListTicketsResult{}, err
 	}
 
-	var items []ticketItem
-	if err := attributevalue.UnmarshalListOfMaps(output.Items, &items); err != nil {
-		return repository.ListTicketsResult{}, err
-	}
+	tickets := make([]domain.Ticket, 0, len(output.Items))
+	for _, rawItem := range output.Items {
+		var item ticketItem
+		if err := attributevalue.UnmarshalMap(rawItem, &item); err != nil {
+			continue
+		}
 
-	tickets := make([]domain.Ticket, 0, len(items))
-	for _, item := range items {
 		ticket, err := toDomainTicket(item)
 		if err != nil {
-			return repository.ListTicketsResult{}, err
+			continue
 		}
 
 		if !matchesSearchQuery(ticket, filter.Query) {
@@ -306,12 +307,12 @@ func toTicketItem(ticket domain.Ticket) ticketItem {
 }
 
 func toDomainTicket(item ticketItem) (domain.Ticket, error) {
-	createdAt, err := parseTimestamp(item.CreatedAt)
+	createdAt, err := parseRequiredTimestamp(item.CreatedAt, item.UpdatedAt)
 	if err != nil {
 		return domain.Ticket{}, err
 	}
 
-	updatedAt, err := parseTimestamp(item.UpdatedAt)
+	updatedAt, err := parseRequiredTimestamp(item.UpdatedAt, item.CreatedAt)
 	if err != nil {
 		return domain.Ticket{}, err
 	}
@@ -323,14 +324,14 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 
 	comments := make([]domain.Comment, 0, len(item.Comments))
 	for _, comment := range item.Comments {
-		createdAt, err := parseTimestamp(comment.CreatedAt)
+		createdAt, err := parseRequiredTimestamp(comment.CreatedAt, comment.UpdatedAt)
 		if err != nil {
-			return domain.Ticket{}, err
+			continue
 		}
 
-		updatedAt, err := parseTimestamp(comment.UpdatedAt)
+		updatedAt, err := parseRequiredTimestamp(comment.UpdatedAt, comment.CreatedAt)
 		if err != nil {
-			return domain.Ticket{}, err
+			continue
 		}
 
 		comments = append(comments, domain.Comment{
@@ -345,9 +346,9 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 
 	attachments := make([]domain.Attachment, 0, len(item.Attachments))
 	for _, attachment := range item.Attachments {
-		createdAt, err := parseTimestamp(attachment.CreatedAt)
+		createdAt, err := parseRequiredTimestamp(attachment.CreatedAt, item.CreatedAt, item.UpdatedAt)
 		if err != nil {
-			return domain.Ticket{}, err
+			continue
 		}
 
 		attachments = append(attachments, domain.Attachment{
@@ -366,9 +367,9 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 
 	activities := make([]domain.ActivityEntry, 0, len(item.Activities))
 	for _, activity := range item.Activities {
-		timestamp, err := parseTimestamp(activity.Timestamp)
+		timestamp, err := parseRequiredTimestamp(activity.Timestamp, item.UpdatedAt, item.CreatedAt)
 		if err != nil {
-			return domain.Ticket{}, err
+			continue
 		}
 
 		activities = append(activities, domain.ActivityEntry{
@@ -407,13 +408,42 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 	}, nil
 }
 
-func parseTimestamp(value string) (time.Time, error) {
-	parsed, err := time.Parse(time.RFC3339, value)
-	if err != nil {
-		return time.Time{}, err
+func parseRequiredTimestamp(values ...string) (time.Time, error) {
+	for _, value := range values {
+		parsed, err := parseTimestamp(value)
+		if err == nil {
+			return parsed, nil
+		}
 	}
 
-	return parsed.UTC(), nil
+	return time.Time{}, errors.New("timestamp is required")
+}
+
+func parseTimestamp(value string) (time.Time, error) {
+	normalized := strings.TrimSpace(value)
+	if normalized == "" {
+		return time.Time{}, errors.New("timestamp is empty")
+	}
+
+	layouts := []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02 15:04:05",
+		time.DateTime,
+	}
+
+	for _, layout := range layouts {
+		parsed, err := time.Parse(layout, normalized)
+		if err == nil {
+			return parsed.UTC(), nil
+		}
+	}
+
+	if unixSeconds, err := strconv.ParseInt(normalized, 10, 64); err == nil {
+		return time.Unix(unixSeconds, 0).UTC(), nil
+	}
+
+	return time.Time{}, errors.New("invalid timestamp")
 }
 
 func parseOptionalTimestamp(value string) (time.Time, error) {

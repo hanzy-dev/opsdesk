@@ -43,7 +43,7 @@ func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc ser
 	rootMux.Handle(cfg.APIBasePath+"/", http.StripPrefix(cfg.APIBasePath, r.basePathMux))
 	rootMux.Handle(cfg.APIBasePath, http.StripPrefix(cfg.APIBasePath, r.basePathMux))
 
-	return withObservability(logger, rootMux)
+	return withObservability(logger, withCORS(cfg, rootMux))
 }
 
 func (r *Router) registerRoutes() {

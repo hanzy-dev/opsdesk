@@ -181,6 +181,123 @@ func TestListTicketsReturnsNewestFirst(t *testing.T) {
 	}
 }
 
+func TestListTicketsSkipsMalformedItemsInsteadOfFailingWholeResponse(t *testing.T) {
+	t.Parallel()
+
+	validTicket := toTicketItem(sampleTicket())
+	validTicket.ID = "TCK-0002"
+	validTicket.Status = "open"
+
+	repo := NewTicketRepository(stubClient{
+		putItemFn: func(context.Context, *dynamodb.PutItemInput, ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
+			t.Fatal("unexpected PutItem call")
+			return nil, nil
+		},
+		getItemFn: func(context.Context, *dynamodb.GetItemInput, ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+			t.Fatal("unexpected GetItem call")
+			return nil, nil
+		},
+		scanFn: func(_ context.Context, _ *dynamodb.ScanInput, _ ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+			return &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"id":        &types.AttributeValueMemberS{Value: "TCK-0001"},
+						"title":     &types.AttributeValueMemberS{Value: "Broken record"},
+						"status":    &types.AttributeValueMemberS{Value: "open"},
+						"createdAt": &types.AttributeValueMemberS{Value: ""},
+						"updatedAt": &types.AttributeValueMemberS{Value: ""},
+					},
+					mustMarshalMap(t, validTicket),
+				},
+			}, nil
+		},
+	}, "opsdesk-dev-tickets")
+
+	result, err := repo.ListTickets(context.Background(), repository.ListTicketsFilter{
+		Status: domain.TicketStatusOpen,
+	})
+	if err != nil {
+		t.Fatalf("ListTickets() error = %v", err)
+	}
+
+	if len(result.Items) != 1 {
+		t.Fatalf("expected 1 valid ticket, got %d", len(result.Items))
+	}
+
+	if result.Items[0].ID != "TCK-0002" {
+		t.Fatalf("expected valid ticket TCK-0002, got %q", result.Items[0].ID)
+	}
+}
+
+func TestListTicketsAcceptsLegacyUnixTimestamps(t *testing.T) {
+	t.Parallel()
+
+	legacyTicket := toTicketItem(sampleTicket())
+	legacyTicket.ID = "TCK-0003"
+	legacyTicket.Status = "in_progress"
+	legacyTicket.AssigneeID = "agent-123"
+	legacyTicket.AssigneeName = "OpsDesk Agent"
+	legacyTicket.CreatedAt = "1713085200"
+	legacyTicket.UpdatedAt = "1713086100"
+	legacyTicket.AssignedAt = "1713087000"
+	legacyTicket.Comments = []commentItem{
+		{
+			ID:         "CMT-0002",
+			TicketID:   "TCK-0003",
+			Message:    "Legacy comment",
+			AuthorName: "Agent Legacy",
+			CreatedAt:  "1713085200",
+			UpdatedAt:  "1713085200",
+		},
+	}
+	legacyTicket.Activities = []activityItem{
+		{
+			ID:        "ACT-0002",
+			TicketID:  "TCK-0003",
+			ActorID:   "agent-123",
+			ActorName: "OpsDesk Agent",
+			ActorRole: "agent",
+			Action:    "status_changed",
+			Summary:   "Status diubah",
+			Timestamp: "1713086100",
+		},
+	}
+
+	repo := NewTicketRepository(stubClient{
+		putItemFn: func(context.Context, *dynamodb.PutItemInput, ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
+			t.Fatal("unexpected PutItem call")
+			return nil, nil
+		},
+		getItemFn: func(context.Context, *dynamodb.GetItemInput, ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+			t.Fatal("unexpected GetItem call")
+			return nil, nil
+		},
+		scanFn: func(_ context.Context, _ *dynamodb.ScanInput, _ ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+			return &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					mustMarshalMap(t, legacyTicket),
+				},
+			}, nil
+		},
+	}, "opsdesk-dev-tickets")
+
+	result, err := repo.ListTickets(context.Background(), repository.ListTicketsFilter{
+		Status:     domain.TicketStatusInProgress,
+		AssigneeID: legacyTicket.AssigneeID,
+	})
+	if err != nil {
+		t.Fatalf("ListTickets() error = %v", err)
+	}
+
+	if len(result.Items) != 1 {
+		t.Fatalf("expected 1 ticket, got %d", len(result.Items))
+	}
+
+	if result.Items[0].ID != "TCK-0003" {
+		t.Fatalf("expected ticket TCK-0003, got %q", result.Items[0].ID)
+	}
+}
+
 func TestUpdateTicketMapsConditionalCheckFailureToNotFound(t *testing.T) {
 	t.Parallel()
 

@@ -189,6 +189,46 @@ func TestOptionsTicketsReturnsNoContent(t *testing.T) {
 	}
 }
 
+func TestOptionsProfileMeReturnsCORSHeadersForAllowedOrigin(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	req := httptest.NewRequest(http.MethodOptions, "/v1/profile/me", nil)
+	req.Header.Set("Origin", "https://opsdesk-teal.vercel.app")
+	req.Header.Set("Access-Control-Request-Method", http.MethodGet)
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", recorder.Code)
+	}
+
+	if recorder.Header().Get("Access-Control-Allow-Origin") != "https://opsdesk-teal.vercel.app" {
+		t.Fatalf("expected allowed origin header, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
+func TestGetProfileMeReturnsCORSHeadersForAllowedOrigin(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	req := httptest.NewRequest(http.MethodGet, "/v1/profile/me", nil)
+	req.Header.Set("Authorization", "Bearer "+testIDToken)
+	req.Header.Set("Origin", "https://opsdesk-teal.vercel.app")
+
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	if recorder.Header().Get("Access-Control-Allow-Origin") != "https://opsdesk-teal.vercel.app" {
+		t.Fatalf("expected allowed origin header, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
 func TestOptionsTicketSubresourceReturnsNoContent(t *testing.T) {
 	t.Parallel()
 
@@ -904,6 +944,7 @@ func newTestRouterWithRepos(identity auth.Identity, repo *memory.TicketRepositor
 	cfg := config.Config{
 		AppEnv:               "test",
 		APIBasePath:          "/v1",
+		FrontendOrigin:       "https://opsdesk-teal.vercel.app",
 		ProfileTableName:     "opsdesk-test-profiles",
 		AttachmentBucketName: "opsdesk-test-attachments",
 	}

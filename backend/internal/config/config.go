@@ -13,6 +13,7 @@ type Config struct {
 	AppEnv               string
 	Port                 string
 	APIBasePath          string
+	FrontendOrigin       string
 	LogLevel             string
 	TicketTableName      string
 	ProfileTableName     string
@@ -27,6 +28,7 @@ func Load() Config {
 		AppEnv:               getEnv("APP_ENV", defaultAppEnv),
 		Port:                 getEnv("PORT", defaultPort),
 		APIBasePath:          getEnv("API_BASE_PATH", defaultAPIBasePath),
+		FrontendOrigin:       getEnv("FRONTEND_ORIGIN", ""),
 		LogLevel:             getEnv("LOG_LEVEL", defaultLogLevel),
 		TicketTableName:      getEnv("TICKET_TABLE_NAME", ""),
 		ProfileTableName:     getEnv("PROFILE_TABLE_NAME", ""),

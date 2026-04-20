@@ -7,10 +7,36 @@ import (
 	"strings"
 	"time"
 
+	"opsdesk/backend/internal/config"
 	"opsdesk/backend/internal/observability"
 )
 
 const requestIDHeader = "X-Request-Id"
+
+func withCORS(cfg config.Config, next http.Handler) http.Handler {
+	allowedOrigin := strings.TrimSpace(cfg.FrontendOrigin)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		origin := strings.TrimSpace(req.Header.Get("Origin"))
+		if origin != "" && allowedOrigin != "" && origin == allowedOrigin {
+			headers := w.Header()
+			headers.Set("Access-Control-Allow-Origin", origin)
+			headers.Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+			headers.Set("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Request-Id")
+			headers.Set("Access-Control-Max-Age", "300")
+			headers.Add("Vary", "Origin")
+			headers.Add("Vary", "Access-Control-Request-Method")
+			headers.Add("Vary", "Access-Control-Request-Headers")
+		}
+
+		if req.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		next.ServeHTTP(w, req)
+	})
+}
 
 func withObservability(baseLogger *slog.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
