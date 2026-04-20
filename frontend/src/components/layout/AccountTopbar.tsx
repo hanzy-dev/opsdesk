@@ -115,7 +115,7 @@ export function AccountTopbar({
               <div className="topbar__identity">
                 <strong>{preferredDisplayName}</strong>
                 <p>{identity?.email ?? "Email akun belum tersedia"}</p>
-                <small className="topbar__identity-subtle">{identity?.subject ?? "ID akun belum tersedia"}</small>
+                <small className="topbar__identity-subtle">Profil pribadi aktif</small>
               </div>
             </div>
             <div className="topbar__account-side">
@@ -158,6 +158,7 @@ export function AccountTopbar({
                 </span>
                 <AppIcon name="chevronRight" size="sm" />
               </button>
+              {identity?.subject ? <div className="topbar__menu-meta">ID sistem: {identity.subject}</div> : null}
             </div>
           ) : null}
         </div>

@@ -2293,6 +2293,15 @@ textarea:focus-visible {
   margin-left: auto;
 }
 
+.topbar__menu-meta {
+  padding: 10px 12px 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .role-pill {
   display: inline-flex;
   align-items: center;
@@ -2350,6 +2359,15 @@ textarea:focus-visible {
   font-size: 0.78rem;
 }
 
+.profile-summary__eyebrow {
+  margin: 0 0 6px;
+  color: #f2b792;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
 .profile-summary__meta strong {
   display: block;
   color: var(--text);
@@ -2386,6 +2404,36 @@ textarea:focus-visible {
   margin-top: 14px;
 }
 
+.profile-summary__system {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.profile-summary__system-item {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.profile-summary__system-item span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.profile-summary__system-item strong {
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .avatar-upload__input {
   display: none;
 }
@@ -2394,6 +2442,51 @@ textarea:focus-visible {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.profile-readonly-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-readonly-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-readonly-item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.profile-readonly-item span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.profile-readonly-item strong,
+.profile-readonly-item p {
+  margin: 0;
+}
+
+.profile-readonly-item strong {
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.profile-readonly-item p {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
 }
 
 .dialog-backdrop {

@@ -26,6 +26,7 @@ export function ProfilePage() {
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -52,6 +53,7 @@ export function ProfilePage() {
     setSelectedAvatarFile(null);
     setUploadStatus(null);
     setUploadProgress(0);
+    setDisplayNameError(null);
   }, [effectiveProfile?.avatarUrl, effectiveProfile?.displayName, effectiveProfile?.subject]);
 
   useEffect(() => {
@@ -75,6 +77,12 @@ export function ProfilePage() {
   );
   const hasAvatar = Boolean(avatarPreviewUrl);
   const isUploadingAvatar = selectedAvatarFile !== null;
+  const normalizedDisplayName = displayName.trim();
+  const isDirty =
+    normalizedDisplayName !== (effectiveProfile?.displayName?.trim() ?? "") ||
+    avatarUrl !== (effectiveProfile?.avatarUrl ?? "") ||
+    avatarPreviewUrl !== (effectiveProfile?.avatarUrl ?? "") ||
+    selectedAvatarFile !== null;
 
   if (isProfileLoading && !effectiveProfile) {
     return (
@@ -103,9 +111,21 @@ export function ProfilePage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setIsSaving(true);
     setFeedback(null);
     setSubmitError(null);
+    setDisplayNameError(null);
+
+    if (!normalizedDisplayName) {
+      setDisplayNameError("Nama tampilan wajib diisi.");
+      showToast({
+        title: "Nama tampilan belum lengkap",
+        description: "Isi nama tampilan yang ingin Anda gunakan di seluruh aplikasi.",
+        tone: "error",
+      });
+      return;
+    }
+
+    setIsSaving(true);
 
     try {
       let nextAvatarValue = avatarUrl;
@@ -121,21 +141,27 @@ export function ProfilePage() {
         });
 
         setUploadStatus("Mengunggah avatar ke penyimpanan aman...");
-        await uploadAttachmentFile(uploadTarget, selectedAvatarFile, setUploadProgress, "Upload avatar ke penyimpanan belum berhasil.");
+        await uploadAttachmentFile(
+          uploadTarget,
+          selectedAvatarFile,
+          setUploadProgress,
+          "Upload avatar ke penyimpanan belum berhasil.",
+        );
         nextAvatarValue = uploadTarget.objectKey;
       }
 
       const nextProfile = await saveProfile({
-        displayName: displayName.trim(),
+        displayName: normalizedDisplayName,
         avatarUrl: nextAvatarValue,
       });
 
+      setDisplayName(nextProfile.displayName);
       setAvatarUrl(nextProfile.avatarUrl ?? "");
       setAvatarPreviewUrl(nextProfile.avatarUrl ?? "");
       setSelectedAvatarFile(null);
       setUploadStatus(null);
       setUploadProgress(0);
-      setFeedback("Profil berhasil diperbarui.");
+      setFeedback("Identitas profil berhasil diperbarui.");
       showToast({
         title: "Profil berhasil diperbarui",
         description: "Perubahan identitas akun sudah diterapkan di aplikasi.",
@@ -199,6 +225,7 @@ export function ProfilePage() {
     setSelectedAvatarFile(null);
     setFeedback(null);
     setSubmitError(null);
+    setDisplayNameError(null);
     setUploadStatus(null);
     setUploadProgress(0);
     if (fileInputRef.current) {
@@ -213,6 +240,7 @@ export function ProfilePage() {
     setSelectedAvatarFile(null);
     setFeedback(null);
     setSubmitError(null);
+    setDisplayNameError(null);
     setUploadStatus("Avatar akan dikembalikan ke inisial setelah profil disimpan.");
     setUploadProgress(0);
     if (fileInputRef.current) {
@@ -225,9 +253,9 @@ export function ProfilePage() {
       <section className="stack-lg page-shell page-shell--narrow page-flow profile-page">
         <div className="hero-card hero-card--compact hero-card--spotlight">
           <div>
-            <p className="section-eyebrow">Akun</p>
-            <h2>Kelola identitas akun</h2>
-            <p>Perbarui nama tampilan dan avatar agar akun Anda terasa lebih personal, rapi, dan konsisten di seluruh aplikasi.</p>
+            <p className="section-eyebrow">Profil</p>
+            <h2>Pusat identitas akun Anda</h2>
+            <p>Kelola nama tampilan, avatar, dan informasi akun utama agar identitas Anda terasa jelas, rapi, dan konsisten di seluruh OpsDesk.</p>
           </div>
         </div>
 
@@ -238,13 +266,13 @@ export function ProfilePage() {
                 <UserAvatar avatarUrl={avatarPreviewUrl} name={preferredDisplayName} size="lg" />
                 <div className="stack-md">
                   <div>
-                    <span className="role-pill">{getRoleLabel(currentProfile.role)}</span>
+                    <p className="profile-summary__eyebrow">Identitas utama</p>
                     <h3>{preferredDisplayName}</h3>
                     <p>{currentProfile.email}</p>
-                    <small className="profile-summary__subtle">{currentProfile.subject}</small>
+                    <span className="role-pill">{getRoleLabel(currentProfile.role)}</span>
                   </div>
                   <p className="profile-summary__helper">
-                    Foto profil akan tampil di area akun dan ringkasan identitas agar akun terasa lebih personal dan mudah dikenali.
+                    Nama tampilan dan avatar di kartu ini akan menjadi identitas utama Anda di area akun, profil, dan aktivitas utama aplikasi.
                   </p>
                 </div>
               </div>
@@ -282,71 +310,126 @@ export function ProfilePage() {
               ) : null}
             </div>
 
-            <p className="profile-summary__note">
-              Format yang didukung: JPG, PNG, WEBP. Ukuran maksimum 5 MB.
-            </p>
+            <p className="profile-summary__note">Format yang didukung: JPG, PNG, WEBP. Ukuran maksimum 5 MB.</p>
+
+            <div className="profile-summary__system">
+              <div className="profile-summary__system-item">
+                <span>ID sistem</span>
+                <strong>{currentProfile.subject}</strong>
+              </div>
+              <div className="profile-summary__system-item">
+                <span>Status identitas</span>
+                <strong>{normalizedDisplayName ? "Nama personal aktif" : "Menggunakan fallback sistem"}</strong>
+              </div>
+            </div>
           </article>
 
-          <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
-            <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">Profil</p>
-                <h3>Informasi akun</h3>
+          <div className="stack-md">
+            <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
+              <div className="section-heading">
+                <div>
+                  <p className="section-eyebrow">Bisa diedit</p>
+                  <h3>Nama tampilan dan avatar</h3>
+                </div>
+                <p className="filter-summary">Perubahan di sini akan dipakai sebagai identitas utama Anda.</p>
               </div>
-            </div>
 
-            <div className="form-grid">
-              <label className="field">
+              <label className={`field ${displayNameError ? "field--invalid" : ""}`}>
                 <span>Nama tampilan</span>
                 <input
+                  aria-invalid={displayNameError ? "true" : "false"}
                   maxLength={80}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  placeholder="Masukkan nama profesional Anda"
+                  onChange={(event) => {
+                    setDisplayName(event.target.value);
+                    if (displayNameError) {
+                      setDisplayNameError(null);
+                    }
+                  }}
+                  placeholder="Masukkan nama yang ingin ditampilkan ke pengguna lain"
                   value={displayName}
                 />
+                <small>
+                  Nama ini akan muncul di area akun, ringkasan profil, dan blok identitas utama di aplikasi.
+                </small>
+                {displayNameError ? <small>{displayNameError}</small> : null}
               </label>
 
-              <label className="field">
-                <span>Email</span>
-                <input readOnly type="email" value={currentProfile.email} />
-              </label>
-
-              <label className="field">
-                <span>Peran</span>
-                <input readOnly value={getRoleLabel(currentProfile.role)} />
-              </label>
-
-              <label className="field">
-                <span>ID Cognito</span>
-                <input readOnly value={currentProfile.subject} />
-              </label>
-            </div>
-
-            {profileError ? <p className="form-hint">Sinkronisasi profil sementara tertunda. Data lokal akun masih digunakan sampai koneksi profil kembali normal.</p> : null}
-            {isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
-            {isUploadingAvatar && uploadProgress > 0 ? (
-              <div aria-label={`Progres upload avatar ${uploadProgress}%`} className="inline-progress" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={uploadProgress}>
-                <div className="inline-progress__track">
-                  <span className="inline-progress__bar" style={{ width: `${uploadProgress}%` }} />
+              {profileError ? (
+                <p className="form-hint">
+                  Sinkronisasi profil sementara tertunda. Data lokal akun masih digunakan sampai koneksi profil kembali normal.
+                </p>
+              ) : null}
+              {isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
+              {isUploadingAvatar && uploadProgress > 0 ? (
+                <div
+                  aria-label={`Progres upload avatar ${uploadProgress}%`}
+                  aria-valuemax={100}
+                  aria-valuemin={0}
+                  aria-valuenow={uploadProgress}
+                  className="inline-progress"
+                  role="progressbar"
+                >
+                  <div className="inline-progress__track">
+                    <span className="inline-progress__bar" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                  <p className="form-hint">Progres upload avatar: {uploadProgress}%</p>
                 </div>
-                <p className="form-hint">Progres upload avatar: {uploadProgress}%</p>
-              </div>
-            ) : null}
-            {!isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
-            {feedback ? <p className="form-success">{feedback}</p> : null}
-            {submitError ? <p className="form-error">{submitError}</p> : null}
+              ) : null}
+              {!isUploadingAvatar && uploadStatus ? <p className="form-hint">{uploadStatus}</p> : null}
+              {feedback ? <p className="form-success">{feedback}</p> : null}
+              {submitError ? <p className="form-error">{submitError}</p> : null}
 
-            <div className="form-actions">
-              <button aria-busy={isSaving} className="button button--primary" disabled={isSaving} type="submit">
-                <AppIcon name="profile" size="sm" />
-                {isSaving ? "Menyimpan..." : "Simpan Profil"}
-              </button>
-              <button aria-busy={isSaving} className="button button--secondary" disabled={isSaving} onClick={resetDraftChanges} type="button">
-                <AppIcon name="reset" size="sm" />
-                Kembalikan Perubahan
-              </button>
-            </div>
-          </form>
+              <div className="form-actions">
+                <button
+                  aria-busy={isSaving}
+                  className="button button--primary"
+                  disabled={isSaving || !isDirty}
+                  type="submit"
+                >
+                  <AppIcon name="profile" size="sm" />
+                  {isSaving ? "Menyimpan..." : "Simpan Identitas"}
+                </button>
+                <button
+                  aria-busy={isSaving}
+                  className="button button--secondary"
+                  disabled={isSaving || !isDirty}
+                  onClick={resetDraftChanges}
+                  type="button"
+                >
+                  <AppIcon name="reset" size="sm" />
+                  Kembalikan Perubahan
+                </button>
+              </div>
+            </form>
+
+            <article className="panel panel--section profile-readonly-panel">
+              <div className="section-heading">
+                <div>
+                  <p className="section-eyebrow">Hanya baca</p>
+                  <h3>Informasi sistem akun</h3>
+                </div>
+                <p className="filter-summary">Data ini mengikuti sistem login dan pengaturan akses.</p>
+              </div>
+
+              <div className="profile-readonly-grid">
+                <div className="profile-readonly-item">
+                  <span>Email akun</span>
+                  <strong>{currentProfile.email}</strong>
+                  <p>Dikelola oleh sistem autentikasi dan tetap tampil sebagai identitas kontak utama.</p>
+                </div>
+                <div className="profile-readonly-item">
+                  <span>Peran akun</span>
+                  <strong>{getRoleLabel(currentProfile.role)}</strong>
+                  <p>Hak akses mengikuti peran yang diberikan admin dan tidak diubah dari halaman ini.</p>
+                </div>
+                <div className="profile-readonly-item">
+                  <span>ID Cognito / sistem</span>
+                  <strong>{currentProfile.subject}</strong>
+                  <p>Disimpan untuk referensi audit, sinkronisasi backend, dan bantuan teknis saat diperlukan.</p>
+                </div>
+              </div>
+            </article>
+          </div>
         </div>
       </section>
 

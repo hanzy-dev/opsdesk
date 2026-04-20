@@ -300,16 +300,21 @@ export function CreateTicketPage() {
             <UserAvatar avatarUrl={profile?.avatarUrl ?? session?.avatarUrl} name={preferredDisplayName} size="lg" />
             <div className="profile-summary__meta">
               <div>
-                <span>Pelapor aktif</span>
+                <p className="profile-summary__eyebrow">Pelapor aktif</p>
                 <strong>{preferredDisplayName}</strong>
                 <p>{effectiveIdentity?.email ?? "Email belum tersedia"}</p>
               </div>
-              <small className="profile-summary__subtle">{effectiveIdentity?.subject ?? "ID belum tersedia"}</small>
             </div>
           </div>
           <span className="role-pill">{effectiveIdentity ? getRoleLabel(effectiveIdentity.role) : "Akun"}</span>
         </div>
         <p className="profile-summary__note">Identitas pelapor akan terpasang otomatis pada tiket agar audit trail tetap rapi dan konsisten.</p>
+        <div className="profile-summary__system">
+          <div className="profile-summary__system-item">
+            <span>ID sistem</span>
+            <strong>{effectiveIdentity?.subject ?? "ID belum tersedia"}</strong>
+          </div>
+        </div>
       </article>
 
       <form className="panel panel--section form-panel form-panel--compact" onSubmit={handleSubmit}>

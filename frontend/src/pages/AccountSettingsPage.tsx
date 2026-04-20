@@ -109,86 +109,125 @@ export function AccountSettingsPage() {
       <div className="detail-grid">
         <article className="panel panel--section profile-summary profile-summary--dense">
           <div className="profile-summary__header">
-            <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} size="lg" />
-            <div className="stack-md">
-              <div>
-                <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
-                <h3>{preferredDisplayName}</h3>
-                <p>{identity?.email ?? "Email tidak tersedia"}</p>
-                <small className="profile-summary__subtle">{identity?.subject ?? "ID belum tersedia"}</small>
-              </div>
-              <p className="profile-summary__helper">
-                Ringkasan ini mengikuti identitas profil aktif Anda. Pengelolaan nama tampilan dan avatar tersedia di halaman Profil.
-              </p>
-              <div className="account-settings__links">
-                <Link className="button button--secondary" to="/profile">
-                  <AppIcon name="profile" size="sm" />
-                  Buka Profil
-                </Link>
-                <Link className="button button--ghost" to="/api-docs">
-                  <AppIcon name="api" size="sm" />
-                  Dokumentasi API
-                </Link>
+            <div className="profile-summary__identity">
+              <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} size="lg" />
+              <div className="stack-md">
+                <div>
+                  <p className="profile-summary__eyebrow">Identitas aktif</p>
+                  <h3>{preferredDisplayName}</h3>
+                  <p>{identity?.email ?? "Email tidak tersedia"}</p>
+                  <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
+                </div>
+                <p className="profile-summary__helper">
+                  Ringkasan ini mengikuti profil aktif Anda. Nama tampilan dan avatar dapat diperbarui dari halaman Profil.
+                </p>
               </div>
             </div>
+          </div>
+
+          <div className="profile-summary__system">
+            <div className="profile-summary__system-item">
+              <span>Info sistem</span>
+              <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
+            </div>
+          </div>
+
+          <div className="account-settings__links">
+            <Link className="button button--secondary" to="/profile">
+              <AppIcon name="profile" size="sm" />
+              Buka Profil
+            </Link>
+            <Link className="button button--ghost" to="/api-docs">
+              <AppIcon name="api" size="sm" />
+              Dokumentasi API
+            </Link>
           </div>
         </article>
 
-        <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
-          <div className="section-heading">
-            <div>
-              <p className="section-eyebrow">Keamanan</p>
-              <h3>Ubah kata sandi</h3>
+        <div className="stack-md">
+          <article className="panel panel--section profile-readonly-panel">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Identitas</p>
+                <h3>Informasi akun saat ini</h3>
+              </div>
             </div>
-          </div>
 
-          <p className="form-hint">{policyHint}</p>
+            <div className="profile-readonly-grid">
+              <div className="profile-readonly-item">
+                <span>Email akun</span>
+                <strong>{identity?.email ?? "Email tidak tersedia"}</strong>
+                <p>Dikelola oleh sistem login dan tidak diubah dari sini.</p>
+              </div>
+              <div className="profile-readonly-item">
+                <span>Peran akses</span>
+                <strong>{identity ? getRoleLabel(identity.role) : "Akun"}</strong>
+                <p>Hak akses mengikuti peran yang diberikan admin.</p>
+              </div>
+              <div className="profile-readonly-item">
+                <span>ID sistem</span>
+                <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
+                <p>Gunakan hanya saat dibutuhkan untuk audit atau dukungan teknis.</p>
+              </div>
+            </div>
+          </article>
 
-          <div className="form-grid">
-            <label className="field field--full">
-              <span>Kata sandi saat ini</span>
-              <input
-                autoComplete="current-password"
-                onChange={(event) => setCurrentPassword(event.target.value)}
-                placeholder="Masukkan kata sandi saat ini"
-                type="password"
-                value={currentPassword}
-              />
-            </label>
+          <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Keamanan</p>
+                <h3>Ubah kata sandi</h3>
+              </div>
+            </div>
 
-            <label className="field">
-              <span>Kata sandi baru</span>
-              <input
-                autoComplete="new-password"
-                onChange={(event) => setNextPassword(event.target.value)}
-                placeholder="Masukkan kata sandi baru"
-                type="password"
-                value={nextPassword}
-              />
-            </label>
+            <p className="form-hint">{policyHint}</p>
 
-            <label className="field">
-              <span>Konfirmasi kata sandi baru</span>
-              <input
-                autoComplete="new-password"
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="Ulangi kata sandi baru"
-                type="password"
-                value={confirmPassword}
-              />
-            </label>
-          </div>
+            <div className="form-grid">
+              <label className="field field--full">
+                <span>Kata sandi saat ini</span>
+                <input
+                  autoComplete="current-password"
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  placeholder="Masukkan kata sandi saat ini"
+                  type="password"
+                  value={currentPassword}
+                />
+              </label>
 
-          {successMessage ? <p className="form-success">{successMessage}</p> : null}
-          {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+              <label className="field">
+                <span>Kata sandi baru</span>
+                <input
+                  autoComplete="new-password"
+                  onChange={(event) => setNextPassword(event.target.value)}
+                  placeholder="Masukkan kata sandi baru"
+                  type="password"
+                  value={nextPassword}
+                />
+              </label>
 
-          <div className="form-actions">
-            <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
-              <AppIcon name="settings" size="sm" />
-              {isSubmitting ? "Menyimpan..." : "Ubah Kata Sandi"}
-            </button>
-          </div>
-        </form>
+              <label className="field">
+                <span>Konfirmasi kata sandi baru</span>
+                <input
+                  autoComplete="new-password"
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="Ulangi kata sandi baru"
+                  type="password"
+                  value={confirmPassword}
+                />
+              </label>
+            </div>
+
+            {successMessage ? <p className="form-success">{successMessage}</p> : null}
+            {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+
+            <div className="form-actions">
+              <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
+                <AppIcon name="settings" size="sm" />
+                {isSubmitting ? "Menyimpan..." : "Ubah Kata Sandi"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </section>
   );

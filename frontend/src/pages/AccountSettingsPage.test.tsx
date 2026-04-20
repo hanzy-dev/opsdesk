@@ -62,6 +62,8 @@ describe("AccountSettingsPage", () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByText("Informasi akun saat ini")).toBeInTheDocument();
+    expect(screen.getByText("ID sistem")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Dokumentasi API" })).toHaveAttribute("href", "/api-docs");
   });
 });

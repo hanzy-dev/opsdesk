@@ -56,11 +56,14 @@ describe("ProfilePage", () => {
     render(<ProfilePage />);
 
     expect(screen.getByDisplayValue("OpsDesk User")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("opsdesk.user@example.com")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("user-123")).toBeInTheDocument();
+    expect(screen.getByText("Informasi sistem akun")).toBeInTheDocument();
+    expect(screen.getAllByText("opsdesk.user@example.com").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("user-123").length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: "Simpan Identitas" })).toBeDisabled();
 
-    fireEvent.change(screen.getByLabelText("Nama tampilan"), { target: { value: "Rina Aulia" } });
-    fireEvent.click(screen.getByRole("button", { name: "Simpan Profil" }));
+    fireEvent.change(screen.getByDisplayValue("OpsDesk User"), { target: { value: "Rina Aulia" } });
+    expect(screen.getByRole("button", { name: "Simpan Identitas" })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Simpan Identitas" }));
 
     await waitFor(() =>
       expect(saveProfileMock).toHaveBeenCalledWith({
@@ -69,6 +72,6 @@ describe("ProfilePage", () => {
       }),
     );
 
-    expect(await screen.findByText("Profil berhasil diperbarui.")).toBeInTheDocument();
+    expect(await screen.findByText("Identitas profil berhasil diperbarui.")).toBeInTheDocument();
   });
 });
