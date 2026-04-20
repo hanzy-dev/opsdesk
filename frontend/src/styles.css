@@ -2147,18 +2147,21 @@ textarea:focus-visible {
 .topbar__account-trigger {
   display: flex;
   align-items: center;
-  gap: 14px;
-  min-width: 298px;
+  gap: 18px;
+  min-width: 336px;
   justify-content: space-between;
-  padding: 10px 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 13px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)),
-    rgba(255, 255, 255, 0.04);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.045);
   color: var(--text);
   text-align: left;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
   transition:
     transform var(--motion-fast) var(--ease-emphasis),
     background-color var(--motion-fast) var(--ease-standard),
@@ -2180,9 +2183,20 @@ textarea:focus-visible {
 
 .topbar__account-side {
   flex-shrink: 0;
+  gap: 10px;
 }
 
 .topbar__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.03);
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1;
@@ -2200,44 +2214,58 @@ textarea:focus-visible {
 
 .topbar__account-trigger:hover {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.05);
-  border-color: rgba(239, 142, 83, 0.18);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)),
+    rgba(255, 255, 255, 0.055);
+  border-color: rgba(239, 142, 83, 0.2);
   transform: translateY(-1px);
   box-shadow:
-    var(--shadow-soft),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    0 18px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .topbar__account-trigger[aria-expanded="true"] {
-  border-color: rgba(239, 142, 83, 0.18);
+  border-color: rgba(239, 142, 83, 0.22);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03)),
-    rgba(255, 255, 255, 0.05);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.035)),
+    rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 20px 38px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 .topbar__identity {
   min-width: 0;
   display: grid;
-  gap: 2px;
+  gap: 4px;
+}
+
+.topbar__identity-label {
+  color: #f2b792;
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
 }
 
 .topbar__identity strong,
 .profile-summary h3 {
   margin: 0;
-  font-size: 1.04rem;
+  font-size: 1.08rem;
   line-height: 1.25;
 }
 
 .topbar__identity p {
-  font-size: 0.84rem;
+  font-size: 0.86rem;
   color: var(--muted);
   line-height: 1.45;
 }
 
 .topbar__identity-subtle {
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.71rem;
   line-height: 1.4;
   max-width: 240px;
   overflow: hidden;
@@ -2245,13 +2273,38 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
+.topbar__account-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar__account-cue-text {
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.topbar__account-trigger:hover .topbar__account-cue-text,
+.topbar__account-trigger[aria-expanded="true"] .topbar__account-cue-text {
+  color: var(--text);
+}
+
+.topbar__account-trigger:hover .topbar__chevron,
+.topbar__account-trigger[aria-expanded="true"] .topbar__chevron {
+  color: var(--text);
+  border-color: rgba(239, 142, 83, 0.18);
+}
+
 .topbar__menu {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: 208px;
+  width: 292px;
   padding: 8px;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 1px solid var(--border);
   background: rgba(20, 18, 20, 0.98);
   box-shadow: var(--shadow);
@@ -2263,6 +2316,46 @@ textarea:focus-visible {
 
 .topbar__menu--open {
   animation: menu-in var(--motion-fast) var(--ease-emphasis);
+}
+
+.topbar__menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.topbar__menu-header-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.topbar__menu-header-copy span {
+  color: #f2b792;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.topbar__menu-header-copy strong,
+.topbar__menu-header-copy p {
+  margin: 0;
+}
+
+.topbar__menu-header-copy strong {
+  font-size: 0.96rem;
+  line-height: 1.35;
+}
+
+.topbar__menu-header-copy p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .topbar__menu-link {
@@ -3149,6 +3242,10 @@ textarea:focus-visible {
   .topbar__account-side {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .topbar__account-cue-text {
+    font-size: 0.72rem;
   }
 
   .dialog__actions {

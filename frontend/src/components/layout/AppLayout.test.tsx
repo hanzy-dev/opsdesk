@@ -73,6 +73,10 @@ describe("AppLayout", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /OpsDesk User/i }));
+    expect(screen.getAllByText("Akun aktif").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OpsDesk User").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("opsdesk.user@example.com").length).toBeGreaterThan(0);
+    expect(screen.getByText("Tutup menu")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("menuitem", { name: /Keluar/i }));
 
     const dialog = await screen.findByRole("dialog", { name: "Keluar dari OpsDesk" });

@@ -113,6 +113,7 @@ export function AccountTopbar({
             <div className="topbar__account-main">
               <UserAvatar avatarUrl={identity?.avatarUrl} name={preferredDisplayName} />
               <div className="topbar__identity">
+                <span className="topbar__identity-label">Akun aktif</span>
                 <strong>{preferredDisplayName}</strong>
                 <p>{identity?.email ?? "Email akun belum tersedia"}</p>
                 <small className="topbar__identity-subtle">Profil pribadi aktif</small>
@@ -120,14 +121,25 @@ export function AccountTopbar({
             </div>
             <div className="topbar__account-side">
               <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
-              <span aria-hidden="true" className={`topbar__chevron ${isOpen ? "topbar__chevron--open" : ""}`}>
-                <AppIcon name="chevronDown" size="sm" />
+              <span className="topbar__account-cue">
+                <span className="topbar__account-cue-text">{isOpen ? "Tutup menu" : "Buka menu"}</span>
+                <span aria-hidden="true" className={`topbar__chevron ${isOpen ? "topbar__chevron--open" : ""}`}>
+                  <AppIcon name="chevronDown" size="sm" />
+                </span>
               </span>
             </div>
           </button>
 
           {isOpen ? (
             <div className="topbar__menu topbar__menu--open" id={menuId} role="menu">
+              <div className="topbar__menu-header">
+                <div className="topbar__menu-header-copy">
+                  <span>Akun aktif</span>
+                  <strong>{preferredDisplayName}</strong>
+                  <p>{identity?.email ?? "Email akun belum tersedia"}</p>
+                </div>
+                <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
+              </div>
               <Link className="topbar__menu-link" onClick={() => setIsOpen(false)} role="menuitem" to="/profile">
                 <span className="topbar__menu-item">
                   <AppIcon name="profile" size="sm" />
