@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import { createTicket } from "../api/tickets";
 import { AppIcon } from "../components/common/AppIcon";
 import { ErrorState } from "../components/common/ErrorState";
+import { SelectControl } from "../components/common/SelectControl";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { useToast } from "../components/common/ToastProvider";
 import { useAuth } from "../modules/auth/AuthContext";
@@ -19,6 +20,12 @@ const initialForm: CreateTicketInput = {
   reporterName: "",
   reporterEmail: "",
 };
+
+const priorityOptions: { value: CreateTicketInput["priority"]; label: string }[] = [
+  { value: "low", label: "Rendah" },
+  { value: "medium", label: "Sedang" },
+  { value: "high", label: "Tinggi" },
+];
 
 export function CreateTicketPage() {
   const { session, profile, permissions } = useAuth();
@@ -146,14 +153,11 @@ export function CreateTicketPage() {
 
           <label className="field">
             <span>Prioritas</span>
-            <select
+            <SelectControl
               value={form.priority}
-              onChange={(event) => setForm((current) => ({ ...current, priority: event.target.value as CreateTicketInput["priority"] }))}
-            >
-              <option value="low">Rendah</option>
-              <option value="medium">Sedang</option>
-              <option value="high">Tinggi</option>
-            </select>
+              onChange={(priority) => setForm((current) => ({ ...current, priority }))}
+              options={priorityOptions}
+            />
             {fieldErrors.priority ? <small>{fieldErrors.priority}</small> : null}
           </label>
 

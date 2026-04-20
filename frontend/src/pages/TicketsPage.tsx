@@ -6,6 +6,7 @@ import { AppIcon, AppIconBadge } from "../components/common/AppIcon";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
+import { SelectControl } from "../components/common/SelectControl";
 import { TicketTable } from "../components/tickets/TicketTable";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
@@ -52,6 +53,38 @@ const assignedTicketsPreset: TicketViewPreset = {
   assigneeFilter: "me",
   isSearchLocked: true,
 };
+
+const statusOptions: { value: "all" | Ticket["status"]; label: string }[] = [
+  { value: "all", label: "Semua status" },
+  { value: "open", label: "Terbuka" },
+  { value: "in_progress", label: "Sedang ditangani" },
+  { value: "resolved", label: "Selesai" },
+];
+
+const priorityOptions: { value: "all" | Ticket["priority"]; label: string }[] = [
+  { value: "all", label: "Semua prioritas" },
+  { value: "high", label: "Tinggi" },
+  { value: "medium", label: "Sedang" },
+  { value: "low", label: "Rendah" },
+];
+
+const assigneeOptions: { value: "all" | "me" | "unassigned"; label: string }[] = [
+  { value: "all", label: "Semua tiket" },
+  { value: "me", label: "Ditugaskan kepada saya" },
+  { value: "unassigned", label: "Belum ditugaskan" },
+];
+
+const sortByOptions: { value: "updated_at" | "created_at" | "priority" | "status"; label: string }[] = [
+  { value: "updated_at", label: "Terakhir diperbarui" },
+  { value: "created_at", label: "Tanggal dibuat" },
+  { value: "priority", label: "Prioritas" },
+  { value: "status", label: "Status" },
+];
+
+const sortOrderOptions: { value: "asc" | "desc"; label: string }[] = [
+  { value: "desc", label: "Menurun" },
+  { value: "asc", label: "Menaik" },
+];
 
 function resolvePreset(pathname: string): TicketViewPreset {
   if (pathname === "/tickets/mine") {
@@ -263,82 +296,70 @@ export function TicketsPage() {
 
           <label className="field">
             <span>Filter status</span>
-            <select
+            <SelectControl
+              ariaLabel="Filter status"
               value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value as "all" | Ticket["status"]);
+              onChange={(nextStatus) => {
+                setStatusFilter(nextStatus);
                 setPage(1);
               }}
-            >
-              <option value="all">Semua status</option>
-              <option value="open">Terbuka</option>
-              <option value="in_progress">Sedang ditangani</option>
-              <option value="resolved">Selesai</option>
-            </select>
+              options={statusOptions}
+            />
           </label>
 
           <label className="field">
             <span>Filter prioritas</span>
-            <select
+            <SelectControl
+              ariaLabel="Filter prioritas"
               value={priorityFilter}
-              onChange={(event) => {
-                setPriorityFilter(event.target.value as "all" | Ticket["priority"]);
+              onChange={(nextPriority) => {
+                setPriorityFilter(nextPriority);
                 setPage(1);
               }}
-            >
-              <option value="all">Semua prioritas</option>
-              <option value="high">Tinggi</option>
-              <option value="medium">Sedang</option>
-              <option value="low">Rendah</option>
-            </select>
+              options={priorityOptions}
+            />
           </label>
 
           {permissions.canAssignTickets ? (
             <label className="field">
               <span>Penugasan</span>
-              <select
+              <SelectControl
+                ariaLabel="Filter penugasan"
                 disabled={preset.isSearchLocked}
                 value={assigneeFilter}
-                onChange={(event) => {
-                  setAssigneeFilter(event.target.value as "all" | "me" | "unassigned");
+                onChange={(nextAssignee) => {
+                  setAssigneeFilter(nextAssignee);
                   setPage(1);
                 }}
-              >
-                <option value="all">Semua tiket</option>
-                <option value="me">Ditugaskan kepada saya</option>
-                <option value="unassigned">Belum ditugaskan</option>
-              </select>
+                options={assigneeOptions}
+              />
             </label>
           ) : null}
 
           <label className="field">
             <span>Urutkan berdasarkan</span>
-            <select
+            <SelectControl
+              ariaLabel="Urutkan berdasarkan"
               value={sortBy}
-              onChange={(event) => {
-                setSortBy(event.target.value as "updated_at" | "created_at" | "priority" | "status");
+              onChange={(nextSortBy) => {
+                setSortBy(nextSortBy);
                 setPage(1);
               }}
-            >
-              <option value="updated_at">Terakhir diperbarui</option>
-              <option value="created_at">Tanggal dibuat</option>
-              <option value="priority">Prioritas</option>
-              <option value="status">Status</option>
-            </select>
+              options={sortByOptions}
+            />
           </label>
 
           <label className="field">
             <span>Arah urutan</span>
-            <select
+            <SelectControl
+              ariaLabel="Arah urutan"
               value={sortOrder}
-              onChange={(event) => {
-                setSortOrder(event.target.value as "asc" | "desc");
+              onChange={(nextSortOrder) => {
+                setSortOrder(nextSortOrder);
                 setPage(1);
               }}
-            >
-              <option value="desc">Menurun</option>
-              <option value="asc">Menaik</option>
-            </select>
+              options={sortOrderOptions}
+            />
           </label>
         </div>
 

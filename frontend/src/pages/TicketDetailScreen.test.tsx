@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TicketDetailPage } from "./TicketDetailScreen";
@@ -139,6 +139,7 @@ describe("TicketDetailScreen", () => {
     expect(screen.getByText("Tindakan yang tersedia")).toBeInTheDocument();
     expect(screen.getByText("Timeline aktivitas tiket")).toBeInTheDocument();
     expect(await screen.findByText("Ubah penanggung jawab")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Ubah penanggung jawab" }));
     expect(screen.getByRole("option", { name: /Budi Operator/ })).toBeInTheDocument();
     expect(screen.getByDisplayValue("Dina Petugas")).toHaveAttribute("readonly");
     expect(screen.getByText("Dikirim sebagai Dina Petugas (Petugas)")).toBeInTheDocument();

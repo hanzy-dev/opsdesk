@@ -15,6 +15,7 @@ import {
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
+import { SelectControl } from "../components/common/SelectControl";
 import { useToast } from "../components/common/ToastProvider";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { StatusBadge } from "../components/tickets/StatusBadge";
@@ -35,6 +36,12 @@ const allowedAttachmentTypes = [
 ];
 
 const maxAttachmentSizeBytes = 10 * 1024 * 1024;
+
+const ticketStatusOptions: { value: TicketStatus; label: string }[] = [
+  { value: "open", label: "Terbuka" },
+  { value: "in_progress", label: "Sedang Ditangani" },
+  { value: "resolved", label: "Selesai" },
+];
 
 export function TicketDetailPage() {
   const { session, profile, permissions } = useAuth();
@@ -187,6 +194,24 @@ export function TicketDetailPage() {
     ],
     [permissions.canAssignTickets, permissions.canUpdateTicketStatus, session?.subject, ticket?.assigneeId, ticket?.assigneeName],
   );
+
+  const assigneeOptions = useMemo(() => {
+    const options = assignableUsers.map((user) => ({
+      value: user.subject,
+      label: user.displayName,
+      description: user.email,
+    }));
+
+    if (session?.subject && !options.some((option) => option.value === session.subject)) {
+      options.unshift({
+        value: session.subject,
+        label: currentIdentity?.displayName ?? "Saya",
+        description: currentIdentity?.email ?? "",
+      });
+    }
+
+    return options;
+  }, [assignableUsers, currentIdentity?.displayName, currentIdentity?.email, session?.subject]);
 
   async function handleStatusSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -665,23 +690,14 @@ export function TicketDetailPage() {
 
                   <label className="field" htmlFor="ticket-assignee-select">
                     <span>Ubah penanggung jawab</span>
-                    <select
-                      id="ticket-assignee-select"
+                    <SelectControl
+                      ariaLabel="Ubah penanggung jawab"
                       disabled={isSavingAssignment || isLoadingAssignableUsers}
+                      id="ticket-assignee-select"
+                      onChange={setSelectedAssigneeId}
+                      options={assigneeOptions}
                       value={selectedAssigneeId}
-                      onChange={(event) => setSelectedAssigneeId(event.target.value)}
-                    >
-                      {assignableUsers.some((user) => user.subject === session?.subject) ? null : (
-                        <option value={session?.subject ?? ""}>
-                          {currentIdentity?.displayName ?? "Saya"} • {currentIdentity?.email ?? ""}
-                        </option>
-                      )}
-                      {assignableUsers.map((user) => (
-                        <option key={user.subject} value={user.subject}>
-                          {user.displayName} • {user.email}
-                        </option>
-                      ))}
-                    </select>
+                    />
                     <small>
                       {isLoadingAssignableUsers
                         ? "Memuat daftar petugas dan admin..."
@@ -723,11 +739,12 @@ export function TicketDetailPage() {
               <form className="stack-md" onSubmit={handleStatusSubmit}>
                 <label className="field">
                   <span>Status tiket</span>
-                  <select value={selectedStatus} onChange={(event) => setSelectedStatus(event.target.value as TicketStatus)}>
-                    <option value="open">Terbuka</option>
-                    <option value="in_progress">Sedang Ditangani</option>
-                    <option value="resolved">Selesai</option>
-                  </select>
+                  <SelectControl
+                    ariaLabel="Status tiket"
+                    onChange={setSelectedStatus}
+                    options={ticketStatusOptions}
+                    value={selectedStatus}
+                  />
                 </label>
                 {statusError ? <p className="form-error">{statusError}</p> : null}
                 {statusErrorReferenceId ? <p className="form-hint">Kode referensi: {statusErrorReferenceId}</p> : null}

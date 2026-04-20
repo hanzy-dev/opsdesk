@@ -104,9 +104,8 @@ describe("TicketsPage smoke tests", () => {
       );
     });
 
-    fireEvent.change(screen.getByDisplayValue("Semua status"), {
-      target: { value: "resolved" },
-    });
+    fireEvent.click(screen.getByRole("button", { name: "Filter status" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Selesai" }));
 
     await waitFor(() => {
       expect(listTicketsMock).toHaveBeenLastCalledWith(
