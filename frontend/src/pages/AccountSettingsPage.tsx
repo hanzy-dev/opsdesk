@@ -1,10 +1,10 @@
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AppIcon } from "../components/common/AppIcon";
-import { useToast } from "../components/common/ToastProvider";
-import { changeCurrentPassword } from "../modules/auth/authService";
-import { useAuth } from "../modules/auth/AuthContext";
+import { AppIcon, AppIconBadge } from "../components/common/AppIcon";
 import { UserAvatar } from "../components/common/UserAvatar";
+import { useToast } from "../components/common/ToastProvider";
+import { useAuth } from "../modules/auth/AuthContext";
+import { changeCurrentPassword } from "../modules/auth/authService";
 import { getRoleLabel } from "../modules/auth/roles";
 import { getPreferredDisplayName } from "../utils/identity";
 
@@ -35,6 +35,8 @@ export function AccountSettingsPage() {
     [],
   );
   const preferredDisplayName = getPreferredDisplayName(identity);
+  const canSubmitPasswordChange =
+    !isSubmitting && Boolean(currentPassword.trim() && nextPassword.trim() && confirmPassword.trim());
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,7 +104,10 @@ export function AccountSettingsPage() {
         <div>
           <p className="section-eyebrow">Akun</p>
           <h2>Pengaturan akun</h2>
-          <p>Kelola pengaturan penting akun, termasuk perubahan kata sandi, profil, dan akses ke dokumentasi API.</p>
+          <p>
+            Pusat kontrol ringan untuk identitas akun, keamanan masuk, dan akses cepat ke profil maupun dokumentasi
+            OpsDesk.
+          </p>
         </div>
       </div>
 
@@ -119,7 +124,8 @@ export function AccountSettingsPage() {
                   <span className="role-pill">{identity ? getRoleLabel(identity.role) : "Akun"}</span>
                 </div>
                 <p className="profile-summary__helper">
-                  Ringkasan ini mengikuti profil aktif Anda. Nama tampilan dan avatar dapat diperbarui dari halaman Profil.
+                  Ringkasan ini mengikuti profil aktif Anda. Nama tampilan dan avatar dapat diperbarui dari halaman
+                  Profil.
                 </p>
               </div>
             </div>
@@ -127,7 +133,7 @@ export function AccountSettingsPage() {
 
           <div className="profile-summary__system">
             <div className="profile-summary__system-item">
-              <span>Info sistem</span>
+              <span>ID sistem</span>
               <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
             </div>
           </div>
@@ -144,89 +150,182 @@ export function AccountSettingsPage() {
           </div>
         </article>
 
-        <div className="stack-md">
-          <article className="panel panel--section profile-readonly-panel">
+        <div className="stack-md settings-page__sections">
+          <article className="panel panel--section profile-readonly-panel settings-section">
             <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">Identitas</p>
-                <h3>Informasi akun saat ini</h3>
+              <div className="settings-section__heading">
+                <AppIconBadge name="profile" size="sm" tone="accent" />
+                <div>
+                  <p className="section-eyebrow">Identitas akun</p>
+                  <h3>Ringkasan identitas</h3>
+                </div>
               </div>
             </div>
 
+            <p className="settings-section__intro">
+              Halaman ini menampilkan identitas utama akun Anda. Ubah nama tampilan dan avatar dari Profil agar
+              tampilan Anda konsisten di seluruh area kerja.
+            </p>
+
             <div className="profile-readonly-grid">
+              <div className="profile-readonly-item">
+                <span>Nama tampilan aktif</span>
+                <strong>{preferredDisplayName}</strong>
+                <p>Nama ini diprioritaskan pada area akun, ringkasan profil, dan identitas pelapor.</p>
+              </div>
               <div className="profile-readonly-item">
                 <span>Email akun</span>
                 <strong>{identity?.email ?? "Email tidak tersedia"}</strong>
-                <p>Dikelola oleh sistem login dan tidak diubah dari sini.</p>
+                <p>Dikelola oleh sistem login dan tidak diubah dari halaman Pengaturan.</p>
               </div>
               <div className="profile-readonly-item">
                 <span>Peran akses</span>
                 <strong>{identity ? getRoleLabel(identity.role) : "Akun"}</strong>
-                <p>Hak akses mengikuti peran yang diberikan admin.</p>
+                <p>Hak akses mengikuti peran yang diberikan admin pada akun ini.</p>
               </div>
-              <div className="profile-readonly-item">
-                <span>ID sistem</span>
-                <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
-                <p>Gunakan hanya saat dibutuhkan untuk audit atau dukungan teknis.</p>
-              </div>
+            </div>
+
+            <div className="settings-link-list">
+              <Link className="settings-link-card" to="/profile">
+                <div className="settings-link-card__content">
+                  <span>Kelola profil pribadi</span>
+                  <strong>Edit nama tampilan dan avatar</strong>
+                  <p>Buka halaman Profil untuk memperbarui identitas yang terlihat oleh tim.</p>
+                </div>
+                <AppIcon name="chevronRight" size="sm" />
+              </Link>
             </div>
           </article>
 
-          <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
+          <article className="panel panel--section settings-section">
             <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">Keamanan</p>
-                <h3>Ubah kata sandi</h3>
+              <div className="settings-section__heading">
+                <AppIconBadge name="settings" size="sm" tone="cool" />
+                <div>
+                  <p className="section-eyebrow">Keamanan akun</p>
+                  <h3>Akses masuk dan proteksi akun</h3>
+                </div>
               </div>
             </div>
 
-            <p className="form-hint">{policyHint}</p>
-
-            <div className="form-grid">
-              <label className="field field--full">
-                <span>Kata sandi saat ini</span>
-                <input
-                  autoComplete="current-password"
-                  onChange={(event) => setCurrentPassword(event.target.value)}
-                  placeholder="Masukkan kata sandi saat ini"
-                  type="password"
-                  value={currentPassword}
-                />
-              </label>
-
-              <label className="field">
-                <span>Kata sandi baru</span>
-                <input
-                  autoComplete="new-password"
-                  onChange={(event) => setNextPassword(event.target.value)}
-                  placeholder="Masukkan kata sandi baru"
-                  type="password"
-                  value={nextPassword}
-                />
-              </label>
-
-              <label className="field">
-                <span>Konfirmasi kata sandi baru</span>
-                <input
-                  autoComplete="new-password"
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="Ulangi kata sandi baru"
-                  type="password"
-                  value={confirmPassword}
-                />
-              </label>
+            <div className="settings-note-list">
+              <div className="settings-note">
+                <span>Perubahan di sini</span>
+                <strong>Kata sandi akun</strong>
+                <p>Gunakan bagian ini untuk menjaga keamanan akses masuk akun Anda.</p>
+              </div>
+              <div className="settings-note">
+                <span>Dikelola di Profil</span>
+                <strong>Nama tampilan dan avatar</strong>
+                <p>Pemisahan ini membantu menjaga informasi identitas dan pengaturan keamanan tetap jelas.</p>
+              </div>
             </div>
 
-            {successMessage ? <p className="form-success">{successMessage}</p> : null}
-            {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+            <form className="form-panel form-panel--compact stack-md" onSubmit={handleSubmit}>
+              <div className="section-heading">
+                <div>
+                  <p className="section-eyebrow">Kata sandi</p>
+                  <h3>Ubah kata sandi</h3>
+                </div>
+              </div>
 
-            <div className="form-actions">
-              <button aria-busy={isSubmitting} className="button button--primary" disabled={isSubmitting} type="submit">
-                <AppIcon name="settings" size="sm" />
-                {isSubmitting ? "Menyimpan..." : "Ubah Kata Sandi"}
-              </button>
+              <p className="form-hint">{policyHint}</p>
+
+              <div className="form-grid">
+                <label className="field field--full">
+                  <span>Kata sandi saat ini</span>
+                  <input
+                    autoComplete="current-password"
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    placeholder="Masukkan kata sandi saat ini"
+                    type="password"
+                    value={currentPassword}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Kata sandi baru</span>
+                  <input
+                    autoComplete="new-password"
+                    onChange={(event) => setNextPassword(event.target.value)}
+                    placeholder="Masukkan kata sandi baru"
+                    type="password"
+                    value={nextPassword}
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Konfirmasi kata sandi baru</span>
+                  <input
+                    autoComplete="new-password"
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="Ulangi kata sandi baru"
+                    type="password"
+                    value={confirmPassword}
+                  />
+                </label>
+              </div>
+
+              {successMessage ? <p className="form-success">{successMessage}</p> : null}
+              {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+
+              <div className="form-actions">
+                <button
+                  aria-busy={isSubmitting}
+                  className="button button--primary"
+                  disabled={!canSubmitPasswordChange}
+                  type="submit"
+                >
+                  <AppIcon name="settings" size="sm" />
+                  {isSubmitting ? "Menyimpan..." : "Ubah Kata Sandi"}
+                </button>
+              </div>
+            </form>
+          </article>
+
+          <article className="panel panel--section settings-section">
+            <div className="section-heading">
+              <div className="settings-section__heading">
+                <AppIconBadge name="api" size="sm" tone="accent" />
+                <div>
+                  <p className="section-eyebrow">Bantuan dan dokumentasi</p>
+                  <h3>Pusat referensi OpsDesk</h3>
+                </div>
+              </div>
             </div>
-          </form>
+
+            <p className="settings-section__intro">
+              Gunakan pintasan ini saat Anda perlu meninjau kontrak API, kembali ke profil, atau memastikan informasi
+              akun tetap rapi dan terbaru.
+            </p>
+
+            <div className="settings-link-list">
+              <Link className="settings-link-card" to="/api-docs">
+                <div className="settings-link-card__content">
+                  <span>Dokumentasi API</span>
+                  <strong>Buka referensi endpoint dan payload</strong>
+                  <p>Cocok untuk pengecekan request, response, dan integrasi frontend-backend yang aktif.</p>
+                </div>
+                <AppIcon name="open" size="sm" />
+              </Link>
+
+              <Link className="settings-link-card" to="/profile">
+                <div className="settings-link-card__content">
+                  <span>Profil pribadi</span>
+                  <strong>Pastikan identitas akun tetap terbaru</strong>
+                  <p>Perbarui nama tampilan dan avatar ketika identitas yang tampil perlu disesuaikan.</p>
+                </div>
+                <AppIcon name="chevronRight" size="sm" />
+              </Link>
+            </div>
+
+            <div className="profile-summary__system">
+              <div className="profile-summary__system-item">
+                <span>ID sistem</span>
+                <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
+              </div>
+            </div>
+          </article>
         </div>
       </div>
     </section>

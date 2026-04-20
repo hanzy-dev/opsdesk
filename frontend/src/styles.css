@@ -2489,6 +2489,99 @@ textarea:focus-visible {
   line-height: 1.55;
 }
 
+.settings-page__sections {
+  align-content: start;
+}
+
+.settings-section {
+  display: grid;
+  gap: 16px;
+}
+
+.settings-section__heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-section__intro {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  max-width: 68ch;
+}
+
+.settings-note-list,
+.settings-link-list {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-note,
+.settings-link-card {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.settings-note {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.settings-note span,
+.settings-link-card__content span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.settings-note strong,
+.settings-link-card__content strong {
+  font-size: 0.94rem;
+  line-height: 1.4;
+}
+
+.settings-note strong,
+.settings-note p,
+.settings-link-card__content strong,
+.settings-link-card__content p {
+  margin: 0;
+}
+
+.settings-note p,
+.settings-link-card__content p {
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.settings-link-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  color: var(--text);
+}
+
+.settings-link-card:hover {
+  border-color: rgba(239, 142, 83, 0.16);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.settings-link-card__content {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
 .dialog-backdrop {
   position: fixed;
   inset: 0;

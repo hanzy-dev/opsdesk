@@ -62,8 +62,12 @@ describe("AccountSettingsPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Informasi akun saat ini")).toBeInTheDocument();
-    expect(screen.getByText("ID sistem")).toBeInTheDocument();
+    expect(screen.getByText("Ringkasan identitas")).toBeInTheDocument();
+    expect(screen.getByText("Akses masuk dan proteksi akun")).toBeInTheDocument();
+    expect(screen.getByText("Pusat referensi OpsDesk")).toBeInTheDocument();
+    expect(screen.getAllByText("ID sistem")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Ubah Kata Sandi" })).toBeDisabled();
     expect(screen.getByRole("link", { name: "Dokumentasi API" })).toHaveAttribute("href", "/api-docs");
+    expect(screen.getByRole("link", { name: /Edit nama tampilan dan avatar/i })).toHaveAttribute("href", "/profile");
   });
 });
