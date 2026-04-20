@@ -109,6 +109,72 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /profile/me/avatar/upload-url:
+    post:
+      tags:
+        - Profile
+      summary: Create a presigned upload URL for the current profile avatar
+      operationId: createProfileAvatarUploadUrl
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestProfileAvatarUploadUrlRequest"
+            example:
+              fileName: rina.png
+              contentType: image/png
+              sizeBytes: 2048
+      responses:
+        "200":
+          description: Presigned avatar upload URL returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileAvatarUploadUrlSuccessResponse"
+        "400":
+          description: Invalid request or unsupported avatar metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /profiles/assignable:
+    get:
+      tags:
+        - Profile
+      summary: List assignable operators
+      operationId: listAssignableProfiles
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Assignable operators returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssignableUserListSuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Authenticated but not allowed to list assignable users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     patch:
       tags:
         - Profile
@@ -310,7 +376,7 @@ paths:
                       requestId: req-1a2b3c4d
                       details:
                         - field: priority
-                          message: priority must be one of: low, medium, high
+                          message: "priority must be one of: low, medium, high"
         "403":
           description: Authenticated but not allowed to create a ticket
           content:
@@ -391,7 +457,7 @@ paths:
                   requestId: req-1a2b3c4d
                   details:
                     - field: status
-                      message: status must be one of: open, in_progress, resolved
+                      message: "status must be one of: open, in_progress, resolved"
         "404":
           description: Ticket was not found
           content:
@@ -409,7 +475,7 @@ paths:
     patch:
       tags:
         - Tickets
-      summary: Assign or reassign a ticket to the authenticated operator
+      summary: Assign or reassign a ticket to an eligible operator
       operationId: assignTicket
       security:
         - bearerAuth: []
@@ -421,7 +487,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/AssignTicketRequest"
-            example: {}
+            example:
+              assigneeId: agent-123
       responses:
         "200":
           description: Ticket assignment updated successfully
@@ -693,7 +760,7 @@ components:
           example: status
         message:
           type: string
-          example: status must be one of: open, in_progress, resolved
+          example: "status must be one of: open, in_progress, resolved"
 
     ErrorBody:
       type: object
@@ -806,7 +873,6 @@ components:
       type: object
       required:
         - displayName
-        - avatarUrl
       properties:
         displayName:
           type: string
@@ -815,6 +881,77 @@ components:
         avatarUrl:
           type: string
           example: https://images.example.com/rina.jpg
+
+    RequestProfileAvatarUploadUrlRequest:
+      type: object
+      required:
+        - fileName
+        - contentType
+        - sizeBytes
+      properties:
+        fileName:
+          type: string
+          example: rina.png
+        contentType:
+          type: string
+          example: image/png
+        sizeBytes:
+          type: integer
+          format: int64
+          example: 2048
+
+    ProfileAvatarUploadUrl:
+      type: object
+      required:
+        - objectKey
+        - uploadUrl
+        - uploadMethod
+        - uploadHeaders
+        - expiresAt
+      properties:
+        objectKey:
+          type: string
+          example: profiles/user-123/avatar/1713513600-rina.png
+        uploadUrl:
+          type: string
+          example: https://opsdesk-dev-attachments.s3.amazonaws.com/...
+        uploadMethod:
+          type: string
+          example: PUT
+        uploadHeaders:
+          type: object
+          additionalProperties:
+            type: string
+        expiresAt:
+          $ref: "#/components/schemas/Timestamp"
+
+    AssignableUser:
+      type: object
+      required:
+        - subject
+        - displayName
+        - email
+        - role
+      properties:
+        subject:
+          type: string
+          example: agent-123
+        displayName:
+          type: string
+          example: OpsDesk Agent
+        email:
+          type: string
+          format: email
+          example: agent@example.com
+        avatarUrl:
+          type: string
+          format: uri
+          example: https://images.example.com/agent.jpg
+        role:
+          type: string
+          enum:
+            - agent
+            - admin
 
     Comment:
       type: object
@@ -1034,7 +1171,7 @@ components:
       properties:
         assigneeId:
           type: string
-          description: Optional field retained for compatibility. Current implementation still assigns the ticket to the authenticated operator.
+          description: Optional assignee ID for an eligible operator. When omitted, the authenticated operator becomes the assignee.
 
     AddCommentRequest:
       type: object
@@ -1107,6 +1244,24 @@ components:
       properties:
         data:
           $ref: "#/components/schemas/Profile"
+
+    ProfileAvatarUploadUrlSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/ProfileAvatarUploadUrl"
+
+    AssignableUserListSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssignableUser"
 
     TicketSuccessResponse:
       type: object

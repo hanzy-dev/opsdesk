@@ -510,6 +510,13 @@ textarea:focus-visible {
   box-shadow: var(--shadow-soft);
 }
 
+.api-docs-viewer__fallback {
+  padding: 24px;
+  background:
+    linear-gradient(180deg, rgba(247, 243, 238, 0.98), rgba(255, 255, 255, 0.98)),
+    #fff;
+}
+
 .api-docs-viewer__frame .swagger-ui {
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
 }

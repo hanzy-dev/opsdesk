@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import SwaggerUI from "swagger-ui-react";
 import "swagger-ui-react/swagger-ui.css";
 import openApiSpecUrl from "../../../docs/openapi.yaml?url";
+import { ErrorState } from "../components/common/ErrorState";
 import { env } from "../config/env";
 
 const cloudHighlights = [
@@ -26,6 +28,9 @@ const operationHighlights = [
 ];
 
 export function ApiDocsPage() {
+  const [viewerError, setViewerError] = useState<string | null>(null);
+  const [viewerKey, setViewerKey] = useState(0);
+
   return (
     <div className="api-docs-page">
       <section className="api-docs-page__hero panel panel--section stack-lg">
@@ -108,15 +113,49 @@ export function ApiDocsPage() {
         </div>
 
         <div className="api-docs-viewer__frame">
-          <SwaggerUI
-            defaultModelsExpandDepth={-1}
-            displayRequestDuration
-            docExpansion="list"
-            persistAuthorization
-            url={openApiSpecUrl}
-          />
+          {viewerError ? (
+            <div className="api-docs-viewer__fallback">
+              <ErrorState
+                eyebrow="Dokumentasi API"
+                title="Dokumentasi API belum dapat ditampilkan"
+                message={viewerError}
+                supportText="File OpenAPI tetap bisa dibuka langsung untuk pemeriksaan manual sambil viewer dimuat ulang."
+                actionLabel="Muat Ulang Viewer"
+                onRetry={() => {
+                  setViewerError(null);
+                  setViewerKey((current) => current + 1);
+                }}
+              />
+            </div>
+          ) : (
+            <SwaggerUI
+              key={viewerKey}
+              defaultModelsExpandDepth={-1}
+              displayRequestDuration
+              docExpansion="list"
+              onComplete={() => setViewerError(null)}
+              onFailure={(error) => setViewerError(getSwaggerViewerErrorMessage(error))}
+              persistAuthorization
+              url={openApiSpecUrl}
+            />
+          )}
         </div>
       </section>
     </div>
   );
+}
+
+function getSwaggerViewerErrorMessage(error: unknown) {
+  const rawMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "Viewer Swagger UI tidak dapat memuat spesifikasi OpenAPI saat ini.";
+
+  if (/fetch|network|load/i.test(rawMessage)) {
+    return "Spesifikasi OpenAPI belum berhasil dimuat dari server.";
+  }
+
+  return "Spesifikasi OpenAPI belum valid untuk dirender oleh Swagger UI.";
 }

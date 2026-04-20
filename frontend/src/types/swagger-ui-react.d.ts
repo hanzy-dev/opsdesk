@@ -5,7 +5,10 @@ declare module "swagger-ui-react" {
     defaultModelsExpandDepth?: number;
     displayRequestDuration?: boolean;
     docExpansion?: "list" | "full" | "none";
+    onComplete?: () => void;
+    onFailure?: (error: unknown) => void;
     persistAuthorization?: boolean;
+    spec?: unknown;
     url?: string;
   };
 
