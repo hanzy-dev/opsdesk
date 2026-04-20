@@ -1194,6 +1194,15 @@ textarea:focus-visible {
   gap: 6px;
 }
 
+.field--invalid input,
+.field--invalid textarea,
+.field--invalid .select-control__trigger {
+  border-color: rgba(255, 143, 126, 0.32);
+  box-shadow:
+    0 0 0 1px rgba(255, 143, 126, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
 .field--full {
   grid-column: 1 / -1;
 }
@@ -1453,6 +1462,110 @@ textarea:focus-visible {
   border-radius: inherit;
   background: linear-gradient(90deg, rgba(239, 142, 83, 0.94), rgba(121, 184, 255, 0.88));
   transition: width var(--motion-base) var(--ease-standard);
+}
+
+.attachment-composer {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.attachment-composer__header,
+.attachment-composer__actions,
+.attachment-composer__summary {
+  display: flex;
+  gap: 12px;
+}
+
+.attachment-composer__header,
+.attachment-composer__summary {
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.attachment-composer__header h3 {
+  margin: 4px 0 6px;
+}
+
+.attachment-composer__actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.attachment-composer__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+
+.attachment-draft-list {
+  display: grid;
+  gap: 12px;
+}
+
+.attachment-draft-card {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(8, 8, 10, 0.24);
+}
+
+.attachment-draft-card__preview,
+.attachment-draft-card__placeholder {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+}
+
+.attachment-draft-card__preview {
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.attachment-draft-card__placeholder {
+  display: grid;
+  place-items: center;
+  color: #ffd1b2;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  background:
+    radial-gradient(circle at top left, rgba(239, 142, 83, 0.14), transparent 58%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.attachment-draft-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.attachment-draft-card__copy strong,
+.attachment-draft-card__copy p {
+  margin: 0;
+}
+
+.attachment-draft-card__copy strong {
+  overflow-wrap: anywhere;
+}
+
+.attachment-draft-card__remove {
+  min-width: 112px;
 }
 
 .filter-grid {
@@ -2800,7 +2913,9 @@ textarea:focus-visible {
 
   .dashboard-hero__copy,
   .dashboard-ticket-card__top,
-  .assignment-card__current {
+  .assignment-card__current,
+  .attachment-composer__header,
+  .attachment-composer__summary {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -2817,7 +2932,8 @@ textarea:focus-visible {
   .filter-grid,
   .dashboard-distribution__legend,
   .ticket-overview-grid,
-  .ticket-layout {
+  .ticket-layout,
+  .attachment-draft-card {
     grid-template-columns: 1fr;
   }
 
@@ -2852,6 +2968,17 @@ textarea:focus-visible {
   .dialog__actions {
     flex-direction: column-reverse;
     align-items: stretch;
+  }
+
+  .attachment-draft-card__preview,
+  .attachment-draft-card__placeholder,
+  .attachment-draft-card__remove {
+    width: 100%;
+  }
+
+  .attachment-draft-card__preview,
+  .attachment-draft-card__placeholder {
+    height: 168px;
   }
 
   .panel,
