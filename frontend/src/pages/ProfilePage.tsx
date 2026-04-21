@@ -78,8 +78,10 @@ export function ProfilePage() {
   const hasAvatar = Boolean(avatarPreviewUrl);
   const isUploadingAvatar = selectedAvatarFile !== null;
   const normalizedDisplayName = displayName.trim();
+  const previousDisplayName = effectiveProfile?.displayName?.trim() ?? "";
+  const isDisplayNameChanged = normalizedDisplayName !== previousDisplayName;
   const isDirty =
-    normalizedDisplayName !== (effectiveProfile?.displayName?.trim() ?? "") ||
+    normalizedDisplayName !== previousDisplayName ||
     avatarUrl !== (effectiveProfile?.avatarUrl ?? "") ||
     avatarPreviewUrl !== (effectiveProfile?.avatarUrl ?? "") ||
     selectedAvatarFile !== null;
@@ -154,6 +156,8 @@ export function ProfilePage() {
         displayName: normalizedDisplayName,
         avatarUrl: nextAvatarValue,
       });
+      const displayNameChanged = normalizedDisplayName !== previousDisplayName;
+      const avatarChanged = nextAvatarValue !== (currentProfile.avatarUrl ?? "");
 
       setDisplayName(nextProfile.displayName);
       setAvatarUrl(nextProfile.avatarUrl ?? "");
@@ -161,10 +165,17 @@ export function ProfilePage() {
       setSelectedAvatarFile(null);
       setUploadStatus(null);
       setUploadProgress(0);
-      setFeedback("Identitas profil berhasil diperbarui.");
+      const successSummary = displayNameChanged
+        ? `Nama tampilan aktif sekarang: ${nextProfile.displayName}.`
+        : avatarChanged
+          ? "Avatar profil berhasil diperbarui."
+          : "Identitas profil berhasil diperbarui.";
+      setFeedback(successSummary);
       showToast({
         title: "Profil berhasil diperbarui",
-        description: "Perubahan identitas akun sudah diterapkan di aplikasi.",
+        description: displayNameChanged
+          ? `Nama tampilan baru ${nextProfile.displayName} sudah dipakai di aplikasi.`
+          : "Perubahan identitas akun sudah diterapkan di aplikasi.",
         tone: "success",
       });
     } catch (error) {
@@ -328,14 +339,30 @@ export function ProfilePage() {
             <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
               <div className="section-heading">
                 <div>
-                  <p className="section-eyebrow">Bisa diedit</p>
-                  <h3>Nama tampilan dan avatar</h3>
+                  <p className="section-eyebrow">Edit identitas</p>
+                  <h3>Ganti nama tampilan dan avatar</h3>
                 </div>
-                <p className="filter-summary">Perubahan di sini akan dipakai sebagai identitas utama Anda.</p>
+                <p className="filter-summary">Perubahan di sini akan langsung dipakai sebagai identitas utama Anda.</p>
               </div>
 
+              <div className="profile-edit-spotlight">
+                <div className="profile-edit-spotlight__item">
+                  <span>Nama yang tampil saat ini</span>
+                  <strong>{currentProfile.displayName}</strong>
+                </div>
+                <div className="profile-edit-spotlight__item">
+                  <span>Setelah disimpan akan tampil sebagai</span>
+                  <strong>{normalizedDisplayName || "Nama tampilan wajib diisi"}</strong>
+                </div>
+              </div>
+
+              <p className="settings-section__intro">
+                Saat Anda mengganti nama tampilan di sini, perubahan itu akan muncul pada ringkasan akun, profil, dan
+                identitas yang terlihat oleh tim di OpsDesk.
+              </p>
+
               <label className={`field ${displayNameError ? "field--invalid" : ""}`}>
-                <span>Nama tampilan</span>
+                <span>Nama tampilan baru</span>
                 <input
                   aria-invalid={displayNameError ? "true" : "false"}
                   maxLength={80}
@@ -345,11 +372,11 @@ export function ProfilePage() {
                       setDisplayNameError(null);
                     }
                   }}
-                  placeholder="Masukkan nama yang ingin ditampilkan ke pengguna lain"
+                  placeholder="Masukkan nama yang ingin ditampilkan kepada tim"
                   value={displayName}
                 />
                 <small>
-                  Nama ini akan muncul di area akun, ringkasan profil, dan blok identitas utama di aplikasi.
+                  Nama ini akan muncul di area akun, ringkasan profil, dashboard, dan identitas utama tiket.
                 </small>
                 {displayNameError ? <small>{displayNameError}</small> : null}
               </label>
@@ -387,7 +414,7 @@ export function ProfilePage() {
                   type="submit"
                 >
                   <AppIcon name="profile" size="sm" />
-                  {isSaving ? "Menyimpan..." : "Simpan Identitas"}
+                  {isSaving ? "Menyimpan..." : isDisplayNameChanged ? "Simpan Nama Tampilan" : "Simpan Perubahan Profil"}
                 </button>
                 <button
                   aria-busy={isSaving}

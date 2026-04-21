@@ -1056,11 +1056,11 @@ textarea:focus-visible {
 .state-card__body {
   display: grid;
   justify-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .state-card__icon {
-  margin-bottom: 2px;
+  margin-bottom: 8px;
 }
 
 .state-card__support,
@@ -1084,12 +1084,13 @@ textarea:focus-visible {
   display: flex;
   justify-content: center;
   width: 100%;
+  margin-top: 10px;
 }
 
 .empty-state__content {
   display: grid;
   justify-items: center;
-  gap: 12px;
+  gap: 14px;
   max-width: 60ch;
 }
 
@@ -1102,8 +1103,8 @@ textarea:focus-visible {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: 2px;
-  padding-top: 4px;
+  margin-top: 8px;
+  padding-top: 8px;
 }
 
 .loading-state--compact {
@@ -2537,6 +2538,44 @@ textarea:focus-visible {
   flex-wrap: wrap;
 }
 
+.settings-focus-card,
+.settings-utility-group {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.settings-focus-card__content,
+.settings-utility-group__header {
+  display: grid;
+  gap: 6px;
+}
+
+.settings-focus-card__content span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.settings-focus-card__content strong {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.settings-focus-card__content p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
 .profile-readonly-panel {
   display: grid;
   gap: 16px;
@@ -2584,6 +2623,10 @@ textarea:focus-visible {
 
 .settings-page__sections {
   align-content: start;
+}
+
+.settings-page__system {
+  margin-top: 2px;
 }
 
 .settings-section {
@@ -2673,6 +2716,37 @@ textarea:focus-visible {
   display: grid;
   gap: 6px;
   min-width: 0;
+}
+
+.profile-edit-spotlight {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-edit-spotlight__item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.profile-edit-spotlight__item span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.profile-edit-spotlight__item strong {
+  margin: 0;
+  font-size: 0.96rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .dialog-backdrop {
@@ -3034,6 +3108,14 @@ textarea:focus-visible {
   gap: var(--section-gap);
 }
 
+.settings-page .detail-grid > :first-child {
+  flex: 0.94;
+}
+
+.settings-page .detail-grid > :last-child {
+  flex: 1.06;
+}
+
 .create-ticket-page .form-panel,
 .profile-page .form-panel,
 .settings-page .form-panel {
@@ -3209,6 +3291,7 @@ textarea:focus-visible {
   .form-grid,
   .meta-grid,
   .filter-grid,
+  .profile-edit-spotlight,
   .dashboard-distribution__legend,
   .ticket-overview-grid,
   .ticket-layout,

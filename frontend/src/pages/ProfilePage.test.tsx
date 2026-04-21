@@ -57,13 +57,16 @@ describe("ProfilePage", () => {
 
     expect(screen.getByDisplayValue("OpsDesk User")).toBeInTheDocument();
     expect(screen.getByText("Informasi sistem akun")).toBeInTheDocument();
+    expect(screen.getByText("Ganti nama tampilan dan avatar")).toBeInTheDocument();
+    expect(screen.getByText("Nama yang tampil saat ini")).toBeInTheDocument();
+    expect(screen.getByText("Setelah disimpan akan tampil sebagai")).toBeInTheDocument();
     expect(screen.getAllByText("opsdesk.user@example.com").length).toBeGreaterThan(0);
     expect(screen.getAllByText("user-123").length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "Simpan Identitas" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Simpan Perubahan Profil" })).toBeDisabled();
 
     fireEvent.change(screen.getByDisplayValue("OpsDesk User"), { target: { value: "Rina Aulia" } });
-    expect(screen.getByRole("button", { name: "Simpan Identitas" })).not.toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Simpan Identitas" }));
+    expect(screen.getByRole("button", { name: "Simpan Nama Tampilan" })).not.toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Simpan Nama Tampilan" }));
 
     await waitFor(() =>
       expect(saveProfileMock).toHaveBeenCalledWith({
@@ -72,6 +75,6 @@ describe("ProfilePage", () => {
       }),
     );
 
-    expect(await screen.findByText("Identitas profil berhasil diperbarui.")).toBeInTheDocument();
+    expect(await screen.findByText("Nama tampilan aktif sekarang: Rina Aulia.")).toBeInTheDocument();
   });
 });

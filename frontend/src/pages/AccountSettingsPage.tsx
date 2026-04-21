@@ -131,22 +131,46 @@ export function AccountSettingsPage() {
             </div>
           </div>
 
-          <div className="profile-summary__system">
+          <div className="settings-focus-card">
+            <div className="settings-focus-card__content">
+              <span>Nama tampilan terlihat tim</span>
+              <strong>Ingin mengganti nama yang tampil di OpsDesk?</strong>
+              <p>
+                Gunakan pintasan ini untuk langsung membuka Profil dan mengubah nama tampilan maupun avatar tanpa
+                mencari menu lain.
+              </p>
+            </div>
+            <Link className="button button--primary" to="/profile">
+              <AppIcon name="profile" size="sm" />
+              Edit Nama Tampilan
+            </Link>
+          </div>
+
+          <div className="settings-utility-group">
+            <div className="settings-utility-group__header">
+              <div>
+                <p className="section-eyebrow">Pintasan cepat</p>
+                <h3>Akses akun dan referensi</h3>
+              </div>
+            </div>
+
+            <div className="account-settings__links">
+              <Link className="button button--secondary" to="/profile">
+                <AppIcon name="profile" size="sm" />
+                Buka Halaman Profil
+              </Link>
+              <Link className="button button--ghost" to="/api-docs">
+                <AppIcon name="api" size="sm" />
+                Dokumentasi API
+              </Link>
+            </div>
+          </div>
+
+          <div className="profile-summary__system settings-page__system">
             <div className="profile-summary__system-item">
               <span>ID sistem</span>
               <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
             </div>
-          </div>
-
-          <div className="account-settings__links">
-            <Link className="button button--secondary" to="/profile">
-              <AppIcon name="profile" size="sm" />
-              Buka Profil
-            </Link>
-            <Link className="button button--ghost" to="/api-docs">
-              <AppIcon name="api" size="sm" />
-              Dokumentasi API
-            </Link>
           </div>
         </article>
 
@@ -188,9 +212,9 @@ export function AccountSettingsPage() {
             <div className="settings-link-list">
               <Link className="settings-link-card" to="/profile">
                 <div className="settings-link-card__content">
-                  <span>Kelola profil pribadi</span>
-                  <strong>Edit nama tampilan dan avatar</strong>
-                  <p>Buka halaman Profil untuk memperbarui identitas yang terlihat oleh tim.</p>
+                  <span>Edit identitas</span>
+                  <strong>Ganti nama tampilan dan avatar profil</strong>
+                  <p>Buka Profil untuk memperbarui identitas yang terlihat oleh tim dan dipakai di area akun.</p>
                 </div>
                 <AppIcon name="chevronRight" size="sm" />
               </Link>
@@ -281,50 +305,6 @@ export function AccountSettingsPage() {
                 </button>
               </div>
             </form>
-          </article>
-
-          <article className="panel panel--section settings-section">
-            <div className="section-heading">
-              <div className="settings-section__heading">
-                <AppIconBadge name="api" size="sm" tone="accent" />
-                <div>
-                  <p className="section-eyebrow">Bantuan dan dokumentasi</p>
-                  <h3>Pusat referensi OpsDesk</h3>
-                </div>
-              </div>
-            </div>
-
-            <p className="settings-section__intro">
-              Gunakan pintasan ini saat Anda perlu meninjau kontrak API, kembali ke profil, atau memastikan informasi
-              akun tetap rapi dan terbaru.
-            </p>
-
-            <div className="settings-link-list">
-              <Link className="settings-link-card" to="/api-docs">
-                <div className="settings-link-card__content">
-                  <span>Dokumentasi API</span>
-                  <strong>Buka referensi endpoint dan payload</strong>
-                  <p>Cocok untuk pengecekan request, response, dan integrasi frontend-backend yang aktif.</p>
-                </div>
-                <AppIcon name="open" size="sm" />
-              </Link>
-
-              <Link className="settings-link-card" to="/profile">
-                <div className="settings-link-card__content">
-                  <span>Profil pribadi</span>
-                  <strong>Pastikan identitas akun tetap terbaru</strong>
-                  <p>Perbarui nama tampilan dan avatar ketika identitas yang tampil perlu disesuaikan.</p>
-                </div>
-                <AppIcon name="chevronRight" size="sm" />
-              </Link>
-            </div>
-
-            <div className="profile-summary__system">
-              <div className="profile-summary__system-item">
-                <span>ID sistem</span>
-                <strong>{identity?.subject ?? "ID belum tersedia"}</strong>
-              </div>
-            </div>
           </article>
         </div>
       </div>
