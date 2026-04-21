@@ -246,13 +246,31 @@ export function TicketDetailPage() {
 
   async function handleCommentSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const normalizedCommentMessage = commentForm.message.trim();
+
+    if (!normalizedCommentMessage) {
+      const message = "Isi komentar wajib diisi sebelum dikirim.";
+      setCommentMessage(null);
+      setCommentError(message);
+      setCommentErrorReferenceId(null);
+      showToast({
+        title: "Komentar belum lengkap",
+        description: message,
+        tone: "error",
+      });
+      return;
+    }
+
     setIsSavingComment(true);
     setCommentMessage(null);
     setCommentError(null);
     setCommentErrorReferenceId(null);
 
     try {
-      await addComment(ticketId, commentForm);
+      await addComment(ticketId, {
+        ...commentForm,
+        message: normalizedCommentMessage,
+      });
       setCommentForm({ message: "", authorName: currentIdentity?.displayName ?? "" });
       await loadTicket({ preserveView: true });
       setCommentMessage("Komentar baru berhasil ditambahkan ke tiket.");

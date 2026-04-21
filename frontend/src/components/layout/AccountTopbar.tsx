@@ -170,7 +170,6 @@ export function AccountTopbar({
                 </span>
                 <AppIcon name="chevronRight" size="sm" />
               </button>
-              {identity?.subject ? <div className="topbar__menu-meta">ID sistem: {identity.subject}</div> : null}
             </div>
           ) : null}
         </div>

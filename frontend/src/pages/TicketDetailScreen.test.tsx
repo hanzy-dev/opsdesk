@@ -3,12 +3,13 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TicketDetailPage } from "./TicketDetailScreen";
 
+const addCommentMock = vi.fn();
 const getTicketMock = vi.fn();
 const getTicketActivitiesMock = vi.fn();
 const listAssignableUsersMock = vi.fn();
 
 vi.mock("../api/tickets", () => ({
-  addComment: vi.fn(),
+  addComment: (...args: unknown[]) => addCommentMock(...args),
   assignTicket: vi.fn(),
   getAttachmentDownloadUrl: vi.fn(),
   getTicket: (ticketId: string) => getTicketMock(ticketId),
@@ -48,6 +49,7 @@ vi.mock("../modules/auth/AuthContext", () => ({
 
 describe("TicketDetailScreen", () => {
   afterEach(() => {
+    addCommentMock.mockReset();
     getTicketMock.mockReset();
     getTicketActivitiesMock.mockReset();
     listAssignableUsersMock.mockReset();
@@ -149,5 +151,41 @@ describe("TicketDetailScreen", () => {
       expect(getTicketActivitiesMock).toHaveBeenCalledWith("TCK-3001");
       expect(listAssignableUsersMock).toHaveBeenCalled();
     });
+  });
+
+  it("blocks empty comments before calling the backend", async () => {
+    getTicketMock.mockResolvedValue({
+      id: "TCK-3002",
+      title: "Komentar kosong tidak boleh lolos",
+      description: "Pengujian validasi komentar kosong.",
+      status: "open",
+      priority: "medium",
+      reporterName: "Rina Pratama",
+      reporterEmail: "rina@example.com",
+      comments: [],
+      attachments: [],
+      createdAt: "2026-04-17T09:00:00Z",
+      updatedAt: "2026-04-17T09:15:00Z",
+    });
+    getTicketActivitiesMock.mockResolvedValue([]);
+    listAssignableUsersMock.mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={["/tickets/TCK-3002"]}>
+        <Routes>
+          <Route path="/tickets/:ticketId" element={<TicketDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Komentar kosong tidak boleh lolos")).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Isi komentar"), {
+      target: { value: "   " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Komentar" }));
+
+    expect(await screen.findByText("Isi komentar wajib diisi sebelum dikirim.")).toBeInTheDocument();
+    expect(addCommentMock).not.toHaveBeenCalled();
   });
 });
