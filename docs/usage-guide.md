@@ -1,61 +1,113 @@
 # Usage Guide
 
-Dokumen ini membantu tim atau reviewer memakai OpsDesk pada deployment aktif tanpa framing demo.
+Dokumen ini membantu reviewer, operator, atau anggota tim memahami cara memakai OpsDesk pada deployment aktif tanpa harus menebak model produknya.
 
 ## URL Aktif
 
 - Frontend: `https://opsdesk-teal.vercel.app`
 - Backend API: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
-- Backend environment: `dev`
+- API docs: `https://opsdesk-teal.vercel.app/api-docs`
 
-## Alur Penggunaan Utama
+## Cara Membaca Produk Ini
 
-1. Buka frontend production.
-2. Masuk menggunakan email dan kata sandi akun internal yang tersedia di Cognito.
-3. Tinjau dashboard untuk melihat ringkasan tiket.
-4. Buka daftar tiket untuk memeriksa tiket aktif.
-5. Gunakan kotak pencarian, filter status, filter prioritas, filter penugasan, serta kontrol urutan untuk menelusuri tiket dari server.
-6. Jika akun Anda bertipe pelapor atau admin, buat tiket baru dari halaman "Buat Tiket".
-7. Buka detail tiket untuk menambahkan komentar, dan jika akun Anda petugas atau admin, ubah status tiket.
-8. Jika akun Anda petugas atau admin, gunakan kontrol penugasan untuk mengambil tiket atau memindahkannya ke operator lain yang eligible.
-9. Gunakan bagian "Lampiran" pada detail tiket untuk mengunggah atau membuka file pendukung.
-10. Periksa bagian "Riwayat Aktivitas" pada detail tiket untuk melihat perubahan terbaru.
-11. Buka menu akun di topbar untuk mengakses halaman "Profil" dan "Pengaturan Akun".
-12. Gunakan "Pengaturan Akun" untuk mengubah kata sandi saat masih login.
-13. Buka `https://opsdesk-teal.vercel.app/api-docs` untuk meninjau dokumentasi API interaktif.
+OpsDesk memiliki dua jenis alur utama:
+
+- alur pelaporan, ketika masalah pertama kali dicatat
+- alur operasional, ketika tiket ditriase, diassign, dan ditangani
+
+Pemisahan ini penting. Pembuatan tiket tidak otomatis berarti penugasan sudah selesai.
+
+## Alur Penggunaan Inti
+
+### 1. Login
+
+Masuk memakai akun Cognito yang sudah disiapkan operator.
+
+### 2. Buat tiket
+
+Jika akun Anda `reporter` atau `admin`, buka halaman `Buat Tiket` lalu isi:
+
+- judul
+- prioritas
+- deskripsi
+- lampiran jika diperlukan
+
+Pada tahap ini, tiket masuk ke sistem dengan status awal `open`.
+
+### 3. Pahami bahwa tiket belum tentu langsung diassign
+
+Saat tiket baru dibuat:
+
+- tiket sudah resmi tercatat
+- tiket belum tentu punya assignee
+- tim operasional masih bisa melakukan triage setelahnya
+
+Model ini disengaja agar keputusan pelaporan dan keputusan assignment tidak tercampur.
+
+### 4. Kelola tiket dari sisi operasional
+
+Jika akun Anda `agent` atau `admin`, Anda dapat:
+
+- membuka dashboard
+- melihat daftar tiket operasional
+- memfilter tiket yang belum ditugaskan
+- mengambil tiket untuk diri sendiri
+- memindahkan assignment ke operator lain yang eligible
+- mengubah status tiket
+
+### 5. Gunakan queue `Ditugaskan ke Saya`
+
+Halaman ini adalah work queue operator yang sedang login. Hanya tiket yang assignee aktifnya sama dengan akun saat ini yang akan tampil.
+
+Artinya:
+
+- halaman ini tidak menampilkan semua tiket
+- halaman ini tidak menampilkan tiket yang hanya pernah Anda komentari
+- halaman ini fokus pada tiket yang saat ini menjadi tanggung jawab Anda
+
+### 6. Pantau progres lewat detail tiket
+
+Pada halaman detail tiket, user dapat melihat:
+
+- data pelapor
+- assignee saat ini
+- status
+- komentar
+- lampiran
+- riwayat aktivitas
+
+## Ringkasan Akses Per Role
+
+| Area / Aksi | Reporter | Agent | Admin |
+| --- | --- | --- | --- |
+| Buat tiket | Ya | Tidak | Ya |
+| Lihat tiket sendiri | Ya | Ya | Ya |
+| Lihat daftar tiket operasional | Tidak | Ya | Ya |
+| Ubah status | Tidak | Ya | Ya |
+| Assign tiket | Tidak | Ya | Ya |
+| Akses `Ditugaskan ke Saya` | Tidak | Ya | Ya |
 
 ## Jalur Verifikasi Cepat
 
 Jika hanya punya waktu singkat:
 
-1. Pastikan dashboard dapat dimuat tanpa error.
-2. Pastikan daftar tiket menampilkan data.
-3. Coba kata kunci pencarian dan pastikan hasil daftar tiket berubah.
-4. Coba filter status atau prioritas dan pastikan hasil tetap konsisten setelah pindah halaman.
-5. Coba urutkan daftar tiket dan pastikan urutannya berubah.
-6. Jika login sebagai petugas atau admin, coba filter "Ditugaskan kepada saya" dan "Belum ditugaskan".
-7. Ubah halaman pagination dan pastikan data berikutnya termuat.
-8. Buat satu tiket baru.
-9. Jika login sebagai petugas, ubah status tiket pada halaman detail.
-10. Jika login sebagai petugas atau admin, ubah assignment tiket dan pastikan nama petugas terbaru tampil di detail tiket.
-11. Tambahkan satu komentar dan pastikan tampil pada detail tiket.
-12. Unggah satu lampiran yang valid dan pastikan daftar lampiran bertambah.
-13. Buka lampiran dari detail tiket dan pastikan file terbuka lewat URL sementara.
-14. Pastikan timeline aktivitas menampilkan entri pembuatan, perubahan status, komentar, penugasan, dan lampiran.
+1. login
+2. buka dashboard
+3. buka daftar tiket
+4. buat satu tiket baru jika memakai akun `reporter` atau `admin`
+5. buka detail tiket
+6. jika memakai akun `agent` atau `admin`, ubah status atau assignment
+7. pastikan riwayat aktivitas bertambah
 
 ## Catatan Operasional
 
-- Teks UI tetap menggunakan Bahasa Indonesia.
-- Login sekarang memakai Amazon Cognito dan bearer token JWT.
-- RBAC sederhana memakai Cognito group `reporter`, `agent`, dan `admin`.
-- Ownership tiket mengikuti identitas login, dan assignment operator tersedia untuk agent atau admin terhadap user operasional yang eligible.
-- Akun kini memiliki halaman profil dan halaman pengaturan akun yang terpisah.
-- Reset kata sandi untuk akun yang lupa kata sandi mengikuti alur email verifikasi Amazon Cognito.
-- Aktivitas tiket dicatat append-only dan ditampilkan pada halaman detail.
-- Daftar tiket sekarang memakai query server-side agar pencarian dan pagination tetap konsisten untuk data yang lebih besar.
-- Lampiran memakai S3 private dan diakses melalui URL presigned yang berlaku sementara.
-- Jika UI menampilkan "Kode referensi" saat error, gunakan nilainya untuk mencari log backend di CloudWatch.
+- UI memakai Bahasa Indonesia.
+- Role berasal dari Cognito group `reporter`, `agent`, dan `admin`.
+- Reporter dibatasi ke tiket yang relevan dengan identitasnya sendiri.
+- Daftar tiket memakai query server-side untuk pencarian, filter, sorting, dan pagination.
+- Lampiran memakai S3 privat dan diakses melalui presigned URL sementara.
+- Jika UI menampilkan `Kode referensi` saat error, gunakan nilai tersebut untuk menelusuri log backend.
 
 ## Screenshot
 
-Referensi screenshot tetap ada di [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md).
+Referensi daftar screenshot ada di [docs/screenshots/README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/screenshots/README.md).

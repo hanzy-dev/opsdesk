@@ -1,139 +1,215 @@
 # Demo Flow OpsDesk
 
-Panduan ini membantu menyiapkan demo singkat 3-5 menit untuk dosen, recruiter, atau reviewer teknis.
+Panduan ini membantu menyiapkan demo yang singkat, jelas, dan mudah dipahami oleh dosen, reviewer, recruiter, atau calon operator.
 
 ## Tujuan Demo
 
-Tunjukkan bahwa OpsDesk bukan sekadar mockup UI, tetapi aplikasi helpdesk cloud yang benar-benar memiliki:
+Demo OpsDesk sebaiknya menunjukkan dua hal sekaligus:
 
-- autentikasi nyata
-- kontrol akses berbasis peran
-- dashboard operasional
-- ticket workflow
-- assignment antar operator
-- audit trail
-- dokumentasi API
+- ini adalah produk helpdesk yang punya model operasional jelas
+- implementasinya benar-benar berjalan di cloud, bukan sekadar mockup UI
+
+## Setup Akun Demo Yang Direkomendasikan
+
+Gunakan tiga akun agar peran produk terlihat jelas:
+
+### 1. Reporter
+
+Yang perlu didemonstrasikan:
+
+- login sebagai pelapor
+- membuat tiket baru
+- melihat tiket miliknya sendiri
+- membuka detail tiket untuk melihat status, komentar, dan histori
+
+Pesan yang ingin disampaikan:
+
+- pelapor fokus pada pencatatan masalah, bukan assignment
+- tiket tetap masuk ke sistem walaupun belum langsung ada operator yang mengambil
+
+### 2. Agent
+
+Yang perlu didemonstrasikan:
+
+- membuka dashboard operasional
+- melihat queue `Ditugaskan ke Saya`
+- mengambil atau menerima tiket
+- mengubah status tiket
+- menambahkan komentar operasional
+
+Pesan yang ingin disampaikan:
+
+- agent bekerja dari antrean tiket, bukan dari chat yang tercecer
+- assignment menunjukkan ownership yang jelas
+
+### 3. Admin
+
+Yang perlu didemonstrasikan:
+
+- melihat seluruh antrean operasional
+- melakukan assignment ke operator lain
+- memantau progres lintas tiket
+
+Pesan yang ingin disampaikan:
+
+- admin memiliki visibilitas operasional yang lebih luas
+- admin dapat membantu triage dan distribusi beban kerja
 
 ## Persiapan Sebelum Demo
 
 Pastikan sebelum presentasi:
 
 - frontend dapat diakses di `https://opsdesk-teal.vercel.app`
-- backend sehat di `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health`
-- minimal ada akun `reporter`
-- minimal ada akun `agent` atau `admin`
-- sudah ada beberapa tiket contoh agar dashboard dan list tidak kosong
+- endpoint health backend merespons baik di `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health`
+- tiga akun demo sudah siap: reporter, agent, admin
+- minimal ada beberapa tiket contoh agar dashboard, list, dan histori tidak kosong
+- setidaknya satu user operasional sudah pernah login sehingga muncul di assignment picker
 
-Jika ingin menonjolkan assignment antar user, siapkan minimal dua akun operasional:
+## Narasi Produk Yang Disarankan
 
-- satu `agent`
-- satu `admin` atau agent kedua
+Sebelum klik apa pun, buka dengan narasi singkat ini:
+
+> OpsDesk dibuat untuk menggantikan pola pelaporan masalah yang tercecer di chat. Setiap isu dicatat sebagai tiket, bisa diprioritaskan, bisa ditugaskan ke operator tertentu, dan memiliki histori aktivitas yang jelas.
+
+Narasi ini membantu audiens memahami mengapa aplikasi ini ada, bukan hanya teknologi apa yang dipakai.
 
 ## Alur Demo 3-5 Menit
 
-### 1. Buka halaman login
-
-Narasi singkat:
-
-> OpsDesk memakai Amazon Cognito untuk autentikasi, jadi sesi dan role tidak di-hardcode di frontend.
-
-Poin yang bisa disebut:
-
-- login memakai akun internal
-- flow lupa kata sandi dan reset kata sandi sudah tersedia
-
-### 2. Masuk ke dashboard
+### 1. Login sebagai Reporter
 
 Tunjukkan:
 
-- kartu statistik utama
-- tiket terbaru
-- aktivitas terbaru
-- quick actions
+- halaman login
+- identitas akun pelapor
 
-Narasi singkat:
+Narasi:
 
-> Dashboard dirancang sebagai command center operasional, bukan hanya landing page pasif.
+> User masuk melalui Amazon Cognito, jadi autentikasi dan role tidak di-hardcode di frontend.
 
-### 3. Buka daftar tiket
+### 2. Buat tiket baru
 
 Tunjukkan:
 
-- pencarian
-- filter
-- sorting
-- pagination
+- form `Buat Tiket`
+- prioritas
+- deskripsi masalah
+- lampiran jika diperlukan
 
-Narasi singkat:
+Narasi:
 
-> Daftar tiket sudah memakai query server-side, jadi perilakunya tetap konsisten saat data bertambah.
+> Saat reporter membuat tiket, tiket masuk ke sistem lebih dulu. Belum tentu langsung ada assignee, karena keputusan pelaporan dipisahkan dari keputusan triage.
 
-### 4. Masuk ke detail tiket
+Ini adalah momen penting untuk menjelaskan kenapa "Create Ticket" tidak otomatis assign.
+
+### 3. Tunjukkan tiket baru pada sistem
 
 Tunjukkan:
 
-- metadata tiket
-- assignee saat ini
-- komentar
-- lampiran
-- timeline aktivitas
+- status awal tiket
+- bahwa tiket sudah tercatat
+- detail pelapor dan histori awal
 
-Narasi singkat:
+Narasi:
 
-> Semua perubahan penting dicatat ke audit trail sehingga status, assignment, komentar, dan lampiran bisa ditelusuri dengan jelas.
+> Sistem sudah punya catatan formal bahwa masalah ini ada, meskipun operator yang menangani belum dipilih.
 
-### 5. Ubah assignment atau status tiket
+### 4. Login sebagai Agent
 
-Pilih salah satu yang paling aman:
+Tunjukkan:
 
-- ubah status tiket
-- assign tiket ke operator lain yang eligible
+- dashboard operasional
+- daftar tiket
+- halaman `Ditugaskan ke Saya`
 
-Narasi singkat:
+Narasi:
 
-> Assignment hanya tersedia untuk role yang berwenang, dan daftar operator diambil dari profil aplikasi yang tersinkron dengan identitas Cognito.
+> Halaman `Ditugaskan ke Saya` adalah work queue pribadi operator. Yang tampil di sini adalah tiket yang saat ini menjadi tanggung jawab akun yang sedang login.
 
-### 6. Tunjukkan API docs
+Jika tiket belum diassign, tunjukkan bahwa queue masih kosong atau tiket belum masuk ke sana.
+
+### 5. Ambil atau assign tiket
+
+Tunjukkan salah satu:
+
+- agent mengambil tiket untuk dirinya sendiri
+- admin menugaskan tiket ke agent tertentu
+
+Narasi:
+
+> Setelah tiket masuk, tim operasional melakukan triage. Di tahap inilah ownership ditetapkan.
+
+### 6. Update status dan tambahkan komentar
+
+Tunjukkan:
+
+- perubahan status
+- komentar tindak lanjut
+- update timestamp
+
+Narasi:
+
+> Penanganan tidak lagi tersebar di chat karena progres dan komunikasi operasional tersimpan langsung pada tiket.
+
+### 7. Tunjukkan riwayat aktivitas
+
+Tunjukkan:
+
+- entri pembuatan tiket
+- entri assignment
+- entri perubahan status
+- entri komentar atau lampiran
+
+Narasi:
+
+> Riwayat aktivitas memberi audit trail yang membantu tim memahami apa yang sudah terjadi pada tiket ini.
+
+### 8. Tunjukkan API docs
 
 Buka:
 
 `https://opsdesk-teal.vercel.app/api-docs`
 
-Narasi singkat:
+Narasi:
 
-> Kontrak API tidak berhenti di codebase; ada OpenAPI dan viewer interaktif agar integrasi dan review teknis lebih mudah dilakukan.
+> Selain antarmuka pengguna, kontrak API juga terdokumentasi. Ini membantu reviewer melihat kematangan engineering, bukan hanya visual aplikasi.
 
-## Narasi Ringkas untuk Dosen atau Recruiter
+## Screenshot Yang Layak Diambil
 
-Versi singkat yang bisa dipakai saat presentasi:
+Untuk portfolio atau presentasi, screenshot yang paling bernilai adalah:
 
-> OpsDesk adalah aplikasi helpdesk cloud untuk dukungan operasional internal. Frontend dibangun dengan React dan Vite, backend memakai Go di AWS Lambda container, API berada di API Gateway, data disimpan di DynamoDB, autentikasi memakai Cognito, dan lampiran memakai S3 privat. Fokus implementasinya adalah alur tiket yang rapi, RBAC nyata, assignment operator, audit trail, dan deployment yang realistis.
+1. halaman login
+2. dashboard operasional
+3. form `Buat Tiket`
+4. daftar tiket dengan filter aktif
+5. halaman `Ditugaskan ke Saya`
+6. detail tiket dengan status, assignee, komentar, dan lampiran
+7. riwayat aktivitas tiket
+8. Swagger UI / API docs
 
-## Poin Teknis yang Layak Disebut
+## Jalur Demo Yang Aman Jika Waktu Sangat Singkat
 
-Pilih 3-4 poin saja agar presentasi tetap tajam:
+Jika waktu hanya 2-3 menit:
 
-- role diselesaikan dari Cognito group `reporter`, `agent`, dan `admin`
-- backend memverifikasi JWT dan menerapkan RBAC di level API
-- ticket list sudah memakai filter, search, sorting, dan pagination di sisi server
-- assignment ke operator lain sudah tersedia untuk role yang berwenang
-- lampiran memakai presigned URL ke bucket S3 privat
-- activity log pada detail tiket bersifat append-only
-- dokumentasi API tersedia dalam OpenAPI dan Swagger UI
-
-## Jalur Demo yang Aman Jika Waktu Sangat Singkat
-
-Jika hanya punya 2-3 menit:
-
-1. login
-2. dashboard
-3. daftar tiket
-4. detail tiket
+1. buka login
+2. tunjukkan dashboard
+3. buka satu tiket
+4. jelaskan assignment dan queue `Ditugaskan ke Saya`
 5. ubah status atau assignment
-6. buka API docs
+6. tutup dengan API docs
+
+## Poin Teknis Yang Layak Disebut
+
+Pilih 3-4 saja agar demo tetap fokus:
+
+- Cognito untuk autentikasi dan role
+- Go backend di AWS Lambda container image
+- API Gateway HTTP API
+- DynamoDB untuk tiket dan profil
+- S3 privat dengan presigned URL untuk lampiran
+- audit trail append-only pada aktivitas tiket
 
 ## Catatan Presentasi
 
-- gunakan data demo yang sudah siap agar tidak membuang waktu di form
-- hindari skenario yang bergantung pada email verifikasi real-time jika koneksi tidak stabil
-- jika ingin menyinggung operator guide, arahkan ke [docs/operator-guide.md](./operator-guide.md)
+- gunakan data demo yang sudah siap agar tidak menghabiskan waktu di setup
+- hindari demo yang bergantung pada email real-time jika koneksi tidak stabil
+- jika reviewer bertanya soal operator onboarding, arahkan ke [docs/operator-guide.md](./operator-guide.md)

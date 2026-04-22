@@ -1,6 +1,6 @@
 # Panduan Operator OpsDesk
 
-Panduan ini ditujukan untuk admin aplikasi atau operator teknis yang mengelola akun pengguna OpsDesk pada deployment aktif.
+Dokumen ini ditujukan untuk admin aplikasi, operator teknis, atau reviewer yang perlu memahami bagaimana akun dan role OpsDesk dikelola pada deployment aktif.
 
 ## Konteks Deployment Aktif
 
@@ -8,38 +8,98 @@ Panduan ini ditujukan untuk admin aplikasi atau operator teknis yang mengelola a
 - Region: `ap-southeast-1`
 - User Pool ID: `ap-southeast-1_sMFqei7IT`
 - App Client ID: `3gtbp1t96krpj6t9hfon4ljujn`
-- User Pool groups: `reporter`, `agent`, `admin`
+- Cognito groups: `reporter`, `agent`, `admin`
 - Profiles table: `opsdesk-dev-profiles`
 
-Role aplikasi diselesaikan dari Cognito User Pool Group. Profil pengguna disimpan terpisah di DynamoDB untuk menyimpan `displayName`, `avatarUrl`, dan metadata yang dipakai aplikasi.
+## Prinsip Operasional Yang Perlu Dipahami
 
-## Ringkasan Cara Kerja Role
+### 1. Sumber kebenaran role ada di Cognito
 
-Sumber kebenaran role:
-
-- role **tidak** diubah dari halaman profil aplikasi
-- role **ditentukan** dari group Cognito
-- backend dan frontend sama-sama membaca group Cognito untuk menentukan `reporter`, `agent`, atau `admin`
-
-Prioritas role:
+Role aplikasi tidak diatur dari halaman profil frontend. Role diselesaikan dari Cognito User Pool Group:
 
 1. `admin`
 2. `agent`
 3. `reporter`
 
-Jika user tidak berada pada grup yang dikenali, sistem memperlakukannya sebagai `reporter`.
+Jika user tidak berada pada group yang dikenali, sistem akan memperlakukannya sebagai `reporter`.
 
-## Tambah User Baru
+### 2. Profil aplikasi disimpan terpisah di DynamoDB
 
-Flow yang paling aman untuk user internal baru:
+OpsDesk menyimpan profil pengguna di tabel `opsdesk-dev-profiles` untuk data seperti:
+
+- `displayName`
+- `avatarUrl`
+- `email`
+- `role` yang dipakai aplikasi untuk kebutuhan operasional tertentu
+
+### 3. User operasional baru tidak otomatis muncul di daftar assignment hanya karena sudah ada di Cognito
+
+Daftar assignable users dibaca dari endpoint:
+
+```text
+GET /v1/profiles/assignable
+```
+
+Endpoint ini mengambil data dari tabel profil aplikasi, bukan langsung dari Cognito. Karena itu, user baru biasanya baru muncul di picker assignment setelah:
+
+1. akun dibuat di Cognito
+2. akun dimasukkan ke group `agent` atau `admin`
+3. user login ke OpsDesk minimal sekali sehingga profilnya tersimpan
+
+## Alur Tambah User Baru
+
+Alur aman yang direkomendasikan:
 
 1. Buat user di Cognito.
-2. Tetapkan kata sandi awal.
-3. Tambahkan user ke group role yang sesuai.
-4. Minta user login ke OpsDesk minimal sekali.
-5. Jika user perlu muncul pada picker assignment, pastikan profilnya sudah tersinkron ke aplikasi.
+2. Set password permanen atau kirim flow reset.
+3. Tambahkan user ke group yang sesuai.
+4. Minta user login ke OpsDesk minimal satu kali.
+5. Jika user adalah operator, verifikasi bahwa profilnya sudah tersinkron sehingga bisa muncul di assignment picker.
 
-### Opsi 1: AWS CLI di Bash / Git Bash
+## Opsi 1: Membuat User Via AWS Console
+
+Langkah ini cocok untuk demo, onboarding cepat, atau operator yang tidak memakai terminal.
+
+### Buat user baru
+
+1. Buka AWS Console.
+2. Masuk ke layanan Amazon Cognito.
+3. Pilih User Pool `opsdesk-dev-users` atau pool dengan ID `ap-southeast-1_sMFqei7IT`.
+4. Buka menu `Users`.
+5. Pilih `Create user`.
+6. Masukkan email user sebagai username.
+7. Isi atribut email dan aktifkan email sebagai verified jika diperlukan.
+8. Jika tidak ingin mengirim email undangan otomatis, pilih opsi yang setara dengan membuat user tanpa delivery default lalu lanjutkan dengan set password manual.
+
+### Set password permanen
+
+Setelah user dibuat:
+
+1. Buka detail user.
+2. Pilih aksi untuk menetapkan password.
+3. Set password permanen agar user bisa langsung login tanpa flow password sementara.
+
+### Tambahkan ke group role
+
+1. Buka tab atau bagian `Groups`.
+2. Tambahkan user ke salah satu group berikut:
+   - `reporter`
+   - `agent`
+   - `admin`
+
+### Verifikasi hasil
+
+Pastikan:
+
+- user berada pada group yang benar
+- email sesuai
+- akun dalam status aktif
+
+## Opsi 2: Membuat User Via AWS CLI
+
+Contoh berikut praktis untuk operator teknis dan mudah dicopy.
+
+### Bash / Git Bash
 
 ```bash
 aws cognito-idp admin-create-user \
@@ -63,7 +123,7 @@ aws cognito-idp admin-add-user-to-group \
   --group-name reporter
 ```
 
-### Opsi 2: AWS CLI di PowerShell
+### PowerShell
 
 ```powershell
 aws cognito-idp admin-create-user `
@@ -90,78 +150,66 @@ aws cognito-idp admin-add-user-to-group `
 Catatan:
 
 - `--message-action SUPPRESS` berarti Cognito tidak mengirim undangan otomatis.
-- Jika Anda ingin user langsung bisa masuk tanpa flow undangan, set kata sandi permanen seperti contoh di atas.
 - Ganti `reporter` menjadi `agent` atau `admin` sesuai kebutuhan.
+- Pada implementasi saat ini, hanya `agent` dan `admin` yang bisa menerima assignment tiket.
 
-## Set Password atau Reset Password
+## Command Referensi Inti
 
-Sistem mendukung dua pola yang berbeda.
+### 1. Create user
 
-### 1. Admin menetapkan password secara langsung
+```bash
+aws cognito-idp admin-create-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username user.baru@contoh.com \
+  --user-attributes Name=email,Value=user.baru@contoh.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+```
 
-Gunakan ini jika operator ingin memberikan password awal atau mengganti password user tanpa menunggu email reset.
-
-#### Bash / Git Bash
+### 2. Set permanent password
 
 ```bash
 aws cognito-idp admin-set-user-password \
   --region ap-southeast-1 \
   --user-pool-id ap-southeast-1_sMFqei7IT \
   --username user.baru@contoh.com \
-  --password 'PasswordBaru123' \
+  --password 'PasswordAwal123' \
   --permanent
 ```
 
-#### PowerShell
-
-```powershell
-aws cognito-idp admin-set-user-password `
-  --region ap-southeast-1 `
-  --user-pool-id ap-southeast-1_sMFqei7IT `
-  --username user.baru@contoh.com `
-  --password 'PasswordBaru123' `
-  --permanent
-```
-
-### 2. User melakukan reset password sendiri
-
-Flow ini memang sudah didukung aplikasi:
-
-- halaman `Lupa Kata Sandi`
-- halaman `Reset Kata Sandi`
-- halaman `Pengaturan Akun` untuk change password saat user masih login
-
-Gunakan flow ini jika email verifikasi Cognito user aktif dan dapat menerima kode verifikasi.
-
-### 3. Admin memicu reset password Cognito
-
-Jika Anda ingin Cognito mengirim alur reset ke user:
-
-#### Bash / Git Bash
+### 3. Add user to group
 
 ```bash
-aws cognito-idp admin-reset-user-password \
+aws cognito-idp admin-add-user-to-group \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username user.baru@contoh.com \
+  --group-name agent
+```
+
+### 4. Verify user detail
+
+```bash
+aws cognito-idp admin-get-user \
   --region ap-southeast-1 \
   --user-pool-id ap-southeast-1_sMFqei7IT \
   --username user.baru@contoh.com
 ```
 
-#### PowerShell
+### 5. List groups for user
 
-```powershell
-aws cognito-idp admin-reset-user-password `
-  --region ap-southeast-1 `
-  --user-pool-id ap-southeast-1_sMFqei7IT `
+```bash
+aws cognito-idp admin-list-groups-for-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
   --username user.baru@contoh.com
 ```
 
-## Set atau Ubah Role
+## Mengubah Role User
 
-Role dikelola melalui Cognito group. Gunakan kombinasi `admin-remove-user-from-group` dan `admin-add-user-to-group`.
+Role dikelola melalui Cognito group. Jika ingin memindahkan user dari `reporter` ke `agent`, lakukan remove lalu add.
 
-### Contoh: ubah reporter menjadi agent
-
-#### Bash / Git Bash
+### Bash / Git Bash
 
 ```bash
 aws cognito-idp admin-remove-user-from-group \
@@ -177,7 +225,7 @@ aws cognito-idp admin-add-user-to-group \
   --group-name agent
 ```
 
-#### PowerShell
+### PowerShell
 
 ```powershell
 aws cognito-idp admin-remove-user-from-group `
@@ -193,42 +241,37 @@ aws cognito-idp admin-add-user-to-group `
   --group-name agent
 ```
 
-Jika ingin langsung mengatur role akhir dengan bersih, pastikan user hanya berada pada group yang memang diinginkan.
+## Reset Password
 
-## Verifikasi User dan Role
-
-### Cek group Cognito user
-
-#### Bash / Git Bash
+### Set password baru secara langsung
 
 ```bash
-aws cognito-idp admin-list-groups-for-user \
+aws cognito-idp admin-set-user-password \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username user.baru@contoh.com \
+  --password 'PasswordBaru123' \
+  --permanent
+```
+
+### Kirim flow reset password Cognito
+
+```bash
+aws cognito-idp admin-reset-user-password \
   --region ap-southeast-1 \
   --user-pool-id ap-southeast-1_sMFqei7IT \
   --username user.baru@contoh.com
 ```
 
-#### PowerShell
+## Verifikasi Sinkronisasi Profil Aplikasi
 
-```powershell
-aws cognito-idp admin-list-groups-for-user `
-  --region ap-southeast-1 `
-  --user-pool-id ap-southeast-1_sMFqei7IT `
-  --username user.baru@contoh.com
+Setelah user login ke aplikasi, backend akan melayani:
+
+```text
+GET /v1/profile/me
 ```
 
-### Cek atribut user Cognito
-
-```bash
-aws cognito-idp admin-get-user \
-  --region ap-southeast-1 \
-  --user-pool-id ap-southeast-1_sMFqei7IT \
-  --username user.baru@contoh.com
-```
-
-### Cek profil aplikasi
-
-Setelah user login, backend akan melayani `GET /v1/profile/me`. Response ini menampilkan:
+Response ini memperlihatkan data seperti:
 
 - `subject`
 - `displayName`
@@ -243,88 +286,58 @@ curl -H "Authorization: Bearer <id-token>" \
   https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/profile/me
 ```
 
-## Bagaimana User Menjadi Tersedia untuk Assignment
+## Mengapa User Tidak Langsung Muncul Di Assignment Picker
 
-Ini bagian yang paling penting untuk operator.
+Ini adalah bagian paling penting untuk operator.
 
-Daftar assignable users **bukan** diambil langsung dari Cognito saat halaman detail tiket dibuka. Daftar tersebut dibaca dari tabel profil `opsdesk-dev-profiles` melalui endpoint:
+Assignment picker tidak membaca daftar operator langsung dari Cognito pada saat halaman detail dibuka. Sistem membaca daftar profile yang sudah tersimpan dan hanya mengambil role `agent` atau `admin`.
 
-```text
-GET /v1/profiles/assignable
-```
+Artinya, user operasional akan muncul jika:
 
-Aturan praktisnya:
+1. role Cognito-nya `agent` atau `admin`
+2. user sudah punya record profil di `opsdesk-dev-profiles`
+3. field `role` pada record profil tersebut juga bernilai `agent` atau `admin`
 
-1. User harus punya role Cognito `agent` atau `admin`.
-2. User harus sudah memiliki record profil di DynamoDB.
-3. Record profil itu harus menyimpan role `agent` atau `admin`.
+## Langkah Aman Setelah Promosi Role
 
-### Kapan record profil dibuat
-
-Record profil dibuat otomatis saat user belum punya profil lalu aplikasi memanggil `GET /v1/profile/me` untuk pertama kali.
-
-Dalam praktiknya, ini biasanya terjadi saat user berhasil login dan frontend memuat profil akun.
-
-### Kapan user langsung muncul di picker assignment
-
-User baru biasanya akan muncul jika urutan berikut dipenuhi:
-
-1. akun dibuat di Cognito
-2. akun dimasukkan ke group `agent` atau `admin`
-3. user login ke OpsDesk minimal satu kali
-
-### Catatan penting saat role user diubah setelah pernah login
-
-Jika user **sudah punya profil tersimpan** lalu role Cognito-nya diubah, response `GET /profile/me` memang akan menampilkan role terbaru, tetapi role yang tersimpan di tabel profil belum tentu langsung ikut diperbarui.
-
-Langkah aman setelah promosi role, misalnya `reporter` menjadi `agent`:
+Jika user sebelumnya sudah pernah login sebagai `reporter`, lalu sekarang dipromosikan menjadi `agent`, lakukan langkah berikut agar data assignment ikut sinkron:
 
 1. ubah group Cognito user
 2. minta user logout lalu login ulang
 3. minta user buka halaman `Profil`
 4. klik `Simpan Profil` sekali
 
-Langkah `Simpan Profil` akan memanggil `PATCH /profile/me` dan menyimpan role terbaru ke profil DynamoDB. Setelah itu user akan ikut terbaca pada daftar assignable.
-
-Jika Anda ingin memverifikasi lewat data, cek item user pada tabel `opsdesk-dev-profiles` dan pastikan field `role` bernilai `agent` atau `admin`.
+Langkah ini akan memanggil `PATCH /profile/me` dan menyimpan role terbaru ke profil DynamoDB.
 
 ## Troubleshooting Singkat
 
-### User berhasil login tetapi tidak muncul di picker assignment
+### User berhasil login tetapi tidak muncul di assignment picker
 
-Periksa urutan berikut:
+Periksa hal berikut:
 
-1. pastikan user ada di group `agent` atau `admin`
-2. pastikan user sudah login minimal sekali
-3. jika user baru saja ganti role, minta user buka `Profil` lalu klik `Simpan Profil`
-4. pastikan item profilnya sudah ada di tabel `opsdesk-dev-profiles`
+1. user ada di group `agent` atau `admin`
+2. user sudah login minimal sekali
+3. setelah perubahan role, user sudah membuka `Profil` lalu klik `Simpan Profil`
+4. record profil user ada di tabel `opsdesk-dev-profiles`
 
 ### User bisa login tetapi menu operasional tidak muncul
 
-Biasanya berarti JWT tidak membawa group yang sesuai. Cek:
+Biasanya JWT tidak membawa group yang sesuai. Verifikasi:
 
-- group Cognito user
 - hasil `admin-list-groups-for-user`
 - hasil endpoint `/v1/auth/me`
 
-### Forgot password tidak berjalan
-
-Gunakan salah satu opsi ini:
-
-- reset langsung lewat `admin-set-user-password --permanent`
-- atau cek apakah email user aktif menerima kode verifikasi Cognito
-
 ### User lama masih terbaca dengan role lama
 
-Penyebab paling umum adalah profil DynamoDB belum tersinkron ulang. Minta user:
+Biasanya profil DynamoDB belum tersinkron ulang. Minta user:
 
 1. login ulang
 2. buka `Profil`
 3. klik `Simpan Profil`
 
-## Referensi Terkait
+## Referensi
 
 - README utama: [../README.md](../README.md)
-- Setup dan deployment: [./setup.md](./setup.md)
 - Panduan penggunaan: [./usage-guide.md](./usage-guide.md)
-- API docs viewer: `https://opsdesk-teal.vercel.app/api-docs`
+- Panduan demo: [./demo-guide.md](./demo-guide.md)
+- Setup dan deployment: [./setup.md](./setup.md)

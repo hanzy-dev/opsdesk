@@ -1,78 +1,112 @@
 # OpsDesk Architecture
 
-## Overview
+Dokumen ini menjelaskan arsitektur OpsDesk dalam bentuk teks singkat tanpa diagram, dengan fokus pada komponen yang memang sudah ada pada implementasi saat ini.
 
-OpsDesk adalah aplikasi helpdesk internal kecil dengan arsitektur serverless AWS yang sengaja dijaga tetap sederhana. Fokusnya adalah alur tiket operasional yang rapi, bisa dideploy, mudah diverifikasi, dan cukup production-oriented tanpa masuk ke kompleksitas enterprise.
+## Gambaran Umum
 
-## Monorepo Layout
+OpsDesk adalah aplikasi helpdesk internal berbasis arsitektur serverless AWS. Frontend berjalan terpisah dari backend, autentikasi ditangani oleh Cognito, dan data operasional disimpan di layanan managed AWS agar deployment tetap sederhana namun realistis.
 
-- `frontend/`: React + Vite + TypeScript web client for end users
-- `backend/`: Go-based Lambda handlers, services, repositories, and validation logic
-- `infra/`: Infrastructure-as-code for AWS resources and deployment configuration
-- `docs/`: Project documentation, architecture notes, and delivery roadmap
+## Komponen Utama
 
-## Current Architecture
+### 1. Cognito untuk autentikasi dan role
 
-### Frontend
+Amazon Cognito User Pool dipakai untuk:
 
-- React + Vite + TypeScript
-- deployed di Vercel
-- User-facing text will be written in Bahasa Indonesia
-- Timestamps will be displayed in Asia/Jakarta time
+- login pengguna
+- token JWT
+- reset password
+- sumber kebenaran role melalui group `reporter`, `agent`, dan `admin`
 
-### Backend
+Frontend dan backend sama-sama membaca identitas ini, tetapi enforcement akses tetap dilakukan di backend.
 
-- Go application yang berjalan sebagai Lambda container image
-- API dipublikasikan melalui API Gateway HTTP API
-- handler tetap tipis dan mendorong logika ke service layer
-- validasi request dilakukan sebelum proses bisnis
-- error response konsisten dan membawa `requestId`
+### 2. Frontend React + Vite di Vercel
 
-### Data Layer
+Frontend bertugas untuk:
 
-- DynamoDB sebagai primary data store tiket
-- satu record tiket menyimpan komentar, aktivitas, dan metadata lampiran
-- S3 private bucket untuk file lampiran
-- presigned PUT dipakai untuk upload dan presigned GET untuk open/download
-### Identity and Access
+- menampilkan dashboard, daftar tiket, detail tiket, profil, dan pengaturan akun
+- memanggil Cognito untuk alur autentikasi
+- mengirim bearer token ke backend
+- menampilkan UI berbahasa Indonesia untuk user akhir
 
-- Amazon Cognito User Pool untuk autentikasi
-- group RBAC:
-  - `reporter`
-  - `agent`
-  - `admin`
-- assignment tiket tersedia untuk `agent` dan `admin`, dengan daftar operator yang dibaca dari profil DynamoDB
+### 3. API Gateway HTTP API
 
-### Observability
+API Gateway menjadi pintu masuk HTTP untuk:
 
-- structured JSON logs di backend
-- request ID per request
-- API Gateway access log ke CloudWatch
-- Lambda application logs ke CloudWatch
+- endpoint autentikasi terproteksi
+- operasi tiket
+- operasi profil
+- upload dan download lampiran berbasis presigned URL
 
-## High-Level Request Flow
+### 4. Go backend di AWS Lambda container image
 
-1. Pengguna membuka frontend production di Vercel.
-2. Frontend mengirim request ke API Gateway HTTP API pada base URL final.
-3. API Gateway memanggil Lambda backend.
-4. Adapter Lambda mengubah event API Gateway menjadi request HTTP internal.
-5. Middleware backend menambahkan request ID, structured logging, dan error handling operasional.
-6. Router melakukan autentikasi JWT Cognito dan RBAC.
-7. Service menjalankan logika tiket, activity, assignment, komentar, dan attachment.
-8. Repository membaca atau menulis DynamoDB, dan storage layer menangani S3 presigned URL.
-9. Response JSON dikembalikan ke frontend dengan format sukses atau error yang konsisten.
+Backend Go menjalankan logika aplikasi seperti:
 
-## Design Principles
+- verifikasi JWT Cognito
+- resolusi role dan RBAC
+- validasi request
+- pembuatan tiket
+- update status
+- assignment tiket
+- komentar dan aktivitas
+- orkestrasi upload atau download lampiran
 
-- incremental dan maintainable
-- RESTful API yang kecil dan stabil
-- AWS-native bila sudah cukup
-- production-oriented untuk aplikasi internal kecil
-- menghindari microservices, queue, WAF, atau kompleksitas enterprise yang belum dibutuhkan
+### 5. DynamoDB
 
-## Known Limitations
+DynamoDB dipakai untuk dua kebutuhan utama:
 
-- belum ada malware scanning attachment
-- belum ada distributed tracing atau alerting lanjutan
-- belum ada email notification atau automation workflow
-- belum ada multi-tenant support
+- tabel tiket
+- tabel profil
+
+Data tiket mencakup informasi inti seperti pelapor, assignee, status, prioritas, komentar, aktivitas, dan metadata lampiran. Data profil dipakai untuk kebutuhan tampilan akun dan daftar operator yang bisa menerima assignment.
+
+### 6. S3 privat untuk lampiran
+
+Lampiran tidak diunggah langsung lewat backend sebagai file payload besar. Sebagai gantinya:
+
+1. frontend meminta presigned upload URL
+2. file diunggah ke bucket S3 privat
+3. metadata lampiran disimpan ke tiket
+4. file dibuka kembali melalui presigned download URL
+
+Model ini menjaga backend tetap ringan dan membuat akses file tetap terkontrol.
+
+## Alur Request Utama
+
+1. User membuka frontend di Vercel.
+2. User login melalui Cognito.
+3. Frontend menyimpan sesi dan bearer token.
+4. Frontend memanggil API Gateway dengan token tersebut.
+5. Lambda backend memverifikasi JWT dan menentukan role user.
+6. Backend menerapkan RBAC lalu membaca atau menulis data ke DynamoDB.
+7. Jika ada lampiran, backend menghasilkan presigned URL untuk S3.
+8. Response dikembalikan ke frontend dalam format JSON yang konsisten.
+
+## Audit Trail dan Aktivitas
+
+OpsDesk menyimpan aktivitas tiket sebagai jejak audit append-only untuk kejadian penting seperti:
+
+- tiket dibuat
+- status diubah
+- assignment diubah
+- komentar ditambahkan
+- lampiran ditambahkan
+
+Riwayat ini membantu operator dan reviewer memahami apa yang terjadi pada sebuah tiket tanpa harus mencari konteks di luar sistem.
+
+## Kenapa Arsitektur Ini Cocok Untuk OpsDesk
+
+Arsitektur ini dipilih karena:
+
+- cukup ringan untuk proyek helpdesk internal
+- mudah dideploy dan diaudit
+- memakai layanan managed AWS yang relevan
+- mendukung pemisahan frontend, backend, auth, data, dan storage dengan jelas
+
+## Batasan Saat Ini
+
+Bagian berikut belum termasuk implementasi saat ini:
+
+- notifikasi email operasional
+- otomasi SLA atau eskalasi
+- malware scanning attachment
+- observability lanjutan seperti distributed tracing dan alerting otomatis
