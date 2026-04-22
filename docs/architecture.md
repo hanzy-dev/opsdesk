@@ -1,6 +1,6 @@
 # OpsDesk Architecture
 
-Dokumen ini menjelaskan arsitektur OpsDesk dalam bentuk teks singkat tanpa diagram, dengan fokus pada komponen yang memang sudah ada pada implementasi saat ini.
+Dokumen ini menjelaskan arsitektur OpsDesk dalam bentuk teks singkat tanpa diagram, dengan fokus pada komponen yang memang sudah ada pada implementasi saat ini. Untuk versi visual yang lebih cepat dibaca, lihat [diagram pack](./diagram-pack.md).
 
 ## Gambaran Umum
 
@@ -110,3 +110,14 @@ Bagian berikut belum termasuk implementasi saat ini:
 - otomasi SLA atau eskalasi
 - malware scanning attachment
 - observability lanjutan seperti distributed tracing dan alerting otomatis
+
+## Diagram Terkait
+
+Visual pendukung yang relevan tersedia di [diagram pack](./diagram-pack.md):
+
+- diagram arsitektur sistem
+- user flow
+- ticket lifecycle
+- visual RBAC
+- secure file upload flow
+- audit trail / activity flow

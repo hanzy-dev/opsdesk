@@ -245,6 +245,7 @@ Panduan lengkap ada di [docs/demo-guide.md](./docs/demo-guide.md).
 
 ## Dokumentasi Tambahan
 
+- Diagram pack: [docs/diagram-pack.md](./docs/diagram-pack.md)
 - Panduan operator: [docs/operator-guide.md](./docs/operator-guide.md)
 - Panduan demo: [docs/demo-guide.md](./docs/demo-guide.md)
 - Panduan penggunaan: [docs/usage-guide.md](./docs/usage-guide.md)
@@ -260,6 +261,10 @@ Panduan lengkap ada di [docs/demo-guide.md](./docs/demo-guide.md).
 - Role sumber kebenaran ada di Cognito group, bukan di form profil frontend.
 - User operasional baru akan muncul pada daftar assignment setelah memiliki profil aplikasi yang tersimpan dengan role `agent` atau `admin`.
 - Dokumentasi langkah Console dan AWS CLI untuk membuat user, set password, verifikasi group, dan sinkronisasi assignment tersedia di [docs/operator-guide.md](./docs/operator-guide.md).
+
+## Diagram Visual
+
+Untuk penjelasan visual yang lebih cepat dipahami, lihat [docs/diagram-pack.md](./docs/diagram-pack.md). Dokumen tersebut merangkum diagram arsitektur sistem, user flow, lifecycle tiket, RBAC, alur upload lampiran privat, dan audit trail.
 
 ## Roadmap Singkat
 
