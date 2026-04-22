@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { listAssignableUsers } from "../api/profile";
 import {
   addComment,
@@ -13,6 +13,7 @@ import {
   updateTicketStatus,
   uploadAttachmentFile,
 } from "../api/tickets";
+import { AppIcon } from "../components/common/AppIcon";
 import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
@@ -27,6 +28,7 @@ import type { Attachment, Comment, Ticket, TicketActivity, TicketStatus } from "
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 import { formatSlaDueLabel, formatSlaTarget, getSlaState, getSlaToneLabel, getTicketDueAt } from "../utils/sla";
+import { buildOperatorDraftAssist, buildTicketSummaryAssist, findRelatedTickets, getTicketAssistSuggestion } from "../utils/smartAssist";
 import {
   commentVisibilityOptions,
   getCommentVisibilityLabel,
@@ -268,6 +270,38 @@ export function TicketDetailPage() {
   );
   const slaState = useMemo(() => (ticket ? getSlaState(ticket) : "normal"), [ticket]);
   const slaDueAt = useMemo(() => (ticket ? getTicketDueAt(ticket) : null), [ticket]);
+  const assistSuggestion = useMemo(
+    () =>
+      ticket
+        ? getTicketAssistSuggestion({
+            title: ticket.title,
+            description: ticket.description,
+          })
+        : null,
+    [ticket],
+  );
+  const relatedTicketHints = useMemo(
+    () =>
+      ticket
+        ? findRelatedTickets(
+            {
+              id: ticket.id,
+              title: ticket.title,
+              description: ticket.description,
+              category: ticket.category,
+              team: ticket.team,
+            },
+            workloadTickets,
+            3,
+          )
+        : [],
+    [ticket, workloadTickets],
+  );
+  const summaryAssist = useMemo(() => (ticket ? buildTicketSummaryAssist(ticket, activities) : null), [activities, ticket]);
+  const operatorDraftAssist = useMemo(
+    () => (ticket ? buildOperatorDraftAssist(ticket, activities, relatedTicketHints) : null),
+    [activities, relatedTicketHints, ticket],
+  );
 
   const assigneeOptions = useMemo(() => {
     const options = assignableUsers.map((user) => ({
@@ -810,6 +844,59 @@ export function TicketDetailPage() {
         <aside className="stack-lg">
           <article className="panel panel--section stack-md">
             <div>
+              <p className="section-eyebrow">Smart assist</p>
+              <h3>Ringkasan dan sinyal cepat</h3>
+              <p className="form-hint">Asistensi ini disusun dari data tiket yang sudah ada, bukan jawaban AI generatif penuh.</p>
+            </div>
+            {summaryAssist ? (
+              <div className="smart-assist-card smart-assist-card--subtle">
+                <div className="smart-assist-card__header">
+                  <div>
+                    <span>Ringkasan otomatis</span>
+                    <strong>{summaryAssist.headline}</strong>
+                  </div>
+                  <small>{summaryAssist.support}</small>
+                </div>
+                <div className="smart-summary-list">
+                  {summaryAssist.bullets.map((bullet) => (
+                    <article className="smart-summary-item" key={bullet}>
+                      <AppIcon name="dashboard" size="sm" />
+                      <p>{bullet}</p>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {assistSuggestion ? (
+              <div className="smart-assist-card">
+                <div className="smart-assist-card__header">
+                  <div>
+                    <span>Saran klasifikasi</span>
+                    <strong>Pola yang terbaca dari isi tiket</strong>
+                  </div>
+                  <small>Dipakai sebagai petunjuk review, bukan perubahan otomatis.</small>
+                </div>
+                <div className="smart-assist-grid">
+                  <div className="smart-assist-item">
+                    <span>Kategori saat ini</span>
+                    <strong>{getTicketCategoryLabel(ticket.category)}</strong>
+                    <p>
+                      Saran sistem: {getTicketCategoryLabel(assistSuggestion.category.value)}. {assistSuggestion.category.reason}
+                    </p>
+                  </div>
+                  <div className="smart-assist-item">
+                    <span>Prioritas saat ini</span>
+                    <strong>{getPriorityLabel(ticket.priority)}</strong>
+                    <p>
+                      Saran sistem: {getPriorityLabel(assistSuggestion.priority.value)}. {assistSuggestion.priority.reason}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div>
               <p className="section-eyebrow">Aksi cepat</p>
               <h3>Tindakan yang tersedia</h3>
             </div>
@@ -843,6 +930,33 @@ export function TicketDetailPage() {
               <small>{slaDueAt ? `Target hingga ${formatDateTime(slaDueAt.toISOString())}` : "Target belum tersedia."}</small>
             </div>
           </article>
+
+          {relatedTicketHints.length > 0 ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Tiket terkait</p>
+                <h3>Hint tiket yang mirip</h3>
+                <p className="form-hint">Gunakan ini untuk cek konteks serupa atau potensi duplikasi sebelum memberi tindak lanjut.</p>
+              </div>
+              <div className="smart-related-list">
+                {relatedTicketHints.map((hint) => (
+                  <Link className="smart-related-item" key={hint.ticket.id} to={`/tickets/${hint.ticket.id}`}>
+                    <div>
+                      <strong>{hint.ticket.title}</strong>
+                      <p>
+                        {hint.ticket.id} · {getTicketCategoryLabel(hint.ticket.category)} · {getTicketTeamLabel(hint.ticket.team)}
+                      </p>
+                      <small>{hint.reason}</small>
+                    </div>
+                    <div className="smart-related-item__meta">
+                      <StatusBadge status={hint.ticket.status} />
+                      <span className="table-tag table-tag--muted">{Math.round(hint.score * 100)}% mirip</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </article>
+          ) : null}
 
           <article className="panel panel--section">
             <p className="section-eyebrow">Routing & penugasan</p>
@@ -997,6 +1111,53 @@ export function TicketDetailPage() {
           <article className="panel panel--section">
             <p className="section-eyebrow">Tambah catatan</p>
             <h3>Tulis pembaruan tiket</h3>
+            {permissions.canViewOperationalTickets && operatorDraftAssist ? (
+              <div className="smart-assist-card smart-assist-card--subtle">
+                <div className="smart-assist-card__header">
+                  <div>
+                    <span>Draf respon</span>
+                    <strong>Mulai dari respons yang sudah dirapikan sistem</strong>
+                  </div>
+                  <small>{operatorDraftAssist.explanation}</small>
+                </div>
+                <div className="smart-assist-grid">
+                  <div className="smart-assist-item">
+                    <span>Draf komentar publik</span>
+                    <p>{operatorDraftAssist.publicReply}</p>
+                    <button
+                      className="button button--ghost"
+                      onClick={() =>
+                        setCommentForm((current) => ({
+                          ...current,
+                          visibility: "public",
+                          message: operatorDraftAssist.publicReply,
+                        }))
+                      }
+                      type="button"
+                    >
+                      Gunakan sebagai draf publik
+                    </button>
+                  </div>
+                  <div className="smart-assist-item">
+                    <span>Draf catatan internal</span>
+                    <p>{operatorDraftAssist.internalNote}</p>
+                    <button
+                      className="button button--ghost"
+                      onClick={() =>
+                        setCommentForm((current) => ({
+                          ...current,
+                          visibility: "internal",
+                          message: operatorDraftAssist.internalNote,
+                        }))
+                      }
+                      type="button"
+                    >
+                      Gunakan sebagai catatan internal
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <form className="stack-md" onSubmit={handleCommentSubmit}>
               <label className="field">
                 <span>Penulis komentar</span>

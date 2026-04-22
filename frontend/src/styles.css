@@ -2581,6 +2581,133 @@ textarea:focus-visible {
     rgba(255, 255, 255, 0.03);
 }
 
+.smart-assist-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.smart-assist-card--subtle {
+  border-color: rgba(121, 184, 255, 0.12);
+  background:
+    linear-gradient(180deg, rgba(121, 184, 255, 0.08), rgba(121, 184, 255, 0.03)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.smart-assist-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.smart-assist-card__header span {
+  color: #f2b792;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+}
+
+.smart-assist-card__header strong,
+.smart-assist-card__header small,
+.smart-assist-item strong,
+.smart-assist-item p,
+.smart-related-item strong,
+.smart-related-item p,
+.smart-related-item small,
+.smart-summary-item p {
+  margin: 0;
+}
+
+.smart-assist-card__header strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.smart-assist-card__header small {
+  color: var(--muted);
+  max-width: 34ch;
+  line-height: 1.5;
+}
+
+.smart-assist-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.smart-assist-item {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.smart-assist-item span,
+.smart-related-item__meta span,
+.smart-related-item small {
+  color: var(--muted);
+}
+
+.smart-assist-item span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.smart-assist-item p,
+.smart-related-item p,
+.smart-related-item small,
+.smart-summary-item p {
+  line-height: 1.55;
+}
+
+.smart-related-list,
+.smart-summary-list {
+  display: grid;
+  gap: 10px;
+}
+
+.smart-related-item,
+.smart-summary-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.smart-related-item__meta {
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+  align-content: start;
+}
+
+.smart-summary-item {
+  align-items: flex-start;
+}
+
+.smart-summary-item .app-icon {
+  margin-top: 2px;
+  color: #ffd1b2;
+}
+
 .workload-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2642,6 +2769,10 @@ textarea:focus-visible {
 
 @media (max-width: 900px) {
   .workload-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-assist-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -3998,6 +4129,9 @@ textarea:focus-visible {
   .dashboard-bars__meta,
   .dashboard-workload-item,
   .assignment-card__current,
+  .smart-assist-card__header,
+  .smart-related-item,
+  .smart-summary-item,
   .attachment-composer__header,
   .attachment-composer__summary {
     flex-direction: column;

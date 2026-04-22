@@ -4,6 +4,7 @@ import { ApiError } from "../api/client";
 import { CreateTicketPage } from "./CreateTicketPage";
 
 const createTicketMock = vi.fn();
+const listTicketsMock = vi.fn();
 const requestAttachmentUploadUrlMock = vi.fn();
 const saveAttachmentMock = vi.fn();
 const uploadAttachmentFileMock = vi.fn();
@@ -20,6 +21,7 @@ vi.mock("../config/env", () => ({
 
 vi.mock("../api/tickets", () => ({
   createTicket: (input: unknown) => createTicketMock(input),
+  listTickets: (...args: unknown[]) => listTicketsMock(...args),
   requestAttachmentUploadUrl: (ticketId: string, input: unknown) => requestAttachmentUploadUrlMock(ticketId, input),
   saveAttachment: (ticketId: string, input: unknown) => saveAttachmentMock(ticketId, input),
   uploadAttachmentFile: (...args: unknown[]) => uploadAttachmentFileMock(...args),
@@ -66,6 +68,7 @@ describe("CreateTicketPage smoke tests", () => {
 
   afterEach(() => {
     createTicketMock.mockReset();
+    listTicketsMock.mockReset();
     requestAttachmentUploadUrlMock.mockReset();
     saveAttachmentMock.mockReset();
     uploadAttachmentFileMock.mockReset();
@@ -98,6 +101,7 @@ describe("CreateTicketPage smoke tests", () => {
   });
 
   it("submits the main ticket form, uploads selected attachments, and redirects to the detail page", async () => {
+    listTicketsMock.mockResolvedValue({ items: [], pagination: { total_items: 0 } });
     createTicketMock.mockResolvedValueOnce({
       id: "TCK-2001",
     });
@@ -169,6 +173,7 @@ describe("CreateTicketPage smoke tests", () => {
   });
 
   it("allows removing a selected attachment before submit", async () => {
+    listTicketsMock.mockResolvedValue({ items: [], pagination: { total_items: 0 } });
     render(<CreateTicketPage />);
 
     fireEvent.change(screen.getByPlaceholderText("Contoh: API timeout di layanan tiket"), {
@@ -193,6 +198,7 @@ describe("CreateTicketPage smoke tests", () => {
   });
 
   it("shows reporter identity as derived read-only fields", () => {
+    listTicketsMock.mockResolvedValue({ items: [], pagination: { total_items: 0 } });
     render(<CreateTicketPage />);
 
     expect(screen.getByText("Pelapor aktif")).toBeInTheDocument();
@@ -205,6 +211,7 @@ describe("CreateTicketPage smoke tests", () => {
   });
 
   it("shows backend reference code when ticket creation fails", async () => {
+    listTicketsMock.mockResolvedValue({ items: [], pagination: { total_items: 0 } });
     createTicketMock.mockRejectedValueOnce(
       new ApiError(
         "Permintaan belum valid. Periksa kembali data yang diisi.",
@@ -229,5 +236,42 @@ describe("CreateTicketPage smoke tests", () => {
     expect(await screen.findByText("Permintaan belum valid. Periksa kembali data yang diisi.")).toBeInTheDocument();
     expect(screen.getByText("Kode referensi: req-create-123")).toBeInTheDocument();
     expect(screen.getByText("Judul tiket wajib diisi.")).toBeInTheDocument();
+  });
+
+  it("shows smart assist suggestions and related ticket hints", async () => {
+    listTicketsMock.mockResolvedValue({
+      items: [
+        {
+          id: "TCK-9901",
+          title: "Login SSO gagal untuk dosen",
+          description: "Pengguna tidak bisa masuk dan melihat pesan error akses.",
+          status: "open",
+          priority: "high",
+          category: "account_access",
+          team: "helpdesk",
+          reporterName: "Rina",
+          reporterEmail: "rina@example.com",
+          comments: [],
+          attachments: [],
+          createdAt: "2026-04-21T09:00:00Z",
+          updatedAt: "2026-04-21T09:15:00Z",
+        },
+      ],
+      pagination: { total_items: 1 },
+    });
+
+    render(<CreateTicketPage />);
+
+    fireEvent.change(screen.getByPlaceholderText("Contoh: API timeout di layanan tiket"), {
+      target: { value: "Login SSO gagal" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Jelaskan gejala, dampak, dan konteks singkat."), {
+      target: { value: "Pengguna tidak bisa masuk ke akun dan reset password belum membantu." },
+    });
+
+    expect(await screen.findByText("Saran klasifikasi awal tiket")).toBeInTheDocument();
+    expect(screen.getAllByText("Akses akun").length).toBeGreaterThan(0);
+    expect(await screen.findByText("Hint kemungkinan duplikat atau tiket terkait")).toBeInTheDocument();
+    expect(screen.getByText("Login SSO gagal untuk dosen")).toBeInTheDocument();
   });
 });

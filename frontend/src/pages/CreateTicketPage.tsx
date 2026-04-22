@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
-import { createTicket, requestAttachmentUploadUrl, saveAttachment, uploadAttachmentFile } from "../api/tickets";
+import { createTicket, listTickets, requestAttachmentUploadUrl, saveAttachment, uploadAttachmentFile } from "../api/tickets";
 import { AppIcon } from "../components/common/AppIcon";
 import { ErrorState } from "../components/common/ErrorState";
 import { SelectControl } from "../components/common/SelectControl";
@@ -12,13 +12,16 @@ import { getRoleLabel } from "../modules/auth/roles";
 import type { CreateTicketInput } from "../types/ticket";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 import { getPreferredDisplayName } from "../utils/identity";
+import { findRelatedTickets, getTicketAssistSuggestion } from "../utils/smartAssist";
 import {
   getDefaultTeamForCategory,
+  getPriorityLabel,
   getTicketCategoryLabel,
   getTicketTeamLabel,
   ticketCategoryOptions,
   ticketTeamOptions,
 } from "../utils/ticketMetadata";
+import { useDebouncedValue } from "../utils/useDebouncedValue";
 
 const initialForm: CreateTicketInput = {
   title: "",
@@ -71,6 +74,8 @@ export function CreateTicketPage() {
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isTeamCustomized, setIsTeamCustomized] = useState(false);
+  const [relatedTicketHints, setRelatedTicketHints] = useState<ReturnType<typeof findRelatedTickets>>([]);
+  const [isLoadingRelatedTickets, setIsLoadingRelatedTickets] = useState(false);
   const effectiveIdentity = profile
     ? profile
     : session
@@ -83,6 +88,15 @@ export function CreateTicketPage() {
       : null;
   const preferredDisplayName = getPreferredDisplayName(effectiveIdentity);
   const isFormValid = useMemo(() => Object.keys(validateTicketForm(form)).length === 0, [form]);
+  const assistSuggestion = useMemo(
+    () =>
+      getTicketAssistSuggestion({
+        title: form.title,
+        description: form.description,
+      }),
+    [form.description, form.title],
+  );
+  const debouncedAssistQuery = useDebouncedValue(`${form.title} ${form.description}`.trim(), 420);
   const attachmentSummary =
     attachmentDrafts.length === 0
       ? "Belum ada lampiran dipilih."
@@ -102,6 +116,59 @@ export function CreateTicketPage() {
       });
     };
   }, []);
+
+  useEffect(() => {
+    const normalizedQuery = debouncedAssistQuery.trim();
+    if (normalizedQuery.length < 10) {
+      setRelatedTicketHints([]);
+      setIsLoadingRelatedTickets(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingRelatedTickets(true);
+
+    void (async () => {
+      try {
+        const response = await listTickets({
+          q: normalizedQuery,
+          page: 1,
+          pageSize: 8,
+          sortBy: "updated_at",
+          sortOrder: "desc",
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        setRelatedTicketHints(
+          findRelatedTickets(
+            {
+              title: form.title,
+              description: form.description,
+              category: assistSuggestion.category.value,
+              team: assistSuggestion.team.value,
+            },
+            response.items,
+            3,
+          ),
+        );
+      } catch {
+        if (!cancelled) {
+          setRelatedTicketHints([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingRelatedTickets(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [assistSuggestion.category.value, assistSuggestion.team.value, debouncedAssistQuery, form.description, form.title]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -382,7 +449,13 @@ export function CreateTicketPage() {
               options={priorityOptions}
               value={form.priority}
             />
-            {fieldErrors.priority ? <small>{fieldErrors.priority}</small> : null}
+            {fieldErrors.priority ? (
+              <small>{fieldErrors.priority}</small>
+            ) : (
+              <small>
+                Saran pintar: {getPriorityLabel(assistSuggestion.priority.value)}. {assistSuggestion.priority.reason}
+              </small>
+            )}
           </label>
 
           <label className={`field ${fieldErrors.category ? "field--invalid" : ""}`}>
@@ -393,7 +466,13 @@ export function CreateTicketPage() {
               options={ticketCategoryOptions}
               value={form.category}
             />
-            {fieldErrors.category ? <small>{fieldErrors.category}</small> : <small>Pilih jenis kebutuhan utama tiket ini.</small>}
+            {fieldErrors.category ? (
+              <small>{fieldErrors.category}</small>
+            ) : (
+              <small>
+                Saran pintar: {getTicketCategoryLabel(assistSuggestion.category.value)}. {assistSuggestion.category.reason}
+              </small>
+            )}
           </label>
 
           <label className={`field ${fieldErrors.team ? "field--invalid" : ""}`}>
@@ -430,6 +509,94 @@ export function CreateTicketPage() {
               triase atau tindak lanjut operasional.
             </p>
           </article>
+
+          <article className="field field--full smart-assist-card">
+            <div className="smart-assist-card__header">
+              <div>
+                <span>Asistensi pintar</span>
+                <strong>Saran klasifikasi awal tiket</strong>
+              </div>
+              <small>Berbasis kata kunci judul, deskripsi, dan pola tiket yang sudah ada.</small>
+            </div>
+            <div className="smart-assist-grid">
+              <div className="smart-assist-item">
+                <span>Kategori disarankan</span>
+                <strong>{getTicketCategoryLabel(assistSuggestion.category.value)}</strong>
+                <p>{assistSuggestion.category.reason}</p>
+                <button
+                  className="button button--ghost"
+                  disabled={form.category === assistSuggestion.category.value}
+                  onClick={() => handleFieldChange("category", assistSuggestion.category.value)}
+                  type="button"
+                >
+                  {form.category === assistSuggestion.category.value ? "Sudah dipakai" : "Gunakan kategori ini"}
+                </button>
+              </div>
+              <div className="smart-assist-item">
+                <span>Prioritas disarankan</span>
+                <strong>{getPriorityLabel(assistSuggestion.priority.value)}</strong>
+                <p>{assistSuggestion.priority.reason}</p>
+                <button
+                  className="button button--ghost"
+                  disabled={form.priority === assistSuggestion.priority.value}
+                  onClick={() => handleFieldChange("priority", assistSuggestion.priority.value)}
+                  type="button"
+                >
+                  {form.priority === assistSuggestion.priority.value ? "Sudah dipakai" : "Gunakan prioritas ini"}
+                </button>
+              </div>
+              <div className="smart-assist-item">
+                <span>Area tujuan disarankan</span>
+                <strong>{getTicketTeamLabel(assistSuggestion.team.value)}</strong>
+                <p>{assistSuggestion.team.reason}</p>
+                <button
+                  className="button button--ghost"
+                  disabled={form.team === assistSuggestion.team.value}
+                  onClick={() => handleFieldChange("team", assistSuggestion.team.value)}
+                  type="button"
+                >
+                  {form.team === assistSuggestion.team.value ? "Sudah dipakai" : "Gunakan area ini"}
+                </button>
+              </div>
+            </div>
+          </article>
+
+          {(relatedTicketHints.length > 0 || isLoadingRelatedTickets) && debouncedAssistQuery.length >= 10 ? (
+            <article className="field field--full smart-assist-card smart-assist-card--subtle">
+              <div className="smart-assist-card__header">
+                <div>
+                  <span>Tiket mirip</span>
+                  <strong>Hint kemungkinan duplikat atau tiket terkait</strong>
+                </div>
+                <small>
+                  {isLoadingRelatedTickets
+                    ? "Mencari tiket serupa..."
+                    : "Gunakan hint ini untuk mengecek apakah kendala serupa sudah pernah masuk."}
+                </small>
+              </div>
+              {relatedTicketHints.length === 0 ? (
+                <p className="form-hint">Belum ada tiket mirip yang cukup kuat untuk ditampilkan.</p>
+              ) : (
+                <div className="smart-related-list">
+                  {relatedTicketHints.map((hint) => (
+                    <article className="smart-related-item" key={hint.ticket.id}>
+                      <div>
+                        <strong>{hint.ticket.title}</strong>
+                        <p>
+                          {hint.ticket.id} · {getTicketCategoryLabel(hint.ticket.category)} · {getTicketTeamLabel(hint.ticket.team)}
+                        </p>
+                        <small>{hint.reason}</small>
+                      </div>
+                      <div className="smart-related-item__meta">
+                        <span className={`priority-pill priority-pill--${hint.ticket.priority}`}>{getPriorityLabel(hint.ticket.priority)}</span>
+                        <span className="table-tag table-tag--muted">{Math.round(hint.score * 100)}% mirip</span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </article>
+          ) : null}
         </div>
 
         <section className="attachment-composer">

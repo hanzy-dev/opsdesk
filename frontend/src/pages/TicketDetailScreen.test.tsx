@@ -163,11 +163,26 @@ describe("TicketDetailScreen", () => {
           createdAt: "2026-04-17T09:00:00Z",
           updatedAt: "2026-04-17T11:15:00Z",
         },
+        {
+          id: "TCK-3010",
+          title: "Sinkronisasi dashboard gagal",
+          description: "Dashboard tidak memproses antrean sinkronisasi baru.",
+          status: "open",
+          priority: "high",
+          category: "application_bug",
+          team: "applications",
+          reporterName: "Budi",
+          reporterEmail: "budi@example.com",
+          comments: [],
+          attachments: [],
+          createdAt: "2026-04-16T09:00:00Z",
+          updatedAt: "2026-04-16T10:15:00Z",
+        },
       ],
       pagination: {
         page: 1,
         page_size: 100,
-        total_items: 1,
+        total_items: 2,
         total_pages: 1,
         has_next: false,
       },
@@ -182,7 +197,7 @@ describe("TicketDetailScreen", () => {
     );
 
     expect(await screen.findByText("Sinkronisasi data gagal")).toBeInTheDocument();
-    expect(screen.getAllByText("Prioritas Tinggi")).toHaveLength(2);
+    expect(screen.getAllByText("Prioritas Tinggi").length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText("Bug aplikasi").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Aplikasi").length).toBeGreaterThan(0);
     expect(screen.getByText("Tindakan yang tersedia")).toBeInTheDocument();
@@ -195,6 +210,11 @@ describe("TicketDetailScreen", () => {
     expect(screen.getAllByText("Catatan internal").length).toBeGreaterThan(0);
     expect(screen.getByText("Perlu cek log worker sebelum update ke pelapor.")).toBeInTheDocument();
     expect(screen.getByText(/Dikirim sebagai Dina Petugas \(Petugas\) • Komentar publik/)).toBeInTheDocument();
+
+    expect(screen.getByText("Ringkasan dan sinyal cepat")).toBeInTheDocument();
+    expect(screen.getByText("Hint tiket yang mirip")).toBeInTheDocument();
+    expect(screen.getByText("Mulai dari respons yang sudah dirapikan sistem")).toBeInTheDocument();
+    expect(screen.getByText("Sinkronisasi dashboard gagal")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(getTicketMock).toHaveBeenCalledWith("TCK-3001");
