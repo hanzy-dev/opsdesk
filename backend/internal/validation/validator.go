@@ -29,6 +29,14 @@ func (v *Validator) ValidateCreateTicketRequest(input dto.CreateTicketRequest) [
 		errs = append(errs, dto.FieldError{Field: "priority", Message: "priority must be one of: low, medium, high"})
 	}
 
+	if !isValidCategory(input.Category) {
+		errs = append(errs, dto.FieldError{Field: "category", Message: "category must be one of: account_access, network, hardware, application_bug, service_request, other"})
+	}
+
+	if !isValidTeam(input.Team) {
+		errs = append(errs, dto.FieldError{Field: "team", Message: "team must be one of: helpdesk, infrastructure, applications, operations"})
+	}
+
 	if strings.TrimSpace(input.ReporterName) == "" {
 		errs = append(errs, dto.FieldError{Field: "reporterName", Message: "reporterName is required"})
 	}
@@ -59,6 +67,10 @@ func (v *Validator) ValidateAddCommentRequest(input dto.AddCommentRequest) []dto
 
 	if strings.TrimSpace(input.AuthorName) == "" {
 		errs = append(errs, dto.FieldError{Field: "authorName", Message: "authorName is required"})
+	}
+
+	if strings.TrimSpace(input.Visibility) != "" && !isValidCommentVisibility(input.Visibility) {
+		errs = append(errs, dto.FieldError{Field: "visibility", Message: "visibility must be one of: public, internal"})
 	}
 
 	return errs
@@ -113,6 +125,14 @@ func (v *Validator) ValidateListTicketsQuery(input dto.ListTicketsQuery) []dto.F
 
 	if input.Priority != "" && !isValidPriority(input.Priority) {
 		errs = append(errs, dto.FieldError{Field: "priority", Message: "priority must be one of: low, medium, high"})
+	}
+
+	if input.Category != "" && !isValidCategory(input.Category) {
+		errs = append(errs, dto.FieldError{Field: "category", Message: "category must be one of: account_access, network, hardware, application_bug, service_request, other"})
+	}
+
+	if input.Team != "" && !isValidTeam(input.Team) {
+		errs = append(errs, dto.FieldError{Field: "team", Message: "team must be one of: helpdesk, infrastructure, applications, operations"})
 	}
 
 	switch input.SortBy {
@@ -189,6 +209,33 @@ func isValidPriority(value string) bool {
 func isValidStatus(value string) bool {
 	switch domain.TicketStatus(value) {
 	case domain.TicketStatusOpen, domain.TicketStatusInProgress, domain.TicketStatusResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidCategory(value string) bool {
+	switch domain.TicketCategory(value) {
+	case domain.TicketCategoryAccountAccess, domain.TicketCategoryNetwork, domain.TicketCategoryHardware, domain.TicketCategoryApplicationBug, domain.TicketCategoryServiceRequest, domain.TicketCategoryOther:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidTeam(value string) bool {
+	switch domain.TicketTeam(value) {
+	case domain.TicketTeamHelpdesk, domain.TicketTeamInfrastructure, domain.TicketTeamApplications, domain.TicketTeamOperations:
+		return true
+	default:
+		return false
+	}
+}
+
+func isValidCommentVisibility(value string) bool {
+	switch domain.CommentVisibility(value) {
+	case domain.CommentVisibilityPublic, domain.CommentVisibilityInternal:
 		return true
 	default:
 		return false

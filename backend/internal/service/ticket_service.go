@@ -21,6 +21,8 @@ type CreateTicketInput struct {
 	Title          string
 	Description    string
 	Priority       domain.TicketPriority
+	Category       domain.TicketCategory
+	Team           domain.TicketTeam
 	CreatedBy      string
 	CreatedByName  string
 	CreatedByEmail string
@@ -34,6 +36,8 @@ type ListTicketsInput struct {
 	Query          string
 	Status         domain.TicketStatus
 	Priority       domain.TicketPriority
+	Category       domain.TicketCategory
+	Team           domain.TicketTeam
 	ReporterEmail  string
 	AssigneeID     string
 	UnassignedOnly bool
@@ -62,6 +66,7 @@ type UpdateTicketStatusInput struct {
 type AddCommentInput struct {
 	Message    string
 	AuthorName string
+	Visibility domain.CommentVisibility
 	ActorID    string
 	ActorName  string
 	ActorRole  string
@@ -121,6 +126,8 @@ func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInpu
 		Description:    strings.TrimSpace(input.Description),
 		Status:         domain.TicketStatusOpen,
 		Priority:       input.Priority,
+		Category:       input.Category,
+		Team:           input.Team,
 		CreatedBy:      strings.TrimSpace(input.CreatedBy),
 		CreatedByName:  strings.TrimSpace(input.CreatedByName),
 		CreatedByEmail: strings.TrimSpace(input.CreatedByEmail),
@@ -138,6 +145,8 @@ func (s *ticketService) CreateTicket(ctx context.Context, input CreateTicketInpu
 				map[string]string{
 					"priority": string(input.Priority),
 					"status":   string(domain.TicketStatusOpen),
+					"category": string(input.Category),
+					"team":     string(input.Team),
 				},
 				now,
 			),
@@ -159,6 +168,8 @@ func (s *ticketService) ListTickets(ctx context.Context, input ListTicketsInput)
 		Query:          strings.TrimSpace(input.Query),
 		Status:         input.Status,
 		Priority:       input.Priority,
+		Category:       input.Category,
+		Team:           input.Team,
 		ReporterEmail:  strings.TrimSpace(input.ReporterEmail),
 		AssigneeID:     strings.TrimSpace(input.AssigneeID),
 		UnassignedOnly: input.UnassignedOnly,
@@ -268,6 +279,8 @@ func (s *ticketService) AddComment(ctx context.Context, ticketID string, input A
 		TicketID:   ticketID,
 		Message:    strings.TrimSpace(input.Message),
 		AuthorName: strings.TrimSpace(input.AuthorName),
+		AuthorRole: strings.TrimSpace(input.ActorRole),
+		Visibility: input.Visibility,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 	}
@@ -280,9 +293,10 @@ func (s *ticketService) AddComment(ctx context.Context, ticketID string, input A
 		strings.TrimSpace(input.ActorName),
 		strings.TrimSpace(input.ActorRole),
 		domain.TicketActivityCommentAdded,
-		"Komentar ditambahkan",
+		commentSummary(input.Visibility),
 		map[string]string{
-			"commentId": comment.ID,
+			"commentId":         comment.ID,
+			"commentVisibility": string(input.Visibility),
 		},
 		now,
 	))
@@ -363,6 +377,14 @@ func (s *ticketService) newActivityEntry(
 		Metadata:  metadata,
 		Timestamp: timestamp,
 	}
+}
+
+func commentSummary(visibility domain.CommentVisibility) string {
+	if visibility == domain.CommentVisibilityInternal {
+		return "Catatan internal ditambahkan"
+	}
+
+	return "Komentar publik ditambahkan"
 }
 
 type idFactory struct {

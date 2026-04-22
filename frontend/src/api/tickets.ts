@@ -11,14 +11,18 @@ import type {
   RequestAttachmentUploadUrlInput,
   SaveAttachmentInput,
   Ticket,
+  TicketCategory,
   TicketActivity,
   TicketStatus,
+  TicketTeam,
 } from "../types/ticket";
 
 type ListTicketsOptions = {
   q?: string;
   status?: "all" | Ticket["status"];
   priority?: "all" | Ticket["priority"];
+  category?: "all" | TicketCategory;
+  team?: "all" | TicketTeam;
   assignee?: "all" | "me" | "unassigned";
   page?: number;
   pageSize?: number;
@@ -39,6 +43,14 @@ export function listTickets(options?: ListTicketsOptions) {
 
   if (options?.priority && options.priority !== "all") {
     query.set("priority", options.priority);
+  }
+
+  if (options?.category && options.category !== "all") {
+    query.set("category", options.category);
+  }
+
+  if (options?.team && options.team !== "all") {
+    query.set("team", options.team);
   }
 
   if (options?.assignee && options.assignee !== "all") {

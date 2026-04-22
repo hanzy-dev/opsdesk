@@ -143,6 +143,8 @@ describe("CreateTicketPage smoke tests", () => {
         title: "API timeout pada dashboard",
         description: "Dashboard gagal memuat data tiket selama jam sibuk.",
         priority: "medium",
+        category: "account_access",
+        team: "helpdesk",
         reporterName: "Aulia Rahman",
         reporterEmail: "aulia@example.com",
       });

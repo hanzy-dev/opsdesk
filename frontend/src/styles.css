@@ -939,6 +939,30 @@ textarea:focus-visible {
   color: var(--muted);
 }
 
+.table-tag {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(239, 142, 83, 0.16);
+  background:
+    linear-gradient(180deg, rgba(239, 142, 83, 0.14), rgba(239, 142, 83, 0.05)),
+    rgba(255, 255, 255, 0.03);
+  color: #ffd1b2;
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.table-tag--muted {
+  border-color: rgba(121, 184, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(121, 184, 255, 0.14), rgba(121, 184, 255, 0.05)),
+    rgba(255, 255, 255, 0.03);
+  color: #cfe7ff;
+}
+
 .ticket-table thead tr {
   background: rgba(255, 255, 255, 0.03);
 }
@@ -2254,6 +2278,74 @@ textarea:focus-visible {
   justify-content: space-between;
   gap: 16px;
   color: var(--muted);
+}
+
+.comment-card--internal {
+  border-color: rgba(121, 184, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(121, 184, 255, 0.08), rgba(121, 184, 255, 0.03)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.comment-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.comment-section-heading h4,
+.workload-strip__item strong,
+.workflow-hint-card strong {
+  margin: 0;
+}
+
+.comment-section-heading p,
+.workload-strip__item p,
+.workflow-hint-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.workflow-hint-card {
+  gap: 8px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(121, 184, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(121, 184, 255, 0.08), rgba(239, 142, 83, 0.04)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.workload-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workload-strip__item {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.workload-strip__item span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 900px) {
+  .workload-strip {
+    grid-template-columns: 1fr;
+  }
 }
 
 .login-page {

@@ -12,8 +12,8 @@ func TestValidateCreateTicketRequestRequiresFields(t *testing.T) {
 	validator := New()
 
 	errs := validator.ValidateCreateTicketRequest(dto.CreateTicketRequest{})
-	if len(errs) != 5 {
-		t.Fatalf("expected 5 validation errors, got %d", len(errs))
+	if len(errs) != 7 {
+		t.Fatalf("expected 7 validation errors, got %d", len(errs))
 	}
 }
 
@@ -26,6 +26,8 @@ func TestValidateCreateTicketRequestPassesForValidPayload(t *testing.T) {
 		Title:         "Ticket title",
 		Description:   "Ticket description",
 		Priority:      "medium",
+		Category:      "application_bug",
+		Team:          "applications",
 		ReporterName:  "OpsDesk User",
 		ReporterEmail: "user@example.com",
 	})
@@ -86,5 +88,20 @@ func TestValidateAddCommentRequestPassesForValidPayload(t *testing.T) {
 	})
 	if len(errs) != 0 {
 		t.Fatalf("expected no validation errors, got %d", len(errs))
+	}
+}
+
+func TestValidateAddCommentRequestRejectsInvalidVisibility(t *testing.T) {
+	t.Parallel()
+
+	validator := New()
+
+	errs := validator.ValidateAddCommentRequest(dto.AddCommentRequest{
+		Message:    "Issue acknowledged",
+		AuthorName: "Support Agent",
+		Visibility: "secret",
+	})
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 validation error, got %d", len(errs))
 	}
 }

@@ -55,6 +55,14 @@ func (r *TicketRepository) ListTickets(_ context.Context, filter repository.List
 			continue
 		}
 
+		if filter.Category != "" && ticket.Category != filter.Category {
+			continue
+		}
+
+		if filter.Team != "" && ticket.Team != filter.Team {
+			continue
+		}
+
 		if strings.TrimSpace(filter.ReporterEmail) != "" && !strings.EqualFold(ticket.ReporterEmail, strings.TrimSpace(filter.ReporterEmail)) {
 			continue
 		}
@@ -151,6 +159,8 @@ func matchesMemorySearchQuery(ticket domain.Ticket, query string) bool {
 		ticket.ID,
 		ticket.Title,
 		ticket.Description,
+		string(ticket.Category),
+		string(ticket.Team),
 		ticket.ReporterName,
 		ticket.ReporterEmail,
 		ticket.AssigneeName,

@@ -18,12 +18,41 @@ const (
 	TicketPriorityHigh   TicketPriority = "high"
 )
 
+type TicketCategory string
+
+const (
+	TicketCategoryAccountAccess  TicketCategory = "account_access"
+	TicketCategoryNetwork        TicketCategory = "network"
+	TicketCategoryHardware       TicketCategory = "hardware"
+	TicketCategoryApplicationBug TicketCategory = "application_bug"
+	TicketCategoryServiceRequest TicketCategory = "service_request"
+	TicketCategoryOther          TicketCategory = "other"
+)
+
+type TicketTeam string
+
+const (
+	TicketTeamHelpdesk      TicketTeam = "helpdesk"
+	TicketTeamInfrastructure TicketTeam = "infrastructure"
+	TicketTeamApplications   TicketTeam = "applications"
+	TicketTeamOperations     TicketTeam = "operations"
+)
+
+type CommentVisibility string
+
+const (
+	CommentVisibilityPublic   CommentVisibility = "public"
+	CommentVisibilityInternal CommentVisibility = "internal"
+)
+
 type Ticket struct {
 	ID             string
 	Title          string
 	Description    string
 	Status         TicketStatus
 	Priority       TicketPriority
+	Category       TicketCategory
+	Team           TicketTeam
 	CreatedBy      string
 	CreatedByName  string
 	CreatedByEmail string
@@ -45,6 +74,8 @@ type Comment struct {
 	TicketID   string
 	Message    string
 	AuthorName string
+	AuthorRole string
+	Visibility CommentVisibility
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

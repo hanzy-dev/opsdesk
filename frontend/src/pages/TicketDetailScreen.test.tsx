@@ -6,6 +6,7 @@ import { TicketDetailPage } from "./TicketDetailScreen";
 const addCommentMock = vi.fn();
 const getTicketMock = vi.fn();
 const getTicketActivitiesMock = vi.fn();
+const listTicketsMock = vi.fn();
 const listAssignableUsersMock = vi.fn();
 
 vi.mock("../api/tickets", () => ({
@@ -14,6 +15,7 @@ vi.mock("../api/tickets", () => ({
   getAttachmentDownloadUrl: vi.fn(),
   getTicket: (ticketId: string) => getTicketMock(ticketId),
   getTicketActivities: (ticketId: string) => getTicketActivitiesMock(ticketId),
+  listTickets: (...args: unknown[]) => listTicketsMock(...args),
   requestAttachmentUploadUrl: vi.fn(),
   saveAttachment: vi.fn(),
   updateTicketStatus: vi.fn(),
@@ -52,6 +54,7 @@ describe("TicketDetailScreen", () => {
     addCommentMock.mockReset();
     getTicketMock.mockReset();
     getTicketActivitiesMock.mockReset();
+    listTicketsMock.mockReset();
     listAssignableUsersMock.mockReset();
   });
 
@@ -62,6 +65,8 @@ describe("TicketDetailScreen", () => {
       description: "Pekerjaan sinkronisasi malam tidak memproses antrean baru.",
       status: "in_progress",
       priority: "high",
+      category: "application_bug",
+      team: "applications",
       createdBy: "admin-1",
       createdByName: "Admin OpsDesk",
       createdByEmail: "admin@example.com",
@@ -77,8 +82,20 @@ describe("TicketDetailScreen", () => {
           ticketId: "TCK-3001",
           message: "Investigasi awal sedang berjalan.",
           authorName: "Dina Petugas",
+          authorRole: "agent",
+          visibility: "public",
           createdAt: "2026-04-17T11:00:00Z",
           updatedAt: "2026-04-17T11:00:00Z",
+        },
+        {
+          id: "c-2",
+          ticketId: "TCK-3001",
+          message: "Perlu cek log worker sebelum update ke pelapor.",
+          authorName: "Budi Operator",
+          authorRole: "agent",
+          visibility: "internal",
+          createdAt: "2026-04-17T11:05:00Z",
+          updatedAt: "2026-04-17T11:05:00Z",
         },
       ],
       attachments: [
@@ -127,6 +144,34 @@ describe("TicketDetailScreen", () => {
         role: "agent",
       },
     ]);
+    listTicketsMock.mockResolvedValue({
+      items: [
+        {
+          id: "TCK-3001",
+          title: "Sinkronisasi data gagal",
+          description: "Pekerjaan sinkronisasi malam tidak memproses antrean baru.",
+          status: "in_progress",
+          priority: "high",
+          category: "application_bug",
+          team: "applications",
+          reporterName: "Rina Pratama",
+          reporterEmail: "rina@example.com",
+          assigneeId: "agent-123",
+          assigneeName: "Dina Petugas",
+          comments: [],
+          attachments: [],
+          createdAt: "2026-04-17T09:00:00Z",
+          updatedAt: "2026-04-17T11:15:00Z",
+        },
+      ],
+      pagination: {
+        page: 1,
+        page_size: 100,
+        total_items: 1,
+        total_pages: 1,
+        has_next: false,
+      },
+    });
 
     render(
       <MemoryRouter initialEntries={["/tickets/TCK-3001"]}>
@@ -138,17 +183,23 @@ describe("TicketDetailScreen", () => {
 
     expect(await screen.findByText("Sinkronisasi data gagal")).toBeInTheDocument();
     expect(screen.getAllByText("Prioritas Tinggi")).toHaveLength(2);
+    expect(screen.getAllByText("Bug aplikasi").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Aplikasi").length).toBeGreaterThan(0);
     expect(screen.getByText("Tindakan yang tersedia")).toBeInTheDocument();
     expect(screen.getByText("Timeline aktivitas tiket")).toBeInTheDocument();
-    expect(await screen.findByText("Ubah penanggung jawab")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Ubah penanggung jawab" }));
+    expect(await screen.findByText("Pilih penanggung jawab")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Pilih penanggung jawab" }));
     expect(screen.getByRole("option", { name: /Budi Operator/ })).toBeInTheDocument();
     expect(screen.getByDisplayValue("Dina Petugas")).toHaveAttribute("readonly");
-    expect(screen.getByText("Dikirim sebagai Dina Petugas (Petugas)")).toBeInTheDocument();
+    expect(screen.getAllByText("Komentar publik").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Catatan internal").length).toBeGreaterThan(0);
+    expect(screen.getByText("Perlu cek log worker sebelum update ke pelapor.")).toBeInTheDocument();
+    expect(screen.getByText(/Dikirim sebagai Dina Petugas \(Petugas\) • Komentar publik/)).toBeInTheDocument();
 
     await waitFor(() => {
       expect(getTicketMock).toHaveBeenCalledWith("TCK-3001");
       expect(getTicketActivitiesMock).toHaveBeenCalledWith("TCK-3001");
+      expect(listTicketsMock).toHaveBeenCalled();
       expect(listAssignableUsersMock).toHaveBeenCalled();
     });
   });
@@ -160,6 +211,8 @@ describe("TicketDetailScreen", () => {
       description: "Pengujian validasi komentar kosong.",
       status: "open",
       priority: "medium",
+      category: "service_request",
+      team: "operations",
       reporterName: "Rina Pratama",
       reporterEmail: "rina@example.com",
       comments: [],
@@ -169,6 +222,10 @@ describe("TicketDetailScreen", () => {
     });
     getTicketActivitiesMock.mockResolvedValue([]);
     listAssignableUsersMock.mockResolvedValue([]);
+    listTicketsMock.mockResolvedValue({
+      items: [],
+      pagination: { page: 1, page_size: 100, total_items: 0, total_pages: 0, has_next: false },
+    });
 
     render(
       <MemoryRouter initialEntries={["/tickets/TCK-3002"]}>
@@ -183,7 +240,7 @@ describe("TicketDetailScreen", () => {
     fireEvent.change(screen.getByLabelText("Isi komentar"), {
       target: { value: "   " },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Tambah Komentar" }));
+    fireEvent.click(screen.getByRole("button", { name: "Tambah Komentar Publik" }));
 
     expect(await screen.findByText("Isi komentar wajib diisi sebelum dikirim.")).toBeInTheDocument();
     expect(addCommentMock).not.toHaveBeenCalled();

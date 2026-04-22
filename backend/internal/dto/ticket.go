@@ -4,6 +4,8 @@ type CreateTicketRequest struct {
 	Title         string `json:"title"`
 	Description   string `json:"description"`
 	Priority      string `json:"priority"`
+	Category      string `json:"category"`
+	Team          string `json:"team"`
 	ReporterName  string `json:"reporterName"`
 	ReporterEmail string `json:"reporterEmail"`
 }
@@ -12,6 +14,8 @@ type ListTicketsQuery struct {
 	Q            string
 	Status       string
 	Priority     string
+	Category     string
+	Team         string
 	Assignee     string
 	Page         int
 	PageSize     int
@@ -27,6 +31,7 @@ type UpdateTicketStatusRequest struct {
 type AddCommentRequest struct {
 	Message    string `json:"message"`
 	AuthorName string `json:"authorName"`
+	Visibility string `json:"visibility"`
 }
 
 type AssignTicketRequest struct {
@@ -86,6 +91,8 @@ type TicketResponse struct {
 	Description    string               `json:"description"`
 	Status         string               `json:"status"`
 	Priority       string               `json:"priority"`
+	Category       string               `json:"category"`
+	Team           string               `json:"team"`
 	CreatedBy      string               `json:"createdBy,omitempty"`
 	CreatedByName  string               `json:"createdByName,omitempty"`
 	CreatedByEmail string               `json:"createdByEmail,omitempty"`
@@ -119,6 +126,8 @@ type CommentResponse struct {
 	TicketID   string `json:"ticketId"`
 	Message    string `json:"message"`
 	AuthorName string `json:"authorName"`
+	AuthorRole string `json:"authorRole,omitempty"`
+	Visibility string `json:"visibility"`
 	CreatedAt  string `json:"createdAt"`
 	UpdatedAt  string `json:"updatedAt"`
 }

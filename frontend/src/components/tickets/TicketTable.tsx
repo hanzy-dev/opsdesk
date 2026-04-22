@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { AppIcon } from "../common/AppIcon";
 import type { Ticket } from "../../types/ticket";
 import { formatDateTime } from "../../utils/date";
+import { getPriorityLabel, getTicketCategoryLabel, getTicketTeamLabel } from "../../utils/ticketMetadata";
 import { StatusBadge } from "./StatusBadge";
 
 type TicketTableProps = {
@@ -37,6 +38,8 @@ export function TicketTable({
             <tr>
               <th>ID</th>
               <th>Judul</th>
+              <th>Kategori</th>
+              <th>Area</th>
               <th>Status</th>
               <th>Prioritas</th>
               <th>Pelapor</th>
@@ -58,13 +61,19 @@ export function TicketTable({
                     <strong>{ticket.title}</strong>
                   </div>
                 </td>
+                <td className="ticket-table__meta-cell">
+                  <span className="table-tag">{getTicketCategoryLabel(ticket.category)}</span>
+                </td>
+                <td className="ticket-table__meta-cell">
+                  <span className="table-tag table-tag--muted">{getTicketTeamLabel(ticket.team)}</span>
+                </td>
                 <td>
                   <StatusBadge status={ticket.status} />
                 </td>
                 <td>
                   <span className={`priority-pill priority-pill--${ticket.priority}`}>
                     <AppIcon name="dashboard" size="sm" />
-                    <span>{formatPriority(ticket.priority)}</span>
+                    <span>{getPriorityLabel(ticket.priority)}</span>
                   </span>
                 </td>
                 <td className="ticket-table__meta-cell">{ticket.reporterName}</td>
@@ -77,15 +86,4 @@ export function TicketTable({
       </div>
     </div>
   );
-}
-
-function formatPriority(priority: Ticket["priority"]) {
-  switch (priority) {
-    case "high":
-      return "Tinggi";
-    case "medium":
-      return "Sedang";
-    default:
-      return "Rendah";
-  }
 }

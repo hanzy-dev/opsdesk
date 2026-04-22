@@ -7,6 +7,7 @@ import {
   getAttachmentDownloadUrl,
   getTicket,
   getTicketActivities,
+  listTickets,
   requestAttachmentUploadUrl,
   saveAttachment,
   updateTicketStatus,
@@ -22,9 +23,16 @@ import { StatusBadge } from "../components/tickets/StatusBadge";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
 import type { AssignableUser } from "../types/profile";
-import type { Attachment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
+import type { Attachment, Comment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
+import {
+  commentVisibilityOptions,
+  getCommentVisibilityLabel,
+  getPriorityLabel,
+  getTicketCategoryLabel,
+  getTicketTeamLabel,
+} from "../utils/ticketMetadata";
 
 const allowedAttachmentTypes = [
   "application/pdf",
@@ -74,6 +82,8 @@ export function TicketDetailPage() {
   const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
   const [downloadingAttachmentId, setDownloadingAttachmentId] = useState<string | null>(null);
   const [assignableUsers, setAssignableUsers] = useState<AssignableUser[]>([]);
+  const [workloadTickets, setWorkloadTickets] = useState<Ticket[]>([]);
+  const [isLoadingWorkload, setIsLoadingWorkload] = useState(false);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState("");
 
   const currentIdentity = profile
@@ -87,9 +97,10 @@ export function TicketDetailPage() {
         }
       : null;
 
-  const [commentForm, setCommentForm] = useState({
+  const [commentForm, setCommentForm] = useState<{ authorName: string; message: string; visibility: "public" | "internal" }>({
     authorName: currentIdentity?.displayName ?? "",
     message: "",
+    visibility: "public",
   });
 
   useEffect(() => {
@@ -98,6 +109,27 @@ export function TicketDetailPage() {
       authorName: currentIdentity?.displayName ?? current.authorName,
     }));
   }, [currentIdentity?.displayName]);
+
+  async function loadWorkloadSnapshot() {
+    if (!permissions.canAssignTickets) {
+      return;
+    }
+
+    setIsLoadingWorkload(true);
+    try {
+      const data = await listTickets({
+        page: 1,
+        pageSize: 100,
+        sortBy: "updated_at",
+        sortOrder: "desc",
+      });
+      setWorkloadTickets(data.items);
+    } catch {
+      setWorkloadTickets([]);
+    } finally {
+      setIsLoadingWorkload(false);
+    }
+  }
 
   async function loadTicket(options?: { preserveView?: boolean }) {
     if (!options?.preserveView) {
@@ -166,6 +198,15 @@ export function TicketDetailPage() {
     };
   }, [permissions.canAssignTickets]);
 
+  useEffect(() => {
+    if (!permissions.canAssignTickets) {
+      setWorkloadTickets([]);
+      return;
+    }
+
+    void loadWorkloadSnapshot();
+  }, [permissions.canAssignTickets]);
+
   const actionItems = useMemo(
     () => [
       {
@@ -175,7 +216,7 @@ export function TicketDetailPage() {
             ? "Tiket ini sudah berada dalam tanggung jawab Anda."
             : ticket?.assigneeName
               ? `Saat ini tiket ditangani oleh ${ticket.assigneeName}.`
-              : "Tiket ini belum memiliki petugas yang bertanggung jawab."
+              : "Tiket ini sudah masuk antrean, tetapi belum memiliki petugas yang bertanggung jawab."
           : "Penugasan tiket hanya tersedia untuk petugas atau admin.",
         canAct: permissions.canAssignTickets,
       },
@@ -193,6 +234,36 @@ export function TicketDetailPage() {
       },
     ],
     [permissions.canAssignTickets, permissions.canUpdateTicketStatus, session?.subject, ticket?.assigneeId, ticket?.assigneeName],
+  );
+
+  const publicComments = useMemo(
+    () => ticket?.comments.filter((comment) => comment.visibility !== "internal") ?? [],
+    [ticket?.comments],
+  );
+
+  const internalComments = useMemo(
+    () => ticket?.comments.filter((comment) => comment.visibility === "internal") ?? [],
+    [ticket?.comments],
+  );
+
+  const activeWorkloadTickets = useMemo(
+    () => workloadTickets.filter((workloadTicket) => workloadTicket.status !== "resolved"),
+    [workloadTickets],
+  );
+
+  const currentAssigneeLoad = useMemo(
+    () => activeWorkloadTickets.filter((workloadTicket) => workloadTicket.assigneeId === ticket?.assigneeId).length,
+    [activeWorkloadTickets, ticket?.assigneeId],
+  );
+
+  const selectedAssigneeLoad = useMemo(
+    () => activeWorkloadTickets.filter((workloadTicket) => workloadTicket.assigneeId === selectedAssigneeId).length,
+    [activeWorkloadTickets, selectedAssigneeId],
+  );
+
+  const teamActiveLoad = useMemo(
+    () => activeWorkloadTickets.filter((workloadTicket) => workloadTicket.team === ticket?.team).length,
+    [activeWorkloadTickets, ticket?.team],
   );
 
   const assigneeOptions = useMemo(() => {
@@ -230,6 +301,7 @@ export function TicketDetailPage() {
         tone: "success",
       });
       await loadTicket({ preserveView: true });
+      await loadWorkloadSnapshot();
     } catch (error) {
       const message = getErrorMessage(error, "Status belum berhasil diperbarui.");
       setStatusError(message);
@@ -271,12 +343,23 @@ export function TicketDetailPage() {
         ...commentForm,
         message: normalizedCommentMessage,
       });
-      setCommentForm({ message: "", authorName: currentIdentity?.displayName ?? "" });
+      setCommentForm({
+        message: "",
+        authorName: currentIdentity?.displayName ?? "",
+        visibility: "public",
+      });
       await loadTicket({ preserveView: true });
-      setCommentMessage("Komentar baru berhasil ditambahkan ke tiket.");
+      setCommentMessage(
+        commentForm.visibility === "internal"
+          ? "Catatan internal berhasil ditambahkan ke tiket."
+          : "Komentar baru berhasil ditambahkan ke tiket.",
+      );
       showToast({
-        title: "Komentar berhasil ditambahkan",
-        description: "Catatan terbaru sudah masuk ke riwayat tiket.",
+        title: commentForm.visibility === "internal" ? "Catatan internal berhasil ditambahkan" : "Komentar berhasil ditambahkan",
+        description:
+          commentForm.visibility === "internal"
+            ? "Catatan internal terbaru sudah masuk ke riwayat tiket operasional."
+            : "Catatan terbaru sudah masuk ke riwayat tiket.",
         tone: "success",
       });
     } catch (error) {
@@ -320,6 +403,7 @@ export function TicketDetailPage() {
         tone: "success",
       });
       await loadTicket({ preserveView: true });
+      await loadWorkloadSnapshot();
     } catch (error) {
       const message = getErrorMessage(error, "Penugasan tiket belum berhasil.");
       setAssignmentError(message);
@@ -477,7 +561,9 @@ export function TicketDetailPage() {
           </div>
           <div className="ticket-summary__badges">
             <StatusBadge status={ticket.status} />
-            <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriorityLabel(ticket.priority)}</span>
+            <span className={`priority-pill priority-pill--${ticket.priority}`}>{getPriorityLabel(ticket.priority)}</span>
+            <span className="table-tag">{getTicketCategoryLabel(ticket.category)}</span>
+            <span className="table-tag table-tag--muted">{getTicketTeamLabel(ticket.team)}</span>
           </div>
         </div>
 
@@ -495,6 +581,11 @@ export function TicketDetailPage() {
             <strong>{ticket.assigneeName || "Belum ditugaskan"}</strong>
             <p>{ticket.assignedAt ? `Ditugaskan ${formatDateTime(ticket.assignedAt)}` : "Belum ada petugas yang mengambil tiket ini."}</p>
             {ticket.assigneeId ? <small>{ticket.assigneeId}</small> : null}
+          </article>
+          <article className="ticket-overview-card">
+            <span>Kategori & area</span>
+            <strong>{getTicketCategoryLabel(ticket.category)}</strong>
+            <p>{getTicketTeamLabel(ticket.team)}</p>
           </article>
           <article className="ticket-overview-card">
             <span>Dibuat oleh sistem</span>
@@ -528,7 +619,15 @@ export function TicketDetailPage() {
               </div>
               <div>
                 <dt>Prioritas</dt>
-                <dd>{formatPriorityLabel(ticket.priority)}</dd>
+                <dd>{getPriorityLabel(ticket.priority)}</dd>
+              </div>
+              <div>
+                <dt>Kategori</dt>
+                <dd>{getTicketCategoryLabel(ticket.category)}</dd>
+              </div>
+              <div>
+                <dt>Area tujuan</dt>
+                <dd>{getTicketTeamLabel(ticket.team)}</dd>
               </div>
               <div>
                 <dt>Pelapor</dt>
@@ -613,24 +712,51 @@ export function TicketDetailPage() {
           <article className="panel panel--section stack-md">
             <div>
               <p className="section-eyebrow">Kolaborasi</p>
-              <h3>Komentar dan catatan kerja</h3>
+              <h3>Komunikasi tiket</h3>
+              <p className="form-hint">Komentar publik dapat dilihat pelapor, sedangkan catatan internal hanya untuk petugas dan admin.</p>
             </div>
 
-            {ticket.comments.length === 0 ? (
-              <EmptyState title="Belum ada komentar" description="Tambahkan komentar pertama untuk mencatat progres penanganan." />
-            ) : (
-              <div className="stack-md">
-                {ticket.comments.map((comment) => (
-                  <article className="comment-card comment-card--rich" key={comment.id}>
-                    <div className="comment-card__header">
-                      <strong>{comment.authorName}</strong>
-                      <span>{formatDateTime(comment.createdAt)}</span>
-                    </div>
-                    <p>{comment.message}</p>
-                  </article>
-                ))}
+            {ticket.comments.length === 0 ? <EmptyState title="Belum ada komentar" description="Tambahkan komentar pertama untuk mencatat progres penanganan." /> : null}
+
+            <div className="stack-md">
+              <div className="comment-section-heading">
+                <div>
+                  <h4>Komentar publik</h4>
+                  <p>Terlihat oleh pelapor dan tim operasional.</p>
+                </div>
+                <span className="table-tag">{publicComments.length} entri</span>
               </div>
-            )}
+              {publicComments.length === 0 ? (
+                <EmptyState title="Belum ada komentar publik" description="Gunakan komentar publik untuk menyampaikan progres yang perlu dilihat pelapor." />
+              ) : (
+                <div className="stack-md">
+                  {publicComments.map((comment) => (
+                    <CommentCard comment={comment} key={comment.id} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {permissions.canViewOperationalTickets ? (
+              <div className="stack-md">
+                <div className="comment-section-heading">
+                  <div>
+                    <h4>Catatan internal</h4>
+                    <p>Hanya terlihat oleh petugas dan admin untuk koordinasi penanganan.</p>
+                  </div>
+                  <span className="table-tag table-tag--muted">{internalComments.length} entri</span>
+                </div>
+                {internalComments.length === 0 ? (
+                  <EmptyState title="Belum ada catatan internal" description="Gunakan catatan internal untuk konteks investigasi yang tidak perlu tampil ke pelapor." />
+                ) : (
+                  <div className="stack-md">
+                    {internalComments.map((comment) => (
+                      <CommentCard comment={comment} key={comment.id} tone="internal" />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </article>
 
           <article className="panel panel--section stack-md">
@@ -687,8 +813,8 @@ export function TicketDetailPage() {
           </article>
 
           <article className="panel panel--section">
-            <p className="section-eyebrow">Penugasan</p>
-            <h3>Tanggung jawab tiket</h3>
+            <p className="section-eyebrow">Routing & penugasan</p>
+            <h3>Tanggung jawab operasional</h3>
             {permissions.canAssignTickets ? (
               <div className="stack-md">
                 <div className="assignment-card">
@@ -696,7 +822,7 @@ export function TicketDetailPage() {
                     <div>
                       <span className="field-label">Penanggung jawab saat ini</span>
                       <strong>{ticket.assigneeName || "Belum ditugaskan"}</strong>
-                      <p>{ticket.assigneeId === session?.subject ? "Tiket ini sedang berada dalam antrean kerja Anda." : ticket.assigneeName ? "Petugas yang dipilih saat ini bertanggung jawab atas tindak lanjut tiket." : "Pilih petugas agar kepemilikan penanganan lebih jelas."}</p>
+                      <p>{ticket.assigneeId === session?.subject ? "Tiket ini sedang berada dalam antrean kerja Anda." : ticket.assigneeName ? "Petugas yang dipilih saat ini bertanggung jawab atas tindak lanjut tiket." : "Tiket sudah masuk ke area tujuan dan menunggu triase atau pengambilan oleh petugas."}</p>
                       {ticket.assigneeId ? <small>{ticket.assigneeId}</small> : null}
                     </div>
                     <UserAvatar
@@ -707,9 +833,9 @@ export function TicketDetailPage() {
                   </div>
 
                   <label className="field" htmlFor="ticket-assignee-select">
-                    <span>Ubah penanggung jawab</span>
+                    <span>Pilih penanggung jawab</span>
                     <SelectControl
-                      ariaLabel="Ubah penanggung jawab"
+                      ariaLabel="Pilih penanggung jawab"
                       disabled={isSavingAssignment || isLoadingAssignableUsers}
                       id="ticket-assignee-select"
                       onChange={setSelectedAssigneeId}
@@ -722,6 +848,35 @@ export function TicketDetailPage() {
                         : "Hanya petugas dan admin yang tersedia untuk penugasan."}
                     </small>
                   </label>
+                </div>
+                <div className="workload-strip">
+                  <article className="workload-strip__item">
+                    <span>Area tujuan</span>
+                    <strong>{getTicketTeamLabel(ticket.team)}</strong>
+                    <p>
+                      {isLoadingWorkload ? "Memuat beban area..." : `${teamActiveLoad} tiket aktif saat ini di area ini.`}
+                    </p>
+                  </article>
+                  <article className="workload-strip__item">
+                    <span>Petugas saat ini</span>
+                    <strong>{ticket.assigneeName || "Belum ditugaskan"}</strong>
+                    <p>
+                      {ticket.assigneeId
+                        ? `${currentAssigneeLoad} tiket aktif saat ini pada antrean petugas ini.`
+                        : "Belum ada antrean personal karena tiket belum ditugaskan."}
+                    </p>
+                  </article>
+                  <article className="workload-strip__item">
+                    <span>Pilihan penugasan</span>
+                    <strong>
+                      {assigneeOptions.find((option) => option.value === selectedAssigneeId)?.label || "Belum dipilih"}
+                    </strong>
+                    <p>
+                      {selectedAssigneeId
+                        ? `${selectedAssigneeLoad} tiket aktif pada antrean petugas terpilih.`
+                        : "Pilih petugas untuk melihat gambaran beban kerjanya."}
+                    </p>
+                  </article>
                 </div>
                 {assignmentError ? <p className="form-error">{assignmentError}</p> : null}
                 {assignmentErrorReferenceId ? <p className="form-hint">Kode referensi: {assignmentErrorReferenceId}</p> : null}
@@ -741,8 +896,8 @@ export function TicketDetailPage() {
                   {isSavingAssignment
                     ? "Menyimpan penugasan..."
                     : selectedAssigneeId === session?.subject
-                      ? "Tugaskan ke Saya"
-                      : "Simpan Penugasan"}
+                      ? "Ambil ke Antrean Saya"
+                      : "Simpan Penanggung Jawab"}
                 </button>
               </div>
             ) : (
@@ -809,32 +964,58 @@ export function TicketDetailPage() {
 
           <article className="panel panel--section">
             <p className="section-eyebrow">Tambah catatan</p>
-            <h3>Tulis komentar baru</h3>
+            <h3>Tulis pembaruan tiket</h3>
             <form className="stack-md" onSubmit={handleCommentSubmit}>
               <label className="field">
                 <span>Penulis komentar</span>
                 <input readOnly value={commentForm.authorName} />
                 <small>Nama penulis diambil dari identitas akun yang sedang masuk.</small>
               </label>
+              {permissions.canViewOperationalTickets ? (
+                <label className="field">
+                  <span>Jenis catatan</span>
+                  <SelectControl
+                    ariaLabel="Jenis catatan"
+                    onChange={(visibility) => setCommentForm((current) => ({ ...current, visibility }))}
+                    options={commentVisibilityOptions}
+                    value={commentForm.visibility}
+                  />
+                  <small>
+                    {commentForm.visibility === "internal"
+                      ? "Catatan ini hanya terlihat oleh petugas dan admin."
+                      : "Komentar ini akan terlihat oleh pelapor dan tim operasional."}
+                  </small>
+                </label>
+              ) : null}
               <label className="field">
                 <span>Isi komentar</span>
                 <textarea
                   value={commentForm.message}
                   onChange={(event) => setCommentForm((current) => ({ ...current, message: event.target.value }))}
-                  placeholder="Tuliskan pembaruan penanganan."
+                  placeholder={
+                    commentForm.visibility === "internal"
+                      ? "Tuliskan catatan internal untuk koordinasi petugas."
+                      : "Tuliskan pembaruan penanganan yang relevan untuk pelapor."
+                  }
                   rows={5}
                 />
               </label>
               {currentIdentity ? (
                 <p className="form-hint">
-                  Dikirim sebagai {currentIdentity.displayName} ({getRoleLabel(currentIdentity.role)})
+                  Dikirim sebagai {currentIdentity.displayName} ({getRoleLabel(currentIdentity.role)}) • {getCommentVisibilityLabel(commentForm.visibility)}
                 </p>
               ) : null}
               {commentError ? <p className="form-error">{commentError}</p> : null}
               {commentErrorReferenceId ? <p className="form-hint">Kode referensi: {commentErrorReferenceId}</p> : null}
               {commentMessage ? <p className="form-success">{commentMessage}</p> : null}
               <button aria-busy={isSavingComment} className="button button--primary" disabled={isSavingComment} type="submit">
-                {isSavingComment ? "Mengirim komentar..." : "Tambah Komentar"}
+                {isSavingComment
+                  ? commentForm.visibility === "internal"
+                    ? "Menyimpan catatan internal..."
+                    : "Mengirim komentar..."
+                  : commentForm.visibility === "internal"
+                    ? "Simpan Catatan Internal"
+                    : "Tambah Komentar Publik"}
               </button>
             </form>
           </article>
@@ -873,6 +1054,10 @@ function renderActivityMetadata(activity: TicketActivity) {
     return <p>{activity.metadata.afterAssigneeName || "Petugas belum ditentukan"}</p>;
   }
 
+  if (activity.action === "comment_added") {
+    return <p>{getCommentVisibilityLabel(activity.metadata.commentVisibility)}</p>;
+  }
+
   if (activity.action === "attachment_added") {
     return <p>{activity.metadata.fileName || "Lampiran baru"}</p>;
   }
@@ -893,19 +1078,6 @@ function formatStatusLabel(status?: string) {
   }
 }
 
-function formatPriorityLabel(priority?: string) {
-  switch (priority) {
-    case "high":
-      return "Prioritas Tinggi";
-    case "medium":
-      return "Prioritas Sedang";
-    case "low":
-      return "Prioritas Rendah";
-    default:
-      return "Prioritas Tidak Diketahui";
-  }
-}
-
 function formatFileSize(sizeBytes: number) {
   if (sizeBytes >= 1024 * 1024) {
     return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -916,4 +1088,20 @@ function formatFileSize(sizeBytes: number) {
   }
 
   return `${sizeBytes} B`;
+}
+
+function CommentCard({ comment, tone = "public" }: { comment: Comment; tone?: "public" | "internal" }) {
+  return (
+    <article className={`comment-card comment-card--rich ${tone === "internal" ? "comment-card--internal" : ""}`}>
+      <div className="comment-card__header">
+        <strong>{comment.authorName}</strong>
+        <span>{formatDateTime(comment.createdAt)}</span>
+      </div>
+      <div className="meta-inline">
+        <span>{getCommentVisibilityLabel(comment.visibility)}</span>
+        {comment.authorRole ? <span>{getRoleLabel(comment.authorRole)}</span> : null}
+      </div>
+      <p>{comment.message}</p>
+    </article>
+  );
 }

@@ -1,11 +1,22 @@
 export type TicketStatus = "open" | "in_progress" | "resolved";
 export type TicketPriority = "low" | "medium" | "high";
+export type TicketCategory =
+  | "account_access"
+  | "network"
+  | "hardware"
+  | "application_bug"
+  | "service_request"
+  | "other";
+export type TicketTeam = "helpdesk" | "infrastructure" | "applications" | "operations";
+export type CommentVisibility = "public" | "internal";
 
 export type Comment = {
   id: string;
   ticketId: string;
   message: string;
   authorName: string;
+  authorRole?: "reporter" | "agent" | "admin";
+  visibility: CommentVisibility;
   createdAt: string;
   updatedAt: string;
 };
@@ -40,6 +51,8 @@ export type Ticket = {
   description: string;
   status: TicketStatus;
   priority: TicketPriority;
+  category: TicketCategory;
+  team: TicketTeam;
   createdBy?: string;
   createdByName?: string;
   createdByEmail?: string;
@@ -59,6 +72,8 @@ export type CreateTicketInput = {
   title: string;
   description: string;
   priority: TicketPriority;
+  category: TicketCategory;
+  team: TicketTeam;
   reporterName: string;
   reporterEmail: string;
 };
@@ -66,6 +81,7 @@ export type CreateTicketInput = {
 export type NewCommentInput = {
   message: string;
   authorName: string;
+  visibility?: CommentVisibility;
 };
 
 export type AssignTicketInput = {

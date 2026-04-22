@@ -34,6 +34,8 @@ type ticketItem struct {
 	Description    string           `dynamodbav:"description"`
 	Status         string           `dynamodbav:"status"`
 	Priority       string           `dynamodbav:"priority"`
+	Category       string           `dynamodbav:"category"`
+	Team           string           `dynamodbav:"team"`
 	CreatedBy      string           `dynamodbav:"createdBy"`
 	CreatedByName  string           `dynamodbav:"createdByName"`
 	CreatedByEmail string           `dynamodbav:"createdByEmail"`
@@ -55,6 +57,8 @@ type commentItem struct {
 	TicketID   string `dynamodbav:"ticketId"`
 	Message    string `dynamodbav:"message"`
 	AuthorName string `dynamodbav:"authorName"`
+	AuthorRole string `dynamodbav:"authorRole"`
+	Visibility string `dynamodbav:"visibility"`
 	CreatedAt  string `dynamodbav:"createdAt"`
 	UpdatedAt  string `dynamodbav:"updatedAt"`
 }
@@ -138,6 +142,18 @@ func (r *TicketRepository) ListTickets(ctx context.Context, filter repository.Li
 		filterExpressions = append(filterExpressions, "#priority = :priority")
 		expressionNames["#priority"] = "priority"
 		expressionValues[":priority"] = &types.AttributeValueMemberS{Value: string(filter.Priority)}
+	}
+
+	if filter.Category != "" {
+		filterExpressions = append(filterExpressions, "#category = :category")
+		expressionNames["#category"] = "category"
+		expressionValues[":category"] = &types.AttributeValueMemberS{Value: string(filter.Category)}
+	}
+
+	if filter.Team != "" {
+		filterExpressions = append(filterExpressions, "#team = :team")
+		expressionNames["#team"] = "team"
+		expressionValues[":team"] = &types.AttributeValueMemberS{Value: string(filter.Team)}
 	}
 
 	if strings.TrimSpace(filter.ReporterEmail) != "" {
@@ -247,6 +263,8 @@ func toTicketItem(ticket domain.Ticket) ticketItem {
 			TicketID:   comment.TicketID,
 			Message:    comment.Message,
 			AuthorName: comment.AuthorName,
+			AuthorRole: comment.AuthorRole,
+			Visibility: string(comment.Visibility),
 			CreatedAt:  domain.FormatTimestamp(comment.CreatedAt),
 			UpdatedAt:  domain.FormatTimestamp(comment.UpdatedAt),
 		})
@@ -289,6 +307,8 @@ func toTicketItem(ticket domain.Ticket) ticketItem {
 		Description:    ticket.Description,
 		Status:         string(ticket.Status),
 		Priority:       string(ticket.Priority),
+		Category:       string(ticket.Category),
+		Team:           string(ticket.Team),
 		CreatedBy:      ticket.CreatedBy,
 		CreatedByName:  ticket.CreatedByName,
 		CreatedByEmail: ticket.CreatedByEmail,
@@ -339,6 +359,8 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 			TicketID:   comment.TicketID,
 			Message:    comment.Message,
 			AuthorName: comment.AuthorName,
+			AuthorRole: comment.AuthorRole,
+			Visibility: domain.CommentVisibility(comment.Visibility),
 			CreatedAt:  createdAt,
 			UpdatedAt:  updatedAt,
 		})
@@ -391,6 +413,8 @@ func toDomainTicket(item ticketItem) (domain.Ticket, error) {
 		Description:    item.Description,
 		Status:         domain.TicketStatus(item.Status),
 		Priority:       domain.TicketPriority(item.Priority),
+		Category:       domain.TicketCategory(item.Category),
+		Team:           domain.TicketTeam(item.Team),
 		CreatedBy:      item.CreatedBy,
 		CreatedByName:  item.CreatedByName,
 		CreatedByEmail: item.CreatedByEmail,
@@ -476,6 +500,8 @@ func matchesSearchQuery(ticket domain.Ticket, query string) bool {
 		ticket.ID,
 		ticket.Title,
 		ticket.Description,
+		string(ticket.Category),
+		string(ticket.Team),
 		ticket.ReporterName,
 		ticket.ReporterEmail,
 		ticket.AssigneeName,

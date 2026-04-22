@@ -13,6 +13,8 @@ type ListTicketsFilter struct {
 	Query          string
 	Status         domain.TicketStatus
 	Priority       domain.TicketPriority
+	Category       domain.TicketCategory
+	Team           domain.TicketTeam
 	ReporterEmail  string
 	AssigneeID     string
 	UnassignedOnly bool

@@ -350,6 +350,8 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 		Title:          strings.TrimSpace(payload.Title),
 		Description:    strings.TrimSpace(payload.Description),
 		Priority:       domain.TicketPriority(payload.Priority),
+		Category:       domain.TicketCategory(payload.Category),
+		Team:           domain.TicketTeam(payload.Team),
 		CreatedBy:      identity.Subject,
 		CreatedByName:  currentProfile.DisplayName,
 		CreatedByEmail: identity.Email,
@@ -371,7 +373,7 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 	)
 
 	writeJSON(w, http.StatusCreated, dto.SuccessResponse[dto.TicketResponse]{
-		Data: toTicketResponse(ticket),
+		Data: toTicketResponse(ticket, canViewInternalComments(identity)),
 	})
 }
 
@@ -399,6 +401,8 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 		Query:          query.Q,
 		Status:         domain.TicketStatus(query.Status),
 		Priority:       domain.TicketPriority(query.Priority),
+		Category:       domain.TicketCategory(query.Category),
+		Team:           domain.TicketTeam(query.Team),
 		ReporterEmail:  reporterEmail,
 		AssigneeID:     assigneeID,
 		UnassignedOnly: unassignedOnly,
@@ -413,8 +417,9 @@ func (r *Router) handleListTickets(w http.ResponseWriter, req *http.Request) {
 	}
 
 	response := make([]dto.TicketResponse, 0, len(tickets.Items))
+	includeInternalComments := canViewInternalComments(identity)
 	for _, ticket := range tickets.Items {
-		response = append(response, toTicketResponse(ticket))
+		response = append(response, toTicketResponse(ticket, includeInternalComments))
 	}
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketListResponse]{
@@ -450,7 +455,7 @@ func (r *Router) handleGetTicket(w http.ResponseWriter, req *http.Request, ticke
 	}
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
-		Data: toTicketResponse(ticket),
+		Data: toTicketResponse(ticket, canViewInternalComments(identity)),
 	})
 }
 
@@ -502,7 +507,7 @@ func (r *Router) handleUpdateTicketStatus(w http.ResponseWriter, req *http.Reque
 	)
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
-		Data: toTicketResponse(ticket),
+		Data: toTicketResponse(ticket, canViewInternalComments(identity)),
 	})
 }
 
@@ -535,9 +540,19 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 		return
 	}
 
+	visibility := domain.CommentVisibility(strings.TrimSpace(payload.Visibility))
+	if visibility == "" {
+		visibility = domain.CommentVisibilityPublic
+	}
+	if visibility == domain.CommentVisibilityInternal && !canViewInternalComments(identity) {
+		writeForbidden(w, req, "forbidden", "you do not have permission to add internal notes to this ticket")
+		return
+	}
+
 	comment, err := r.ticketSvc.AddComment(req.Context(), ticketID, service.AddCommentInput{
 		Message:    strings.TrimSpace(payload.Message),
 		AuthorName: strings.TrimSpace(payload.AuthorName),
+		Visibility: visibility,
 		ActorID:    identity.Subject,
 		ActorName:  r.currentProfile(req.Context(), identity).DisplayName,
 		ActorRole:  string(identity.Role),
@@ -634,7 +649,7 @@ func (r *Router) handleAssignTicket(w http.ResponseWriter, req *http.Request, ti
 	)
 
 	writeJSON(w, http.StatusOK, dto.SuccessResponse[dto.TicketResponse]{
-		Data: toTicketResponse(ticket),
+		Data: toTicketResponse(ticket, canViewInternalComments(identity)),
 	})
 }
 
@@ -663,7 +678,11 @@ func (r *Router) handleListTicketActivities(w http.ResponseWriter, req *http.Req
 	}
 
 	response := make([]dto.TicketActivityResponse, 0, len(activities))
+	includeInternalComments := canViewInternalComments(identity)
 	for _, activity := range activities {
+		if !includeInternalComments && activity.Action == domain.TicketActivityCommentAdded && activity.Metadata["commentVisibility"] == string(domain.CommentVisibilityInternal) {
+			continue
+		}
 		response = append(response, toTicketActivityResponse(activity))
 	}
 
@@ -1007,6 +1026,8 @@ func parseListTicketsQuery(req *http.Request) dto.ListTicketsQuery {
 		Q:            strings.TrimSpace(values.Get("q")),
 		Status:       strings.TrimSpace(values.Get("status")),
 		Priority:     strings.TrimSpace(values.Get("priority")),
+		Category:     strings.TrimSpace(values.Get("category")),
+		Team:         strings.TrimSpace(values.Get("team")),
 		Assignee:     strings.TrimSpace(values.Get("assignee")),
 		Page:         parsePositiveInt(values.Get("page"), 1),
 		PageSize:     parsePositiveInt(values.Get("page_size"), 10),

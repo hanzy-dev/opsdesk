@@ -12,11 +12,20 @@ import { getRoleLabel } from "../modules/auth/roles";
 import type { CreateTicketInput } from "../types/ticket";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 import { getPreferredDisplayName } from "../utils/identity";
+import {
+  getDefaultTeamForCategory,
+  getTicketCategoryLabel,
+  getTicketTeamLabel,
+  ticketCategoryOptions,
+  ticketTeamOptions,
+} from "../utils/ticketMetadata";
 
 const initialForm: CreateTicketInput = {
   title: "",
   description: "",
   priority: "medium",
+  category: "account_access",
+  team: getDefaultTeamForCategory("account_access"),
   reporterName: "",
   reporterEmail: "",
 };
@@ -44,7 +53,7 @@ type AttachmentDraft = {
   previewUrl?: string;
 };
 
-type TicketFormErrors = Partial<Record<"title" | "priority" | "description", string>>;
+type TicketFormErrors = Partial<Record<"title" | "priority" | "category" | "team" | "description", string>>;
 
 export function CreateTicketPage() {
   const { session, profile, permissions } = useAuth();
@@ -61,6 +70,7 @@ export function CreateTicketPage() {
   const [fieldErrors, setFieldErrors] = useState<TicketFormErrors>({});
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isTeamCustomized, setIsTeamCustomized] = useState(false);
   const effectiveIdentity = profile
     ? profile
     : session
@@ -104,7 +114,7 @@ export function CreateTicketPage() {
       setSubmitNotice(null);
       showToast({
         title: "Form tiket belum lengkap",
-        description: "Lengkapi judul, prioritas, dan deskripsi sebelum menyimpan tiket.",
+        description: "Lengkapi judul, kategori, tim tujuan, prioritas, dan deskripsi sebelum menyimpan tiket.",
         tone: "error",
       });
       return;
@@ -180,6 +190,28 @@ export function CreateTicketPage() {
   }
 
   function handleFieldChange<Field extends keyof CreateTicketInput>(field: Field, value: CreateTicketInput[Field]) {
+    if (field === "category") {
+      const nextCategory = value as CreateTicketInput["category"];
+      setForm((current) => ({
+        ...current,
+        category: nextCategory,
+        team: isTeamCustomized ? current.team : getDefaultTeamForCategory(nextCategory),
+      }));
+      setFieldErrors((current) => {
+        const nextErrors = { ...current };
+        delete nextErrors.category;
+        if (!isTeamCustomized) {
+          delete nextErrors.team;
+        }
+        return nextErrors;
+      });
+      return;
+    }
+
+    if (field === "team") {
+      setIsTeamCustomized(true);
+    }
+
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => {
       if (!current[field as keyof TicketFormErrors]) {
@@ -323,6 +355,10 @@ export function CreateTicketPage() {
             Isi informasi inti tiket secara singkat dan jelas. Identitas pelapor diambil dari sesi masuk yang aktif agar
             pencatatan tetap konsisten.
           </p>
+          <p className="form-hint">
+            Tiket akan masuk ke antrean terlebih dahulu, lalu diproses oleh tim tujuan yang Anda pilih. Pembuatan tiket
+            tidak otomatis menugaskan petugas tertentu.
+          </p>
         </div>
 
         <div className="form-grid">
@@ -349,6 +385,28 @@ export function CreateTicketPage() {
             {fieldErrors.priority ? <small>{fieldErrors.priority}</small> : null}
           </label>
 
+          <label className={`field ${fieldErrors.category ? "field--invalid" : ""}`}>
+            <span>Kategori</span>
+            <SelectControl
+              ariaLabel="Kategori tiket"
+              onChange={(category) => handleFieldChange("category", category)}
+              options={ticketCategoryOptions}
+              value={form.category}
+            />
+            {fieldErrors.category ? <small>{fieldErrors.category}</small> : <small>Pilih jenis kebutuhan utama tiket ini.</small>}
+          </label>
+
+          <label className={`field ${fieldErrors.team ? "field--invalid" : ""}`}>
+            <span>Area tujuan</span>
+            <SelectControl
+              ariaLabel="Area tujuan tiket"
+              onChange={(team) => handleFieldChange("team", team)}
+              options={ticketTeamOptions}
+              value={form.team}
+            />
+            {fieldErrors.team ? <small>{fieldErrors.team}</small> : <small>Tentukan area operasional yang paling relevan untuk triase awal.</small>}
+          </label>
+
           <label className={`field field--full ${fieldErrors.description ? "field--invalid" : ""}`}>
             <span>Deskripsi</span>
             <textarea
@@ -361,6 +419,17 @@ export function CreateTicketPage() {
             />
             {fieldErrors.description ? <small>{fieldErrors.description}</small> : null}
           </label>
+
+          <article className="field field--full workflow-hint-card">
+            <span>Routing awal tiket</span>
+            <strong>
+              {getTicketCategoryLabel(form.category)} menuju {getTicketTeamLabel(form.team)}
+            </strong>
+            <p>
+              Pilihan ini membantu petugas memahami area kerja tiket sejak awal. Penugasan ke petugas dilakukan pada tahap
+              triase atau tindak lanjut operasional.
+            </p>
+          </article>
         </div>
 
         <section className="attachment-composer">
@@ -474,6 +543,14 @@ function validateTicketForm(form: CreateTicketInput): TicketFormErrors {
 
   if (!form.priority) {
     nextErrors.priority = "Prioritas tiket wajib dipilih.";
+  }
+
+  if (!form.category) {
+    nextErrors.category = "Kategori tiket wajib dipilih.";
+  }
+
+  if (!form.team) {
+    nextErrors.team = "Area tujuan tiket wajib dipilih.";
   }
 
   if (!form.description.trim()) {

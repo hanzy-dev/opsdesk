@@ -8,9 +8,13 @@ import (
 	"opsdesk/backend/internal/service"
 )
 
-func toTicketResponse(ticket domain.Ticket) dto.TicketResponse {
+func toTicketResponse(ticket domain.Ticket, includeInternalComments bool) dto.TicketResponse {
 	comments := make([]dto.CommentResponse, 0, len(ticket.Comments))
 	for _, comment := range ticket.Comments {
+		if !includeInternalComments && comment.Visibility == domain.CommentVisibilityInternal {
+			continue
+		}
+
 		comments = append(comments, toCommentResponse(comment))
 	}
 
@@ -25,6 +29,8 @@ func toTicketResponse(ticket domain.Ticket) dto.TicketResponse {
 		Description:    ticket.Description,
 		Status:         string(ticket.Status),
 		Priority:       string(ticket.Priority),
+		Category:       string(ticket.Category),
+		Team:           string(ticket.Team),
 		CreatedBy:      ticket.CreatedBy,
 		CreatedByName:  ticket.CreatedByName,
 		CreatedByEmail: ticket.CreatedByEmail,
@@ -47,6 +53,8 @@ func toCommentResponse(comment domain.Comment) dto.CommentResponse {
 		TicketID:   comment.TicketID,
 		Message:    comment.Message,
 		AuthorName: comment.AuthorName,
+		AuthorRole: comment.AuthorRole,
+		Visibility: string(comment.Visibility),
 		CreatedAt:  domain.FormatTimestamp(comment.CreatedAt),
 		UpdatedAt:  domain.FormatTimestamp(comment.UpdatedAt),
 	}

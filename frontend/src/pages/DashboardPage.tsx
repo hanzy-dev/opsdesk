@@ -11,6 +11,7 @@ import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket, TicketActivity, TicketPriority } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage } from "../utils/errors";
+import { getTicketCategoryLabel, getTicketTeamLabel } from "../utils/ticketMetadata";
 
 type DashboardStats = {
   total: number;
@@ -413,6 +414,8 @@ export function DashboardPage() {
                     </div>
                     <div className="dashboard-ticket-card__meta">
                       <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
+                      <span>{getTicketCategoryLabel(ticket.category)}</span>
+                      <span>{getTicketTeamLabel(ticket.team)}</span>
                       <span>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</span>
                       <span>Diperbarui {formatDateTime(ticket.updatedAt)}</span>
                     </div>

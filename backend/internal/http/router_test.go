@@ -173,6 +173,68 @@ func TestPostTicketCommentReturnsNotFoundForMissingTicket(t *testing.T) {
 	}
 }
 
+func TestReporterCannotCreateInternalComment(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
+
+	recorder := performRequest(t, reporterRouter, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
+		Message:    "Catatan internal untuk operator",
+		AuthorName: "OpsDesk User",
+		Visibility: "internal",
+	})
+
+	if recorder.Code != http.StatusForbidden {
+		t.Fatalf("expected status 403, got %d", recorder.Code)
+	}
+}
+
+func TestReporterCannotSeeInternalCommentsOrActivities(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
+
+	internalCommentRecorder := performRequest(t, agentRouter, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
+		Message:    "Catatan investigasi internal",
+		AuthorName: "OpsDesk Agent",
+		Visibility: "internal",
+	})
+	if internalCommentRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", internalCommentRecorder.Code)
+	}
+
+	detailRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets/"+ticket.ID, nil)
+	if detailRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", detailRecorder.Code)
+	}
+
+	var ticketResponse dto.SuccessResponse[dto.TicketResponse]
+	decodeResponse(t, detailRecorder, &ticketResponse)
+
+	if len(ticketResponse.Data.Comments) != 0 {
+		t.Fatalf("expected reporter to see 0 comments, got %d", len(ticketResponse.Data.Comments))
+	}
+
+	activityRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/tickets/"+ticket.ID+"/activities", nil)
+	if activityRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", activityRecorder.Code)
+	}
+
+	var activityResponse dto.SuccessResponse[[]dto.TicketActivityResponse]
+	decodeResponse(t, activityRecorder, &activityResponse)
+
+	for _, activity := range activityResponse.Data {
+		if activity.Action == "comment_added" {
+			t.Fatalf("expected internal comment activity to be hidden from reporter")
+		}
+	}
+}
+
 func TestOptionsTicketsReturnsNoContent(t *testing.T) {
 	t.Parallel()
 
@@ -836,6 +898,8 @@ func TestAgentCannotCreateTicket(t *testing.T) {
 		Title:         "Ticket title",
 		Description:   "Ticket description",
 		Priority:      "high",
+		Category:      "service_request",
+		Team:          "operations",
 		ReporterName:  "OpsDesk User",
 		ReporterEmail: "opsdesk.user@example.com",
 	})
@@ -966,6 +1030,8 @@ func createTestTicket(t *testing.T, router http.Handler) dto.TicketResponse {
 		Title:         "Ticket title",
 		Description:   "Ticket description",
 		Priority:      "high",
+		Category:      "application_bug",
+		Team:          "applications",
 		ReporterName:  "OpsDesk User",
 		ReporterEmail: "user@example.com",
 	})

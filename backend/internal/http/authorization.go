@@ -46,3 +46,7 @@ func canAddComment(identity auth.Identity, ticket domain.Ticket) bool {
 func canAssignTicket(identity auth.Identity) bool {
 	return identity.Role == auth.RoleAgent || identity.Role == auth.RoleAdmin
 }
+
+func canViewInternalComments(identity auth.Identity) bool {
+	return identity.Role.CanViewOperationalTickets()
+}

@@ -12,6 +12,7 @@ import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
 import { useDebouncedValue } from "../utils/useDebouncedValue";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
+import { ticketCategoryOptions, ticketTeamOptions } from "../utils/ticketMetadata";
 
 type TicketViewPreset = {
   key: "all" | "mine" | "assigned";
@@ -69,6 +70,9 @@ const priorityOptions: { value: "all" | Ticket["priority"]; label: string }[] = 
   { value: "low", label: "Rendah" },
 ];
 
+const categoryOptions = [{ value: "all", label: "Semua kategori" }, ...ticketCategoryOptions];
+const teamOptions = [{ value: "all", label: "Semua area" }, ...ticketTeamOptions];
+
 const assigneeOptions: { value: "all" | "me" | "unassigned"; label: string }[] = [
   { value: "all", label: "Semua tiket" },
   { value: "me", label: "Ditugaskan kepada saya" },
@@ -119,6 +123,8 @@ export function TicketsPage() {
   const [activeSearchQuery, setActiveSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Ticket["priority"]>("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | Ticket["category"]>("all");
+  const [teamFilter, setTeamFilter] = useState<"all" | Ticket["team"]>("all");
   const [assigneeFilter, setAssigneeFilter] = useState<"all" | "me" | "unassigned">(preset.assigneeFilter);
   const [sortBy, setSortBy] = useState<"updated_at" | "created_at" | "priority" | "status">("updated_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -130,6 +136,8 @@ export function TicketsPage() {
     setActiveSearchQuery("");
     setStatusFilter("all");
     setPriorityFilter("all");
+    setCategoryFilter("all");
+    setTeamFilter("all");
     setAssigneeFilter(preset.assigneeFilter);
     setSortBy("updated_at");
     setSortOrder("desc");
@@ -158,6 +166,7 @@ export function TicketsPage() {
       const data = await fetchTicketsWithFallback({
         assigneeFilter,
         canUseAssignedFallback: preset.key === "assigned" && assigneeFilter === "me",
+        categoryFilter,
         page,
         pageSize: pagination.pageSize,
         priorityFilter,
@@ -166,6 +175,7 @@ export function TicketsPage() {
         sortBy,
         sortOrder,
         statusFilter,
+        teamFilter,
       });
       setTickets(data.items);
       setPagination({
@@ -186,7 +196,7 @@ export function TicketsPage() {
 
   useEffect(() => {
     void loadTickets();
-  }, [activeSearchQuery, statusFilter, priorityFilter, assigneeFilter, page, sortBy, sortOrder, preset.key, session?.subject]);
+  }, [activeSearchQuery, statusFilter, priorityFilter, categoryFilter, teamFilter, assigneeFilter, page, sortBy, sortOrder, preset.key, session?.subject]);
 
   const stats = useMemo(
     () => ({
@@ -337,6 +347,32 @@ export function TicketsPage() {
             />
           </label>
 
+          <label className="field">
+            <span>Kategori</span>
+            <SelectControl
+              ariaLabel="Filter kategori"
+              value={categoryFilter}
+              onChange={(nextCategory) => {
+                setCategoryFilter(nextCategory as "all" | Ticket["category"]);
+                setPage(1);
+              }}
+              options={categoryOptions}
+            />
+          </label>
+
+          <label className="field">
+            <span>Area tujuan</span>
+            <SelectControl
+              ariaLabel="Filter area tujuan"
+              value={teamFilter}
+              onChange={(nextTeam) => {
+                setTeamFilter(nextTeam as "all" | Ticket["team"]);
+                setPage(1);
+              }}
+              options={teamOptions}
+            />
+          </label>
+
           {permissions.canAssignTickets ? (
             <label className="field">
               <span>Penugasan</span>
@@ -400,6 +436,8 @@ export function TicketsPage() {
               setActiveSearchQuery("");
               setStatusFilter("all");
               setPriorityFilter("all");
+              setCategoryFilter("all");
+              setTeamFilter("all");
               setAssigneeFilter(preset.assigneeFilter);
               setSortBy("updated_at");
               setSortOrder("desc");
@@ -451,6 +489,8 @@ export function TicketsPage() {
                 setActiveSearchQuery("");
                 setStatusFilter("all");
                 setPriorityFilter("all");
+                setCategoryFilter("all");
+                setTeamFilter("all");
                 setAssigneeFilter(preset.assigneeFilter);
                 setSortBy("updated_at");
                 setSortOrder("desc");
@@ -512,6 +552,7 @@ export function TicketsPage() {
 type TicketsFallbackOptions = {
   assigneeFilter: "all" | "me" | "unassigned";
   canUseAssignedFallback: boolean;
+  categoryFilter: "all" | Ticket["category"];
   page: number;
   pageSize: number;
   priorityFilter: "all" | Ticket["priority"];
@@ -520,6 +561,7 @@ type TicketsFallbackOptions = {
   sortBy: "updated_at" | "created_at" | "priority" | "status";
   sortOrder: "asc" | "desc";
   statusFilter: "all" | Ticket["status"];
+  teamFilter: "all" | Ticket["team"];
 };
 
 async function fetchTicketsWithFallback(options: TicketsFallbackOptions) {
@@ -528,6 +570,8 @@ async function fetchTicketsWithFallback(options: TicketsFallbackOptions) {
       q: options.searchQuery,
       status: options.statusFilter,
       priority: options.priorityFilter,
+      category: options.categoryFilter,
+      team: options.teamFilter,
       assignee: options.assigneeFilter,
       page: options.page,
       pageSize: options.pageSize,
@@ -542,6 +586,8 @@ async function fetchTicketsWithFallback(options: TicketsFallbackOptions) {
     const fallbackData = await listTickets({
       status: options.statusFilter,
       priority: options.priorityFilter,
+      category: options.categoryFilter,
+      team: options.teamFilter,
       assignee: "all",
       page: 1,
       pageSize: 100,
