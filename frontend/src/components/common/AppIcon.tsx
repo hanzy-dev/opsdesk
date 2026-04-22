@@ -18,6 +18,7 @@ export type AppIconName =
   | "search"
   | "reset"
   | "api"
+  | "notification"
   | "empty"
   | "error"
   | "open";
@@ -140,6 +141,13 @@ const iconPaths: Record<AppIconName, ReactElement> = {
       <path d="M8 7.5 5 12l3 4.5" />
       <path d="M16 7.5 19 12l-3 4.5" />
       <path d="m13.5 5-3 14" />
+    </>
+  ),
+  notification: (
+    <>
+      <path d="M8.5 18h7" />
+      <path d="M6.5 16.5h11l-1.2-1.8a4.5 4.5 0 0 1-.8-2.6V10a3.5 3.5 0 1 0-7 0v2.1c0 .9-.3 1.8-.8 2.6l-1.2 1.8Z" />
+      <path d="M10.2 19.5a1.9 1.9 0 0 0 3.6 0" />
     </>
   ),
   empty: (

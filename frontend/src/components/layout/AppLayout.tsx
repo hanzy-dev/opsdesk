@@ -3,6 +3,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { ConfirmationDialog } from "../common/ConfirmationDialog";
 import { useToast } from "../common/ToastProvider";
 import { useAuth } from "../../modules/auth/AuthContext";
+import { NotificationProvider } from "../../modules/notifications/NotificationContext";
 import { Sidebar } from "./Sidebar";
 import { AccountTopbar } from "./AccountTopbar";
 
@@ -105,16 +106,18 @@ export function AppLayout() {
           aria-hidden="true"
           className={`page-progress ${isRouteTransitioning ? "page-progress--active" : ""}`}
         />
-        <AccountTopbar
-          isMobileNavigation={isMobileViewport}
-          isSidebarCollapsed={isSidebarCollapsed && !isMobileViewport}
-          onNavigationToggle={handleNavigationToggle}
-          onRequestLogout={() => setIsLogoutDialogOpen(true)}
-          title={title}
-        />
-        <main className="page-content">
-          <Outlet />
-        </main>
+        <NotificationProvider>
+          <AccountTopbar
+            isMobileNavigation={isMobileViewport}
+            isSidebarCollapsed={isSidebarCollapsed && !isMobileViewport}
+            onNavigationToggle={handleNavigationToggle}
+            onRequestLogout={() => setIsLogoutDialogOpen(true)}
+            title={title}
+          />
+          <main className="page-content">
+            <Outlet />
+          </main>
+        </NotificationProvider>
       </div>
       <ConfirmationDialog
         cancelLabel="Batal"

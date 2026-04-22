@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -5,6 +6,8 @@ import { AppLayout } from "./AppLayout";
 
 const logoutMock = vi.fn();
 const showToastMock = vi.fn();
+const markAllReadMock = vi.fn();
+const refreshNotificationsMock = vi.fn();
 
 vi.mock("../../modules/auth/AuthContext", () => ({
   useAuth: () => ({
@@ -39,10 +42,23 @@ vi.mock("../common/ToastProvider", () => ({
   }),
 }));
 
+vi.mock("../../modules/notifications/NotificationContext", () => ({
+  NotificationProvider: ({ children }: { children: ReactNode }) => children,
+  useNotifications: () => ({
+    notifications: [],
+    unreadCount: 0,
+    isLoading: false,
+    markAllRead: markAllReadMock,
+    refreshNotifications: refreshNotificationsMock,
+  }),
+}));
+
 describe("AppLayout", () => {
   beforeEach(() => {
     logoutMock.mockReset();
     showToastMock.mockReset();
+    markAllReadMock.mockReset();
+    refreshNotificationsMock.mockReset();
 
     Object.defineProperty(window, "matchMedia", {
       writable: true,

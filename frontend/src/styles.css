@@ -939,6 +939,63 @@ textarea:focus-visible {
   color: var(--muted);
 }
 
+.ticket-table__subtle {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.sla-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03)),
+    rgba(255, 255, 255, 0.04);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sla-pill--normal {
+  color: #cfe7ff;
+  border-color: rgba(121, 184, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(121, 184, 255, 0.14), rgba(121, 184, 255, 0.04)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.sla-pill--warning {
+  color: #ffd9a7;
+  border-color: rgba(241, 182, 77, 0.18);
+  background:
+    linear-gradient(180deg, rgba(241, 182, 77, 0.16), rgba(241, 182, 77, 0.05)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.sla-pill--breached {
+  color: #ffc1b4;
+  border-color: rgba(255, 143, 126, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 143, 126, 0.16), rgba(255, 143, 126, 0.05)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.sla-pill--resolved {
+  color: #a6e2bf;
+  border-color: rgba(79, 190, 139, 0.18);
+  background:
+    linear-gradient(180deg, rgba(79, 190, 139, 0.16), rgba(79, 190, 139, 0.05)),
+    rgba(255, 255, 255, 0.03);
+}
+
 .table-tag {
   display: inline-flex;
   align-items: center;
@@ -1762,7 +1819,7 @@ textarea:focus-visible {
 
 .dashboard-hero__summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -1799,6 +1856,10 @@ textarea:focus-visible {
 
 .dashboard-hero__summary-item--resolved {
   border-color: rgba(79, 190, 139, 0.18);
+}
+
+.dashboard-hero__summary-item--breached {
+  border-color: rgba(255, 143, 126, 0.2);
 }
 
 .dashboard-stat {
@@ -2544,6 +2605,41 @@ textarea:focus-visible {
   letter-spacing: 0.08em;
 }
 
+.sla-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.sla-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sla-card__header strong,
+.sla-card p,
+.sla-card small {
+  margin: 0;
+}
+
+.sla-card p {
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.sla-card small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 @media (max-width: 900px) {
   .workload-strip {
     grid-template-columns: 1fr;
@@ -2619,8 +2715,92 @@ textarea:focus-visible {
   font-size: 1.5rem;
 }
 
+.topbar__notification-wrap,
 .topbar__account-wrap {
   position: relative;
+}
+
+.topbar__notification-trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 248px;
+  padding: 12px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 30%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  text-align: left;
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.topbar__notification-trigger:hover,
+.topbar__notification-trigger[aria-expanded="true"] {
+  border-color: rgba(239, 142, 83, 0.18);
+  transform: translateY(-1px);
+  box-shadow:
+    0 16px 34px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.topbar__notification-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(121, 184, 255, 0.16), rgba(121, 184, 255, 0.05)),
+    rgba(255, 255, 255, 0.03);
+  color: #d5e9ff;
+  flex-shrink: 0;
+}
+
+.topbar__notification-badge {
+  position: absolute;
+  top: 8px;
+  left: 38px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--accent), #d6555d);
+  color: #fff7f0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  box-shadow: 0 10px 18px rgba(214, 85, 93, 0.28);
+}
+
+.topbar__notification-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.topbar__notification-copy strong,
+.topbar__notification-copy small {
+  margin: 0;
+}
+
+.topbar__notification-copy strong {
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.topbar__notification-copy small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
 }
 
 .topbar__account-trigger {
@@ -2795,6 +2975,63 @@ textarea:focus-visible {
 
 .topbar__menu--open {
   animation: menu-in var(--motion-fast) var(--ease-emphasis);
+}
+
+.topbar__notification-menu {
+  width: min(420px, calc(100vw - 40px));
+}
+
+.topbar__notification-list {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.topbar__notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  color: var(--text);
+  border: 1px solid transparent;
+}
+
+.topbar__notification-item:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(239, 142, 83, 0.12);
+  transform: translateY(-1px);
+}
+
+.topbar__notification-item-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.topbar__notification-item-copy strong,
+.topbar__notification-item-copy p,
+.topbar__notification-item-copy small {
+  margin: 0;
+}
+
+.topbar__notification-item-copy strong {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.topbar__notification-item-copy p {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.topbar__notification-item-copy small {
+  color: rgba(244, 239, 232, 0.68);
+  font-size: 0.74rem;
+  line-height: 1.45;
 }
 
 .topbar__menu-header {
@@ -3806,6 +4043,10 @@ textarea:focus-visible {
   }
 
   .topbar__account-trigger {
+    min-width: 100%;
+  }
+
+  .topbar__notification-trigger {
     min-width: 100%;
   }
 

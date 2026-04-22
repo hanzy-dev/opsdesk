@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { AppIcon } from "../common/AppIcon";
 import { UserAvatar } from "../common/UserAvatar";
 import { useAuth } from "../../modules/auth/AuthContext";
+import { useNotifications } from "../../modules/notifications/NotificationContext";
 import { getRoleLabel } from "../../modules/auth/roles";
 import { getPreferredDisplayName } from "../../utils/identity";
 
@@ -22,10 +23,14 @@ export function AccountTopbar({
   onRequestLogout,
 }: AccountTopbarProps) {
   const { session, profile, isSigningOut } = useAuth();
+  const { notifications, unreadCount, isLoading, markAllRead } = useNotifications();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const notificationRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
+  const notificationId = useId();
 
   const identity = profile
     ? profile
@@ -43,10 +48,15 @@ export function AccountTopbar({
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       if (!menuRef.current || menuRef.current.contains(event.target as Node)) {
+      } else {
+        setIsOpen(false);
+      }
+
+      if (!notificationRef.current || notificationRef.current.contains(event.target as Node)) {
         return;
       }
 
-      setIsOpen(false);
+      setIsNotificationsOpen(false);
     }
 
     window.addEventListener("mousedown", handlePointerDown);
@@ -57,16 +67,18 @@ export function AccountTopbar({
 
   useEffect(() => {
     setIsOpen(false);
+    setIsNotificationsOpen(false);
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen && !isNotificationsOpen) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsOpen(false);
+        setIsNotificationsOpen(false);
       }
     };
 
@@ -74,7 +86,7 @@ export function AccountTopbar({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isNotificationsOpen, isOpen]);
 
   return (
     <header className="topbar">
@@ -101,13 +113,79 @@ export function AccountTopbar({
       </div>
 
       <div className="topbar__actions">
+        <div className="topbar__notification-wrap" ref={notificationRef}>
+          <button
+            aria-controls={notificationId}
+            aria-expanded={isNotificationsOpen}
+            aria-haspopup="menu"
+            className="topbar__notification-trigger"
+            onClick={() => {
+              setIsNotificationsOpen((current) => {
+                const nextOpen = !current;
+                if (nextOpen) {
+                  markAllRead();
+                  setIsOpen(false);
+                }
+                return nextOpen;
+              });
+            }}
+            type="button"
+          >
+            <span className="topbar__notification-icon">
+              <AppIcon name="notification" size="sm" />
+            </span>
+            {unreadCount > 0 ? <span className="topbar__notification-badge">{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
+            <span className="topbar__notification-copy">
+              <strong>Notifikasi</strong>
+              <small>{unreadCount > 0 ? `${unreadCount} baru` : "Semua sudah terbaca"}</small>
+            </span>
+          </button>
+
+          {isNotificationsOpen ? (
+            <div className="topbar__menu topbar__menu--open topbar__notification-menu" id={notificationId} role="menu">
+              <div className="topbar__menu-header">
+                <div className="topbar__menu-header-copy">
+                  <span>Notifikasi</span>
+                  <strong>Pembaruan operasional</strong>
+                  <p>Tray ini diperbarui berkala dan tidak bersifat realtime penuh.</p>
+                </div>
+                {unreadCount > 0 ? <span className="role-pill">{unreadCount} baru</span> : null}
+              </div>
+              <div className="topbar__notification-list">
+                {isLoading && notifications.length === 0 ? <p className="topbar__menu-meta">Memuat notifikasi...</p> : null}
+                {!isLoading && notifications.length === 0 ? (
+                  <p className="topbar__menu-meta">Belum ada notifikasi penting untuk akun ini.</p>
+                ) : null}
+                {notifications.map((notification) => (
+                  <Link
+                    className="topbar__notification-item"
+                    key={notification.id}
+                    onClick={() => setIsNotificationsOpen(false)}
+                    role="menuitem"
+                    to={notification.link}
+                  >
+                    <div className="topbar__notification-item-copy">
+                      <strong>{notification.title}</strong>
+                      <p>{notification.message}</p>
+                      <small>{notification.actorName ? `${notification.actorName} • ` : ""}{new Date(notification.timestamp).toLocaleString("id-ID")}</small>
+                    </div>
+                    <AppIcon name="chevronRight" size="sm" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
         <div className="topbar__account-wrap" ref={menuRef}>
           <button
             aria-controls={menuId}
             aria-expanded={isOpen}
             aria-haspopup="menu"
             className="topbar__account-trigger"
-            onClick={() => setIsOpen((current) => !current)}
+            onClick={() => {
+              setIsNotificationsOpen(false);
+              setIsOpen((current) => !current);
+            }}
             type="button"
           >
             <div className="topbar__account-main">

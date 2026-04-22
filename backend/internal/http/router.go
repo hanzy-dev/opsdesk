@@ -49,6 +49,7 @@ func NewRouter(cfg config.Config, validator *validation.Validator, ticketSvc ser
 func (r *Router) registerRoutes() {
 	r.basePathMux.HandleFunc("/health", r.handleHealth)
 	r.basePathMux.HandleFunc("/auth/me", r.requireAuth(r.handleAuthMe))
+	r.basePathMux.HandleFunc("/notifications", r.requireAuth(r.handleNotifications))
 	r.basePathMux.HandleFunc("/profile/me/avatar/upload-url", r.requireAuth(r.handleProfileAvatarUploadURL))
 	r.basePathMux.HandleFunc("/profile/me", r.requireAuth(r.handleProfileMe))
 	r.basePathMux.HandleFunc("/profiles/assignable", r.requireAuth(r.handleAssignableProfiles))
@@ -113,6 +114,54 @@ func (r *Router) handleAuthMe(w http.ResponseWriter, req *http.Request) {
 			Role:     string(identity.Role),
 			Groups:   identity.Groups,
 		},
+	})
+}
+
+func (r *Router) handleNotifications(w http.ResponseWriter, req *http.Request) {
+	if req.Method == http.MethodOptions {
+		writeNoContent(w)
+		return
+	}
+
+	if req.Method != http.MethodGet {
+		writeMethodNotAllowed(w, req)
+		return
+	}
+
+	identity, ok := auth.IdentityFromContext(req.Context())
+	if !ok {
+		writeUnauthorized(w, req, "unauthorized", "authentication is required")
+		return
+	}
+
+	limit := 12
+	if rawLimit := strings.TrimSpace(req.URL.Query().Get("limit")); rawLimit != "" {
+		parsedLimit, err := strconv.Atoi(rawLimit)
+		if err == nil && parsedLimit > 0 && parsedLimit <= 30 {
+			limit = parsedLimit
+		}
+	}
+
+	reporterEmail := ""
+	if identity.Role == auth.RoleReporter {
+		reporterEmail = identity.Email
+	}
+
+	tickets, err := r.ticketSvc.ListTickets(req.Context(), service.ListTicketsInput{
+		ReporterEmail: reporterEmail,
+		Page:          1,
+		PageSize:      50,
+		SortBy:        "updated_at",
+		SortOrder:     "desc",
+	})
+	if err != nil {
+		writeServiceError(w, req, err)
+		return
+	}
+
+	notifications := buildNotifications(identity, tickets.Items, limit)
+	writeJSON(w, http.StatusOK, dto.SuccessResponse[[]dto.NotificationResponse]{
+		Data: notifications,
 	})
 }
 

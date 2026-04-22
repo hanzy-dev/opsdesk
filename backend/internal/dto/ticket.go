@@ -85,6 +85,18 @@ type AssignableUserResponse struct {
 	Role        string `json:"role"`
 }
 
+type NotificationResponse struct {
+	ID          string `json:"id"`
+	TicketID    string `json:"ticketId"`
+	TicketTitle string `json:"ticketTitle"`
+	Type        string `json:"type"`
+	Title       string `json:"title"`
+	Message     string `json:"message"`
+	Timestamp   string `json:"timestamp"`
+	ActorName   string `json:"actorName,omitempty"`
+	Link        string `json:"link"`
+}
+
 type TicketResponse struct {
 	ID             string               `json:"id"`
 	Title          string               `json:"title"`

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { AppIcon } from "../common/AppIcon";
 import type { Ticket } from "../../types/ticket";
 import { formatDateTime } from "../../utils/date";
+import { formatSlaDueLabel, getSlaState, getSlaToneLabel } from "../../utils/sla";
 import { getPriorityLabel, getTicketCategoryLabel, getTicketTeamLabel } from "../../utils/ticketMetadata";
 import { StatusBadge } from "./StatusBadge";
 
@@ -42,6 +43,7 @@ export function TicketTable({
               <th>Area</th>
               <th>Status</th>
               <th>Prioritas</th>
+              <th>Target</th>
               <th>Pelapor</th>
               <th>Petugas</th>
               <th>Diperbarui</th>
@@ -75,6 +77,10 @@ export function TicketTable({
                     <AppIcon name="dashboard" size="sm" />
                     <span>{getPriorityLabel(ticket.priority)}</span>
                   </span>
+                </td>
+                <td className="ticket-table__meta-cell">
+                  <span className={`sla-pill sla-pill--${getSlaState(ticket)}`}>{getSlaToneLabel(getSlaState(ticket))}</span>
+                  <small className="ticket-table__subtle">{formatSlaDueLabel(ticket)}</small>
                 </td>
                 <td className="ticket-table__meta-cell">{ticket.reporterName}</td>
                 <td className="ticket-table__meta-cell">{ticket.assigneeName || "Belum ditugaskan"}</td>

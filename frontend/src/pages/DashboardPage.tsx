@@ -11,6 +11,7 @@ import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket, TicketActivity, TicketPriority } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage } from "../utils/errors";
+import { getSlaState } from "../utils/sla";
 import { getTicketCategoryLabel, getTicketTeamLabel } from "../utils/ticketMetadata";
 
 type DashboardStats = {
@@ -20,6 +21,8 @@ type DashboardStats = {
   resolved: number;
   unassigned: number;
   assignedToMe: number;
+  warning: number;
+  breached: number;
 };
 
 type ActivityHighlight = {
@@ -169,6 +172,8 @@ export function DashboardPage() {
           resolved: resolvedTickets.pagination.total_items,
           unassigned: unassignedTickets.pagination.total_items,
           assignedToMe: assignedToMeCount,
+          warning: activeTickets.filter((ticket) => getSlaState(ticket) === "warning").length,
+          breached: activeTickets.filter((ticket) => getSlaState(ticket) === "breached").length,
         },
         recentTickets,
         recentActivities,
@@ -311,6 +316,13 @@ export function DashboardPage() {
       to: "/tickets?assignee=unassigned",
       tone: "is-violet",
     },
+    {
+      label: "Mendekati target",
+      value: data.stats.warning,
+      description: "Tiket aktif yang mulai mendekati batas target operasional berbasis prioritas.",
+      to: "/tickets",
+      tone: "is-amber",
+    },
     permissions.canAssignTickets
       ? {
           label: "Ditugaskan ke saya",
@@ -334,6 +346,13 @@ export function DashboardPage() {
         : "Total tiket yang bisa Anda akses dari akun saat ini.",
       to: "/tickets",
       tone: "is-neutral",
+    },
+    {
+      label: "Lewat target",
+      value: data.stats.breached,
+      description: "Tiket aktif yang sudah melewati target operasional ringan dan butuh perhatian cepat.",
+      to: "/tickets",
+      tone: "is-violet",
     },
   ];
 
@@ -371,9 +390,9 @@ export function DashboardPage() {
             <span>Selesai</span>
             <strong>{data.stats.resolved}</strong>
           </div>
-          <div className="dashboard-hero__summary-item">
-            <span>Belum ditugaskan</span>
-            <strong>{data.stats.unassigned}</strong>
+          <div className="dashboard-hero__summary-item dashboard-hero__summary-item--breached">
+            <span>Lewat target</span>
+            <strong>{data.stats.breached}</strong>
           </div>
         </div>
       </div>
@@ -924,6 +943,10 @@ function getStatIcon(label: string): AppIconName {
 
   if (label.includes("ditugaskan")) {
     return "mine";
+  }
+
+  if (label.includes("target")) {
+    return "dashboard";
   }
 
   return "dashboard";

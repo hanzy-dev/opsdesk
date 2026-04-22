@@ -661,6 +661,72 @@ func TestAgentCanAssignTicketToAnotherEligibleUser(t *testing.T) {
 	}
 }
 
+func TestAgentSeesAssignmentNotificationWhenTicketAssignedByAdmin(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	profileRepo := memory.NewProfileRepository()
+	for _, profile := range []domain.Profile{
+		{
+			Subject:     "agent-123",
+			DisplayName: "OpsDesk Agent",
+			Email:       "agent@example.com",
+			Role:        "agent",
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+		},
+		{
+			Subject:     "admin-123",
+			DisplayName: "OpsDesk Admin",
+			Email:       "admin@example.com",
+			Role:        "admin",
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+		},
+	} {
+		if err := profileRepo.UpsertProfile(context.Background(), profile); err != nil {
+			t.Fatalf("expected profile insert, got %v", err)
+		}
+	}
+
+	reporterRouter := newTestRouterWithRepos(testReporterIdentity(), repo, profileRepo)
+	ticket := createTestTicket(t, reporterRouter)
+	adminRouter := newTestRouterWithRepos(testAdminIdentity(), repo, profileRepo)
+	agentRouter := newTestRouterWithRepos(testAgentIdentity(), repo, profileRepo)
+
+	assignRecorder := performRequest(t, adminRouter, http.MethodPatch, "/v1/tickets/"+ticket.ID+"/assignment", dto.AssignTicketRequest{
+		AssigneeID: "agent-123",
+	})
+	if assignRecorder.Code != http.StatusOK {
+		t.Fatalf("expected assignment status 200, got %d", assignRecorder.Code)
+	}
+
+	notificationRecorder := performRequest(t, agentRouter, http.MethodGet, "/v1/notifications?limit=10", nil)
+	if notificationRecorder.Code != http.StatusOK {
+		t.Fatalf("expected notifications status 200, got %d", notificationRecorder.Code)
+	}
+
+	var response dto.SuccessResponse[[]dto.NotificationResponse]
+	decodeResponse(t, notificationRecorder, &response)
+
+	if len(response.Data) == 0 {
+		t.Fatal("expected at least 1 notification")
+	}
+
+	notification := response.Data[0]
+	if notification.Type != "assignment_changed" {
+		t.Fatalf("expected assignment_changed notification, got %q", notification.Type)
+	}
+
+	if notification.TicketID != ticket.ID {
+		t.Fatalf("expected ticket ID %q, got %q", ticket.ID, notification.TicketID)
+	}
+
+	if notification.Link != "/tickets/"+ticket.ID {
+		t.Fatalf("expected notification link for ticket %q, got %q", ticket.ID, notification.Link)
+	}
+}
+
 func TestReporterCannotAssignTicket(t *testing.T) {
 	t.Parallel()
 

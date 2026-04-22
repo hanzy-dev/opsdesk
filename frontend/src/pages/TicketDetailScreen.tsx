@@ -26,6 +26,7 @@ import type { AssignableUser } from "../types/profile";
 import type { Attachment, Comment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
+import { formatSlaDueLabel, formatSlaTarget, getSlaState, getSlaToneLabel, getTicketDueAt } from "../utils/sla";
 import {
   commentVisibilityOptions,
   getCommentVisibilityLabel,
@@ -265,6 +266,8 @@ export function TicketDetailPage() {
     () => activeWorkloadTickets.filter((workloadTicket) => workloadTicket.team === ticket?.team).length,
     [activeWorkloadTickets, ticket?.team],
   );
+  const slaState = useMemo(() => (ticket ? getSlaState(ticket) : "normal"), [ticket]);
+  const slaDueAt = useMemo(() => (ticket ? getTicketDueAt(ticket) : null), [ticket]);
 
   const assigneeOptions = useMemo(() => {
     const options = assignableUsers.map((user) => ({
@@ -564,6 +567,7 @@ export function TicketDetailPage() {
             <span className={`priority-pill priority-pill--${ticket.priority}`}>{getPriorityLabel(ticket.priority)}</span>
             <span className="table-tag">{getTicketCategoryLabel(ticket.category)}</span>
             <span className="table-tag table-tag--muted">{getTicketTeamLabel(ticket.team)}</span>
+            <span className={`sla-pill sla-pill--${slaState}`}>{getSlaToneLabel(slaState)}</span>
           </div>
         </div>
 
@@ -628,6 +632,18 @@ export function TicketDetailPage() {
               <div>
                 <dt>Area tujuan</dt>
                 <dd>{getTicketTeamLabel(ticket.team)}</dd>
+              </div>
+              <div>
+                <dt>Target operasional</dt>
+                <dd>{formatSlaTarget(ticket)}</dd>
+              </div>
+              <div>
+                <dt>Batas target</dt>
+                <dd>{slaDueAt ? formatDateTime(slaDueAt.toISOString()) : "Belum tersedia"}</dd>
+              </div>
+              <div>
+                <dt>Status target</dt>
+                <dd>{formatSlaDueLabel(ticket)}</dd>
               </div>
               <div>
                 <dt>Pelapor</dt>
@@ -809,6 +825,22 @@ export function TicketDetailPage() {
                   </span>
                 </article>
               ))}
+            </div>
+          </article>
+
+          <article className="panel panel--section stack-md">
+            <div>
+              <p className="section-eyebrow">SLA ringan</p>
+              <h3>Target operasional tiket</h3>
+              <p className="form-hint">Timer ini adalah target operasional berbasis prioritas, bukan SLA bisnis kompleks berbasis jam kerja.</p>
+            </div>
+            <div className="sla-card">
+              <div className="sla-card__header">
+                <span className={`sla-pill sla-pill--${slaState}`}>{getSlaToneLabel(slaState)}</span>
+                <strong>{formatSlaTarget(ticket)}</strong>
+              </div>
+              <p>{formatSlaDueLabel(ticket)}</p>
+              <small>{slaDueAt ? `Target hingga ${formatDateTime(slaDueAt.toISOString())}` : "Target belum tersedia."}</small>
             </div>
           </article>
 
