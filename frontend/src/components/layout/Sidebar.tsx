@@ -44,6 +44,7 @@ const navItems: NavItem[] = [
 export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLogout }: SidebarProps) {
   const { permissions, isSigningOut } = useAuth();
   const visibleItems = navItems.filter((item) => item.isVisible(permissions));
+  const logoutLabel = isSigningOut ? "Keluar dari sesi..." : "Keluar dari OpsDesk";
 
   return (
     <>
@@ -78,28 +79,37 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
           </div>
         </div>
 
-        <nav className="sidebar__nav" aria-label="Navigasi utama">
-          {visibleItems.map((item) => (
-            <NavLink
-              end={item.to === "/tickets"}
-              key={item.to}
-              onClick={onCloseMobile}
-              to={item.to}
-              className={({ isActive }) => (isActive ? "sidebar__link sidebar__link--active" : "sidebar__link")}
-            >
-              <span aria-hidden="true" className="sidebar__link-icon">
-                <AppIcon name={item.icon} />
-              </span>
-              <span className="sidebar__link-label">{item.label}</span>
-              <span aria-hidden="true" className="sidebar__link-cue">
-                <AppIcon name="chevronRight" size="sm" />
-              </span>
-            </NavLink>
-          ))}
-        </nav>
+        <div className="sidebar__body">
+          <nav className="sidebar__nav" aria-label="Navigasi utama">
+            {visibleItems.map((item) => (
+              <NavLink
+                end={item.to === "/tickets"}
+                key={item.to}
+                onClick={onCloseMobile}
+                to={item.to}
+                className={({ isActive }) => (isActive ? "sidebar__link sidebar__link--active" : "sidebar__link")}
+              >
+                <span aria-hidden="true" className="sidebar__link-icon">
+                  <AppIcon name={item.icon} />
+                </span>
+                <span className="sidebar__link-label">{item.label}</span>
+                <span aria-hidden="true" className="sidebar__link-cue">
+                  <AppIcon name="chevronRight" size="sm" />
+                </span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
 
         <div className="sidebar__footer">
+          {!isCollapsed ? (
+            <div className="sidebar__footer-copy">
+              <span>Akses akun</span>
+              <p>Keluar tetap tersedia di sini dan juga pada menu akun di kanan atas.</p>
+            </div>
+          ) : null}
           <button
+            aria-label={logoutLabel}
             className="button button--secondary sidebar__logout"
             disabled={isSigningOut}
             onClick={() => {
@@ -109,7 +119,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
             type="button"
           >
             <AppIcon name="logout" size="sm" />
-            {isSigningOut ? "Keluar dari sesi..." : "Keluar dari OpsDesk"}
+            <span className="sidebar__logout-label">{logoutLabel}</span>
           </button>
         </div>
       </aside>

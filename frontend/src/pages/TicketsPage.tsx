@@ -10,6 +10,7 @@ import { SelectControl } from "../components/common/SelectControl";
 import { TicketTable } from "../components/tickets/TicketTable";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
+import { useDebouncedValue } from "../utils/useDebouncedValue";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 
 type TicketViewPreset = {
@@ -115,17 +116,18 @@ export function TicketsPage() {
   const [error, setError] = useState<string | null>(null);
   const [errorReferenceId, setErrorReferenceId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [submittedQuery, setSubmittedQuery] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | Ticket["status"]>("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Ticket["priority"]>("all");
   const [assigneeFilter, setAssigneeFilter] = useState<"all" | "me" | "unassigned">(preset.assigneeFilter);
   const [sortBy, setSortBy] = useState<"updated_at" | "created_at" | "priority" | "status">("updated_at");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
+  const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), preset.isSearchLocked ? 0 : 280);
 
   useEffect(() => {
     setSearchQuery("");
-    setSubmittedQuery("");
+    setActiveSearchQuery("");
     setStatusFilter("all");
     setPriorityFilter("all");
     setAssigneeFilter(preset.assigneeFilter);
@@ -133,6 +135,15 @@ export function TicketsPage() {
     setSortOrder("desc");
     setPage(1);
   }, [preset]);
+
+  useEffect(() => {
+    if (preset.isSearchLocked) {
+      return;
+    }
+
+    setPage(1);
+    setActiveSearchQuery(debouncedSearchQuery);
+  }, [debouncedSearchQuery, preset.isSearchLocked]);
 
   async function loadTickets() {
     if (loading) {
@@ -150,7 +161,7 @@ export function TicketsPage() {
         page,
         pageSize: pagination.pageSize,
         priorityFilter,
-        searchQuery: submittedQuery,
+        searchQuery: activeSearchQuery,
         sessionSubject: session?.subject,
         sortBy,
         sortOrder,
@@ -175,7 +186,7 @@ export function TicketsPage() {
 
   useEffect(() => {
     void loadTickets();
-  }, [submittedQuery, statusFilter, priorityFilter, assigneeFilter, page, sortBy, sortOrder, preset.key, session?.subject]);
+  }, [activeSearchQuery, statusFilter, priorityFilter, assigneeFilter, page, sortBy, sortOrder, preset.key, session?.subject]);
 
   const stats = useMemo(
     () => ({
@@ -197,6 +208,7 @@ export function TicketsPage() {
             : "Kami sedang mengambil data tiket terbaru beserta filter yang sedang aktif."
         }
         lines={6}
+        skeletonTitle={preset.key === "assigned" ? "Menyusun antrean penugasan personal" : "Menyusun tabel tiket dan filter operasional"}
       />
     );
   }
@@ -274,7 +286,11 @@ export function TicketsPage() {
           </p>
         </div>
 
-        {isRefreshing ? <p className="filter-summary">Memperbarui daftar tiket...</p> : null}
+        {isRefreshing || (!preset.isSearchLocked && searchQuery.trim() !== activeSearchQuery) ? (
+          <p className="filter-summary">
+            {searchQuery.trim() !== activeSearchQuery ? "Menyaring daftar tiket..." : "Memperbarui daftar tiket..."}
+          </p>
+        ) : null}
         {error && tickets.length > 0 ? (
           <div className="inline-feedback inline-feedback--error">
             <strong>Daftar belum sepenuhnya diperbarui.</strong>
@@ -292,6 +308,7 @@ export function TicketsPage() {
               onChange={(event) => setSearchQuery(event.target.value)}
               placeholder="Cari ID tiket, judul, atau nama pelapor"
             />
+            {!preset.isSearchLocked ? <small>Pencarian diterapkan otomatis setelah Anda berhenti mengetik sejenak.</small> : null}
           </label>
 
           <label className="field">
@@ -369,7 +386,7 @@ export function TicketsPage() {
             disabled={preset.isSearchLocked}
             onClick={() => {
               setPage(1);
-              setSubmittedQuery(searchQuery.trim());
+              setActiveSearchQuery(searchQuery.trim());
             }}
             type="button"
           >
@@ -380,7 +397,7 @@ export function TicketsPage() {
             className="button button--secondary"
             onClick={() => {
               setSearchQuery("");
-              setSubmittedQuery("");
+              setActiveSearchQuery("");
               setStatusFilter("all");
               setPriorityFilter("all");
               setAssigneeFilter(preset.assigneeFilter);
@@ -431,7 +448,7 @@ export function TicketsPage() {
               className="button button--secondary"
               onClick={() => {
                 setSearchQuery("");
-                setSubmittedQuery("");
+                setActiveSearchQuery("");
                 setStatusFilter("all");
                 setPriorityFilter("all");
                 setAssigneeFilter(preset.assigneeFilter);

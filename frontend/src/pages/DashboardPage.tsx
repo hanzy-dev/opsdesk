@@ -37,6 +37,15 @@ type DashboardData = {
   activityError: string | null;
 };
 
+type DashboardStatCard = {
+  label: string;
+  value: number;
+  description: string;
+  to: string;
+  tone: "is-neutral" | "is-amber" | "is-blue" | "is-green" | "is-violet";
+  featured?: boolean;
+};
+
 export function DashboardPage() {
   const { permissions, session } = useAuth();
   const [data, setData] = useState<DashboardData | null>(null);
@@ -198,6 +207,7 @@ export function DashboardPage() {
         label="Menyiapkan ringkasan operasional..."
         supportText="Kami sedang merapikan data tiket, aktivitas terbaru, dan jalur aksi utama untuk sesi Anda."
         lines={6}
+        skeletonTitle="Menyusun kartu statistik dan sorotan aktivitas"
       />
     );
   }
@@ -226,22 +236,14 @@ export function DashboardPage() {
     );
   }
 
-  const statCards = [
-    {
-      label: "Total tiket terakses",
-      value: data.stats.total,
-      description: permissions.canViewOperationalTickets
-        ? "Semua tiket yang berada dalam jangkauan operasional akun ini."
-        : "Total tiket yang bisa Anda akses dari akun saat ini.",
-      to: "/tickets",
-      tone: "is-neutral",
-    },
+  const statCards: DashboardStatCard[] = [
     {
       label: "Perlu triase",
       value: data.stats.open,
       description: "Tiket terbuka yang masih menunggu penanganan awal.",
       to: "/tickets?status=open",
       tone: "is-amber",
+      featured: true,
     },
     {
       label: "Sedang berjalan",
@@ -265,6 +267,15 @@ export function DashboardPage() {
           to: "/tickets?status=resolved",
           tone: "is-green",
         },
+    {
+      label: "Total tiket terakses",
+      value: data.stats.total,
+      description: permissions.canViewOperationalTickets
+        ? "Semua tiket yang berada dalam jangkauan operasional akun ini."
+        : "Total tiket yang bisa Anda akses dari akun saat ini.",
+      to: "/tickets",
+      tone: "is-neutral",
+    },
   ];
 
   return (
@@ -288,11 +299,29 @@ export function DashboardPage() {
             ))}
           </div>
         </div>
+        <div className="dashboard-hero__summary" aria-label="Ringkasan status tiket">
+          <div className="dashboard-hero__summary-item dashboard-hero__summary-item--open">
+            <span>Terbuka</span>
+            <strong>{data.stats.open}</strong>
+          </div>
+          <div className="dashboard-hero__summary-item dashboard-hero__summary-item--progress">
+            <span>Sedang ditangani</span>
+            <strong>{data.stats.inProgress}</strong>
+          </div>
+          <div className="dashboard-hero__summary-item dashboard-hero__summary-item--resolved">
+            <span>Selesai</span>
+            <strong>{data.stats.resolved}</strong>
+          </div>
+        </div>
       </div>
 
       <div className="metrics-grid metrics-grid--dashboard dashboard-metrics">
         {statCards.map((card) => (
-          <Link className={`metric-card metric-card--premium dashboard-stat ${card.tone}`} key={card.label} to={card.to}>
+          <Link
+            className={`metric-card metric-card--premium dashboard-stat ${card.tone} ${card.featured ? "dashboard-stat--featured" : ""}`}
+            key={card.label}
+            to={card.to}
+          >
             <div className="dashboard-stat__header">
               <div className="dashboard-stat__title">
                 <AppIconBadge name={getStatIcon(card.label)} size="sm" tone={card.tone === "is-blue" ? "cool" : "accent"} />
@@ -467,19 +496,19 @@ export function DashboardPage() {
               </div>
 
               <div className="dashboard-actions-grid">
-              {quickActions.map((action) => (
-                <Link className="dashboard-action-card" key={action.to} to={action.to}>
-                  <div className="dashboard-action-card__header">
-                    <AppIconBadge name={action.icon} size="sm" tone={action.icon === "api" ? "cool" : "neutral"} />
-                    <strong>{action.title}</strong>
-                  </div>
-                  <p>{action.description}</p>
-                  <span className="dashboard-action-card__cue">
-                    <span>Buka</span>
-                    <AppIcon name="chevronRight" size="sm" />
-                  </span>
-                </Link>
-              ))}
+                {quickActions.map((action) => (
+                  <Link className="dashboard-action-card" key={action.to} to={action.to}>
+                    <div className="dashboard-action-card__header">
+                      <AppIconBadge name={action.icon} size="sm" tone={action.icon === "api" ? "cool" : "neutral"} />
+                      <strong>{action.title}</strong>
+                    </div>
+                    <p>{action.description}</p>
+                    <span className="dashboard-action-card__cue">
+                      <span>Buka</span>
+                      <AppIcon name="chevronRight" size="sm" />
+                    </span>
+                  </Link>
+                ))}
               </div>
             </section>
           </div>
