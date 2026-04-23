@@ -12,7 +12,7 @@ type SidebarProps = {
 type NavItem = {
   to: string;
   label: string;
-  icon: "dashboard" | "tickets" | "plus" | "mine" | "assigned" | "profile" | "settings";
+  icon: "dashboard" | "tickets" | "plus" | "help" | "mine" | "assigned" | "profile" | "settings";
   isVisible: (permissions: ReturnType<typeof useAuth>["permissions"]) => boolean;
 };
 
@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
     icon: "plus",
     isVisible: (permissions) => permissions.canCreateTickets,
   },
+  { to: "/help", label: "Pusat Bantuan", icon: "help", isVisible: () => true },
   {
     to: "/tickets/mine",
     label: "Tiket Saya",

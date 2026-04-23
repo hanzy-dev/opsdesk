@@ -7,6 +7,8 @@ import { EmptyState } from "../components/common/EmptyState";
 import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { StatusBadge } from "../components/tickets/StatusBadge";
+import { helpArticles } from "../content/helpArticles";
+import { getFeaturedHelpArticles } from "../utils/selfService";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket, TicketActivity, TicketPriority } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
@@ -229,6 +231,12 @@ export function DashboardPage() {
             }
           : null,
         {
+          title: "Pusat bantuan",
+          description: "Temukan panduan singkat sebelum membuat tiket atau saat menunggu tindak lanjut.",
+          to: "/help",
+          icon: "help" as const,
+        },
+        {
           title: "Lihat semua tiket",
           description: "Masuk ke antrean utama untuk triase, filter, dan tindak lanjut operasional.",
           to: "/tickets",
@@ -256,15 +264,21 @@ export function DashboardPage() {
       ].filter((item): item is NonNullable<typeof item> => item !== null),
     [permissions.canAssignTickets, permissions.canCreateTickets],
   );
+  const isReporterPortal = !permissions.canViewOperationalTickets;
+  const featuredHelpArticles = useMemo(() => getFeaturedHelpArticles(3), []);
 
   if (loading) {
     return (
       <LoadingState
         eyebrow="Dashboard"
-        label="Menyiapkan ringkasan operasional..."
-        supportText="Kami sedang merapikan KPI, distribusi tiket, dan beban kerja operasional untuk sesi Anda."
+        label={isReporterPortal ? "Menyiapkan portal pelapor..." : "Menyiapkan ringkasan operasional..."}
+        supportText={
+          isReporterPortal
+            ? "Kami sedang merapikan tiket terbaru, pembaruan terkini, dan panduan bantuan untuk sesi Anda."
+            : "Kami sedang merapikan KPI, distribusi tiket, dan beban kerja operasional untuk sesi Anda."
+        }
         lines={6}
-        skeletonTitle="Menyusun cockpit operasional OpsDesk"
+        skeletonTitle={isReporterPortal ? "Menyusun portal pelapor OpsDesk" : "Menyusun cockpit operasional OpsDesk"}
       />
     );
   }
@@ -274,8 +288,16 @@ export function DashboardPage() {
       <ErrorState
         eyebrow="Dashboard"
         title="Dashboard belum siap ditampilkan"
-        message="Ringkasan operasional belum bisa dimuat sepenuhnya untuk saat ini."
-        supportText="Coba muat ulang beberapa saat lagi. Jika kendala berlanjut, Anda masih bisa melanjutkan pekerjaan dari halaman tiket."
+        message={
+          isReporterPortal
+            ? "Portal pelapor belum bisa dimuat sepenuhnya untuk saat ini."
+            : "Ringkasan operasional belum bisa dimuat sepenuhnya untuk saat ini."
+        }
+        supportText={
+          isReporterPortal
+            ? "Coba muat ulang beberapa saat lagi. Anda juga masih bisa membuka daftar tiket atau pusat bantuan."
+            : "Coba muat ulang beberapa saat lagi. Jika kendala berlanjut, Anda masih bisa melanjutkan pekerjaan dari halaman tiket."
+        }
         onRetry={() => void loadDashboard()}
       />
     );
@@ -295,35 +317,51 @@ export function DashboardPage() {
 
   const statCards: DashboardStatCard[] = [
     {
-      label: "Perlu triase",
+      label: isReporterPortal ? "Tiket terbuka" : "Perlu triase",
       value: data.stats.open,
-      description: "Tiket terbuka yang masih menunggu tindak lanjut awal.",
+      description: isReporterPortal
+        ? "Tiket Anda yang sudah diterima dan masih menunggu tindak lanjut awal."
+        : "Tiket terbuka yang masih menunggu tindak lanjut awal.",
       to: "/tickets?status=open",
       tone: "is-amber",
       featured: true,
     },
     {
-      label: "Sedang berjalan",
+      label: isReporterPortal ? "Sedang diproses" : "Sedang berjalan",
       value: data.stats.inProgress,
-      description: "Tiket aktif yang sedang berada dalam proses penanganan.",
+      description: isReporterPortal
+        ? "Tiket Anda yang sedang ditangani atau ditinjau oleh tim."
+        : "Tiket aktif yang sedang berada dalam proses penanganan.",
       to: "/tickets?status=in_progress",
       tone: "is-blue",
     },
-    {
-      label: "Belum ditugaskan",
-      value: data.stats.unassigned,
-      description: "Tiket yang sudah masuk antrean tetapi belum punya penanggung jawab.",
-      to: "/tickets?assignee=unassigned",
-      tone: "is-violet",
-    },
-    {
-      label: "Mendekati target",
-      value: data.stats.warning,
-      description: "Tiket aktif yang mulai mendekati batas target operasional berbasis prioritas.",
-      to: "/tickets",
-      tone: "is-amber",
-    },
-    permissions.canAssignTickets
+    ...(isReporterPortal
+      ? [
+          {
+            label: "Sudah selesai",
+            value: data.stats.resolved,
+            description: "Tiket yang sudah ditutup dan bisa Anda cek ulang bila perlu.",
+            to: "/tickets?status=resolved",
+            tone: "is-green" as const,
+          },
+        ]
+      : [
+          {
+            label: "Belum ditugaskan",
+            value: data.stats.unassigned,
+            description: "Tiket yang sudah masuk antrean tetapi belum punya penanggung jawab.",
+            to: "/tickets?assignee=unassigned",
+            tone: "is-violet" as const,
+          },
+          {
+            label: "Mendekati target",
+            value: data.stats.warning,
+            description: "Tiket aktif yang mulai mendekati batas target operasional berbasis prioritas.",
+            to: "/tickets",
+            tone: "is-amber" as const,
+          },
+        ]),
+    permissions.canAssignTickets && !isReporterPortal
       ? {
           label: "Ditugaskan ke saya",
           value: data.stats.assignedToMe,
@@ -332,28 +370,34 @@ export function DashboardPage() {
           tone: "is-green",
         }
       : {
-          label: "Sudah selesai",
-          value: data.stats.resolved,
-          description: "Tiket yang telah diselesaikan dari akses akun saat ini.",
-          to: "/tickets?status=resolved",
+          label: "Panduan tersedia",
+          value: helpArticles.length,
+          description: "Artikel bantuan ringan yang bisa dipakai sebelum atau sesudah membuat tiket.",
+          to: "/help",
           tone: "is-green",
         },
     {
-      label: "Total tiket terakses",
+      label: isReporterPortal ? "Perlu perhatian" : "Total tiket terakses",
       value: data.stats.total,
-      description: permissions.canViewOperationalTickets
-        ? "Seluruh tiket yang berada dalam jangkauan operasional akun ini."
-        : "Total tiket yang bisa Anda akses dari akun saat ini.",
-      to: "/tickets",
+      description: isReporterPortal
+        ? "Gunakan daftar tiket dan komentar publik untuk memastikan tidak ada update yang terlewat."
+        : permissions.canViewOperationalTickets
+          ? "Seluruh tiket yang berada dalam jangkauan operasional akun ini."
+          : "Total tiket yang bisa Anda akses dari akun saat ini.",
+      to: isReporterPortal ? "/tickets/mine" : "/tickets",
       tone: "is-neutral",
     },
-    {
-      label: "Lewat target",
-      value: data.stats.breached,
-      description: "Tiket aktif yang sudah melewati target operasional ringan dan butuh perhatian cepat.",
-      to: "/tickets",
-      tone: "is-violet",
-    },
+    ...(isReporterPortal
+      ? []
+      : [
+          {
+            label: "Lewat target",
+            value: data.stats.breached,
+            description: "Tiket aktif yang sudah melewati target operasional ringan dan butuh perhatian cepat.",
+            to: "/tickets",
+            tone: "is-violet" as const,
+          },
+        ]),
   ];
 
   return (
@@ -361,11 +405,16 @@ export function DashboardPage() {
       <div className="hero-card hero-card--spotlight dashboard-hero">
         <div className="dashboard-hero__copy">
           <div>
-            <p className="section-eyebrow">Command center</p>
-            <h2>Pantau kesehatan antrean, distribusi beban, dan ritme operasional</h2>
+            <p className="section-eyebrow">{isReporterPortal ? "Portal pelapor" : "Command center"}</p>
+            <h2>
+              {isReporterPortal
+                ? "Lacak tiket, temukan panduan, dan pahami pembaruan terbaru"
+                : "Pantau kesehatan antrean, distribusi beban, dan ritme operasional"}
+            </h2>
             <p>
-              Dashboard ini merangkum KPI utama, pola tiket yang masuk, dan sinyal kerja yang membantu agent atau admin
-              mengambil langkah berikutnya lebih cepat.
+              {isReporterPortal
+                ? "Dashboard ini membantu pelapor memahami status tiket, melihat pembaruan terbaru, dan menemukan panduan mandiri tanpa perlu platform knowledge base yang berat."
+                : "Dashboard ini merangkum KPI utama, pola tiket yang masuk, dan sinyal kerja yang membantu agent atau admin mengambil langkah berikutnya lebih cepat."}
             </p>
           </div>
           <div className="dashboard-hero__actions">
@@ -485,12 +534,74 @@ export function DashboardPage() {
         </div>
       ) : (
         <>
+          {isReporterPortal ? (
+            <div className="dashboard-support-grid">
+              <section className="panel panel--section dashboard-panel">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Self-service</p>
+                    <h3>Panduan mandiri yang paling sering membantu</h3>
+                  </div>
+                  <Link className="button button--secondary" to="/help">
+                    Buka Pusat Bantuan
+                  </Link>
+                </div>
+                <div className="dashboard-actions-grid">
+                  {featuredHelpArticles.map((article) => (
+                    <article className="dashboard-action-card" key={article.id}>
+                      <div className="dashboard-action-card__header">
+                        <AppIconBadge name="help" size="sm" tone="accent" />
+                        <strong>{article.title}</strong>
+                      </div>
+                      <p>{article.summary}</p>
+                      <span className="dashboard-action-card__cue">
+                        <span>{article.readTimeMinutes} menit baca</span>
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="panel panel--section dashboard-panel">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Cara pakai</p>
+                    <h3>Apa yang bisa Anda lakukan dari portal ini</h3>
+                  </div>
+                </div>
+                <div className="action-overview">
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Lihat status dengan konteks</strong>
+                      <p>Setiap tiket membantu Anda memahami apakah tiket baru diterima, sedang diproses, atau sudah selesai.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">Aktif</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Baca update publik</strong>
+                      <p>Komentar publik membantu Anda mengikuti tindak lanjut tanpa perlu menghubungi tim lewat jalur lain.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">Aktif</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Tambahkan info jika perlu</strong>
+                      <p>Anda tetap bisa membalas tiket atau menambah lampiran bila ada konteks baru yang penting.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">Aktif</span>
+                  </article>
+                </div>
+              </section>
+            </div>
+          ) : null}
+
           <div className="dashboard-analytics-grid">
             <section className="panel panel--section dashboard-panel">
               <div className="section-heading">
                 <div>
-                  <p className="section-eyebrow">Distribusi status</p>
-                  <h3>Komposisi antrean saat ini</h3>
+                  <p className="section-eyebrow">{isReporterPortal ? "Status tiket" : "Distribusi status"}</p>
+                  <h3>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean saat ini"}</h3>
                 </div>
               </div>
               <DistributionPanel items={data.statusDistribution} />
@@ -499,8 +610,8 @@ export function DashboardPage() {
             <section className="panel panel--section dashboard-panel">
               <div className="section-heading">
                 <div>
-                  <p className="section-eyebrow">Kategori</p>
-                  <h3>Pola kebutuhan yang paling sering masuk</h3>
+                  <p className="section-eyebrow">{isReporterPortal ? "Kategori tiket" : "Kategori"}</p>
+                  <h3>{isReporterPortal ? "Masalah yang paling sering Anda laporkan" : "Pola kebutuhan yang paling sering masuk"}</h3>
                 </div>
               </div>
               <DistributionPanel items={data.categoryDistribution} emptyLabel="Belum ada kategori yang dapat diringkas." />
@@ -509,8 +620,8 @@ export function DashboardPage() {
             <section className="panel panel--section dashboard-panel">
               <div className="section-heading">
                 <div>
-                  <p className="section-eyebrow">Area tujuan</p>
-                  <h3>Sebaran tiket per tim operasional</h3>
+                  <p className="section-eyebrow">{isReporterPortal ? "Tim tujuan" : "Area tujuan"}</p>
+                  <h3>{isReporterPortal ? "Tiket Anda paling sering diarahkan ke tim mana" : "Sebaran tiket per tim operasional"}</h3>
                 </div>
               </div>
               <DistributionPanel items={data.teamDistribution} emptyLabel="Belum ada area operasional yang dapat diringkas." />
@@ -521,8 +632,8 @@ export function DashboardPage() {
             <section className="panel panel--section dashboard-panel">
               <div className="section-heading">
                 <div>
-                  <p className="section-eyebrow">Ritme tiket</p>
-                  <h3>Tiket masuk 7 hari terakhir</h3>
+                  <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
+                  <h3>{isReporterPortal ? "Tiket yang Anda buat dalam 7 hari terakhir" : "Tiket masuk 7 hari terakhir"}</h3>
                 </div>
               </div>
               <div className="dashboard-trend">
@@ -546,29 +657,63 @@ export function DashboardPage() {
               </div>
             </section>
 
-            <section className="panel panel--section dashboard-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">Distribusi beban</p>
-                  <h3>Antrean aktif per petugas</h3>
+            {isReporterPortal ? (
+              <section className="panel panel--section dashboard-panel">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Panduan status</p>
+                    <h3>Apa arti status tiket Anda</h3>
+                  </div>
                 </div>
-              </div>
-              {data.workloadDistribution.length === 0 ? (
-                <EmptyState title="Belum ada beban aktif" description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia." />
-              ) : (
-                <div className="dashboard-workload-list">
-                  {data.workloadDistribution.map((item) => (
-                    <article className="dashboard-workload-item" key={item.key}>
-                      <div>
-                        <strong>{item.label}</strong>
-                        <p>{item.sublabel}</p>
-                      </div>
-                      <span className="dashboard-workload-item__value">{item.value} tiket aktif</span>
-                    </article>
-                  ))}
+                <div className="action-overview">
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Terbuka</strong>
+                      <p>Tiket sudah diterima dan menunggu triase awal dari tim terkait.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">Langkah 1</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Sedang ditangani</strong>
+                      <p>Tiket sedang diperiksa, dikerjakan, atau menunggu verifikasi tambahan dari konteks yang ada.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">Langkah 2</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Selesai</strong>
+                      <p>Tindak lanjut utama sudah dianggap tuntas. Anda tetap bisa membalas bila masalah berlanjut.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">Langkah 3</span>
+                  </article>
                 </div>
-              )}
-            </section>
+              </section>
+            ) : (
+              <section className="panel panel--section dashboard-panel">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Distribusi beban</p>
+                    <h3>Antrean aktif per petugas</h3>
+                  </div>
+                </div>
+                {data.workloadDistribution.length === 0 ? (
+                  <EmptyState title="Belum ada beban aktif" description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia." />
+                ) : (
+                  <div className="dashboard-workload-list">
+                    {data.workloadDistribution.map((item) => (
+                      <article className="dashboard-workload-item" key={item.key}>
+                        <div>
+                          <strong>{item.label}</strong>
+                          <p>{item.sublabel}</p>
+                        </div>
+                        <span className="dashboard-workload-item__value">{item.value} tiket aktif</span>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </div>
 
           <div className="dashboard-main-grid">
@@ -576,7 +721,7 @@ export function DashboardPage() {
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">Tiket terbaru</p>
-                  <h3>Antrian yang paling baru diperbarui</h3>
+                  <h3>{isReporterPortal ? "Tiket yang baru diperbarui" : "Antrian yang paling baru diperbarui"}</h3>
                 </div>
                 <Link className="button button--secondary" to="/tickets">
                   Lihat Semua
@@ -614,7 +759,7 @@ export function DashboardPage() {
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">Sorotan audit</p>
-                  <h3>Aktivitas terbaru yang layak dipantau</h3>
+                  <h3>{isReporterPortal ? "Pembaruan terbaru yang layak Anda pantau" : "Aktivitas terbaru yang layak dipantau"}</h3>
                 </div>
               </div>
 
@@ -650,8 +795,8 @@ export function DashboardPage() {
             <section className="panel panel--section dashboard-panel">
               <div className="section-heading">
                 <div>
-                  <p className="section-eyebrow">Butuh perhatian</p>
-                  <h3>Tiket prioritas tinggi yang belum selesai</h3>
+                  <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
+                  <h3>{isReporterPortal ? "Tiket penting yang belum selesai" : "Tiket prioritas tinggi yang belum selesai"}</h3>
                 </div>
               </div>
               {data.attentionTickets.length === 0 ? (
@@ -689,7 +834,7 @@ export function DashboardPage() {
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">Aksi cepat</p>
-                  <h3>Jalur kerja yang paling sering dibutuhkan</h3>
+                  <h3>{isReporterPortal ? "Jalur utama untuk pelapor" : "Jalur kerja yang paling sering dibutuhkan"}</h3>
                 </div>
               </div>
 

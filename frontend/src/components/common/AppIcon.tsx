@@ -4,6 +4,7 @@ export type AppIconName =
   | "dashboard"
   | "tickets"
   | "plus"
+  | "help"
   | "mine"
   | "assigned"
   | "profile"
@@ -50,6 +51,14 @@ const iconPaths: Record<AppIconName, ReactElement> = {
     <>
       <path d="M12 5v14" />
       <path d="M5 12h14" />
+    </>
+  ),
+  help: (
+    <>
+      <path d="M6 5.5h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-4 2v-13a2 2 0 0 1 2-2Z" />
+      <path d="M9 9h6" />
+      <path d="M9 12.5h6" />
+      <path d="M9 16h3.5" />
     </>
   ),
   mine: (

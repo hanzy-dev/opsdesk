@@ -13,6 +13,7 @@ const pageTitles: Record<string, string> = {
   "/tickets/mine": "Tiket Saya",
   "/tickets/assigned": "Ditugaskan ke Saya",
   "/tickets/new": "Buat Tiket",
+  "/help": "Pusat Bantuan",
   "/profile": "Profil",
   "/settings": "Pengaturan Akun",
 };

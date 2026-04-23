@@ -8,6 +8,7 @@ import { CreateTicketPage } from "./pages/CreateTicketPage";
 import { AccountSettingsPage } from "./pages/AccountSettingsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { HelpCenterPage } from "./pages/HelpCenterPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProfilePage } from "./pages/ProfilePage";
@@ -71,6 +72,7 @@ export default function App() {
         <Route path="tickets/mine" element={<TicketsPage />} />
         <Route path="tickets/assigned" element={<TicketsPage />} />
         <Route path="tickets/new" element={<CreateTicketPage />} />
+        <Route path="help" element={<HelpCenterPage />} />
         <Route path="tickets/:ticketId" element={<TicketDetailPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />

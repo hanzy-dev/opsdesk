@@ -27,6 +27,7 @@ import type { AssignableUser } from "../types/profile";
 import type { Attachment, Comment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
+import { buildReporterTicketGuidance, findHelpArticleMatches, getReporterProgressSteps } from "../utils/selfService";
 import { formatSlaDueLabel, formatSlaTarget, getSlaState, getSlaToneLabel, getTicketDueAt } from "../utils/sla";
 import { buildOperatorDraftAssist, buildTicketSummaryAssist, findRelatedTickets, getTicketAssistSuggestion } from "../utils/smartAssist";
 import {
@@ -220,19 +221,23 @@ export function TicketDetailPage() {
             : ticket?.assigneeName
               ? `Saat ini tiket ditangani oleh ${ticket.assigneeName}.`
               : "Tiket ini sudah masuk antrean, tetapi belum memiliki petugas yang bertanggung jawab."
-          : "Penugasan tiket hanya tersedia untuk petugas atau admin.",
-        canAct: permissions.canAssignTickets,
+          : ticket?.assigneeName
+            ? `Saat ini tiket ditangani oleh ${ticket.assigneeName}.`
+            : "Tiket ini sudah masuk antrean dan menunggu petugas yang relevan mengambil tindak lanjut.",
+        canAct: permissions.canAssignTickets || !permissions.canViewOperationalTickets,
       },
       {
         title: "Perubahan status",
         description: permissions.canUpdateTicketStatus
           ? "Status tiket dapat diperbarui sesuai progres penanganan."
-          : "Perubahan status hanya tersedia untuk petugas atau admin.",
-        canAct: permissions.canUpdateTicketStatus,
+          : "Anda tetap bisa memantau status terbaru dari tiket ini tanpa mengubahnya sendiri.",
+        canAct: permissions.canUpdateTicketStatus || !permissions.canViewOperationalTickets,
       },
       {
         title: "Kolaborasi",
-        description: "Komentar dan lampiran tetap tersedia untuk memperkaya konteks penanganan tiket.",
+        description: permissions.canViewOperationalTickets
+          ? "Komentar dan lampiran tetap tersedia untuk memperkaya konteks penanganan tiket."
+          : "Komentar publik dan lampiran bisa dipakai untuk menambahkan konteks baru yang relevan.",
         canAct: true,
       },
     ],
@@ -301,6 +306,21 @@ export function TicketDetailPage() {
   const operatorDraftAssist = useMemo(
     () => (ticket ? buildOperatorDraftAssist(ticket, activities, relatedTicketHints) : null),
     [activities, relatedTicketHints, ticket],
+  );
+  const isReporterPortal = !permissions.canViewOperationalTickets;
+  const reporterGuidance = useMemo(() => (ticket ? buildReporterTicketGuidance(ticket, activities) : null), [activities, ticket]);
+  const reporterProgressSteps = useMemo(() => (ticket ? getReporterProgressSteps(ticket.status) : []), [ticket]);
+  const reporterHelpMatches = useMemo(
+    () =>
+      ticket
+        ? findHelpArticleMatches({
+            title: ticket.title,
+            description: ticket.description,
+            category: ticket.category,
+            limit: 2,
+          })
+        : [],
+    [ticket],
   );
 
   const assigneeOptions = useMemo(() => {
@@ -644,10 +664,12 @@ export function TicketDetailPage() {
           <article className="panel panel--section stack-md">
             <div className="section-heading">
               <div>
-                <p className="section-eyebrow">Metadata</p>
-                <h3>Informasi tiket</h3>
+                <p className="section-eyebrow">{isReporterPortal ? "Ringkasan tiket" : "Metadata"}</p>
+                <h3>{isReporterPortal ? "Informasi yang terlihat oleh pelapor" : "Informasi tiket"}</h3>
               </div>
-              <p className="filter-summary">Ringkasan inti untuk verifikasi operasional</p>
+              <p className="filter-summary">
+                {isReporterPortal ? "Ringkasan inti untuk memahami progres dan konteks tiket Anda" : "Ringkasan inti untuk verifikasi operasional"}
+              </p>
             </div>
 
             <dl className="meta-grid meta-grid--detail">
@@ -703,10 +725,12 @@ export function TicketDetailPage() {
                 <dt>Petugas</dt>
                 <dd>{ticket.assigneeName || "Belum ditugaskan"}</dd>
               </div>
-              <div>
-                <dt>ID petugas</dt>
-                <dd>{ticket.assigneeId || "Belum ditugaskan"}</dd>
-              </div>
+              {permissions.canViewOperationalTickets ? (
+                <div>
+                  <dt>ID petugas</dt>
+                  <dd>{ticket.assigneeId || "Belum ditugaskan"}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Waktu penugasan</dt>
                 <dd>{ticket.assignedAt ? formatDateTime(ticket.assignedAt) : "Belum ditugaskan"}</dd>
@@ -763,7 +787,11 @@ export function TicketDetailPage() {
             <div>
               <p className="section-eyebrow">Kolaborasi</p>
               <h3>Komunikasi tiket</h3>
-              <p className="form-hint">Komentar publik dapat dilihat pelapor, sedangkan catatan internal hanya untuk petugas dan admin.</p>
+              <p className="form-hint">
+                {permissions.canViewOperationalTickets
+                  ? "Komentar publik dapat dilihat pelapor, sedangkan catatan internal hanya untuk petugas dan admin."
+                  : "Baca pembaruan publik dari tim atau tambahkan informasi baru bila ada konteks tambahan yang penting."}
+              </p>
             </div>
 
             {ticket.comments.length === 0 ? <EmptyState title="Belum ada komentar" description="Tambahkan komentar pertama untuk mencatat progres penanganan." /> : null}
@@ -842,11 +870,59 @@ export function TicketDetailPage() {
         </div>
 
         <aside className="stack-lg">
+          {isReporterPortal && reporterGuidance ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Portal pelapor</p>
+                <h3>Progres dan langkah berikutnya</h3>
+                <p className="form-hint">Diringkas dari status, komentar publik, dan aktivitas tiket yang sudah tersimpan.</p>
+              </div>
+
+              <div className="reporter-guidance-card">
+                <span className={`reporter-guidance-card__status reporter-guidance-card__status--${reporterGuidance.statusLabel}`}>
+                  {reporterGuidance.statusLabel === "baru"
+                    ? "Menunggu triase"
+                    : reporterGuidance.statusLabel === "berjalan"
+                      ? "Sedang diproses"
+                      : "Sudah selesai"}
+                </span>
+                <strong>{reporterGuidance.headline}</strong>
+                <p>{reporterGuidance.expectation}</p>
+                <small>{reporterGuidance.lastUpdate}</small>
+              </div>
+
+              <div className="reporter-progress">
+                {reporterProgressSteps.map((step) => (
+                  <article
+                    className={`reporter-progress__step ${step.isComplete ? "reporter-progress__step--complete" : ""} ${step.isCurrent ? "reporter-progress__step--current" : ""}`}
+                    key={step.key}
+                  >
+                    <span>{step.label}</span>
+                  </article>
+                ))}
+              </div>
+
+              <article className="smart-assist-card smart-assist-card--subtle">
+                <div className="smart-assist-card__header">
+                  <div>
+                    <span>Langkah berikutnya</span>
+                    <strong>Apa yang sebaiknya dilakukan pelapor</strong>
+                  </div>
+                </div>
+                <p>{reporterGuidance.nextStep}</p>
+              </article>
+            </article>
+          ) : null}
+
           <article className="panel panel--section stack-md">
             <div>
-              <p className="section-eyebrow">Smart assist</p>
-              <h3>Ringkasan dan sinyal cepat</h3>
-              <p className="form-hint">Asistensi ini disusun dari data tiket yang sudah ada, bukan jawaban AI generatif penuh.</p>
+              <p className="section-eyebrow">{isReporterPortal ? "Pembaruan ringkas" : "Smart assist"}</p>
+              <h3>{isReporterPortal ? "Ringkasan yang membantu dibaca cepat" : "Ringkasan dan sinyal cepat"}</h3>
+              <p className="form-hint">
+                {isReporterPortal
+                  ? "Ringkasan ini membantu pelapor memahami tiket tanpa harus membaca seluruh riwayat sekaligus."
+                  : "Asistensi ini disusun dari data tiket yang sudah ada, bukan jawaban AI generatif penuh."}
+              </p>
             </div>
             {summaryAssist ? (
               <div className="smart-assist-card smart-assist-card--subtle">
@@ -868,7 +944,7 @@ export function TicketDetailPage() {
               </div>
             ) : null}
 
-            {assistSuggestion ? (
+            {!isReporterPortal && assistSuggestion ? (
               <div className="smart-assist-card">
                 <div className="smart-assist-card__header">
                   <div>
@@ -917,9 +993,13 @@ export function TicketDetailPage() {
 
           <article className="panel panel--section stack-md">
             <div>
-              <p className="section-eyebrow">SLA ringan</p>
-              <h3>Target operasional tiket</h3>
-              <p className="form-hint">Timer ini adalah target operasional berbasis prioritas, bukan SLA bisnis kompleks berbasis jam kerja.</p>
+              <p className="section-eyebrow">{isReporterPortal ? "Ekspektasi waktu" : "SLA ringan"}</p>
+              <h3>{isReporterPortal ? "Target tindak lanjut tiket" : "Target operasional tiket"}</h3>
+              <p className="form-hint">
+                {isReporterPortal
+                  ? "Ini adalah target operasional ringan berbasis prioritas. Gunakan sebagai gambaran umum, bukan janji SLA kompleks."
+                  : "Timer ini adalah target operasional berbasis prioritas, bukan SLA bisnis kompleks berbasis jam kerja."}
+              </p>
             </div>
             <div className="sla-card">
               <div className="sla-card__header">
@@ -930,6 +1010,36 @@ export function TicketDetailPage() {
               <small>{slaDueAt ? `Target hingga ${formatDateTime(slaDueAt.toISOString())}` : "Target belum tersedia."}</small>
             </div>
           </article>
+
+          {isReporterPortal && reporterHelpMatches.length > 0 ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Panduan terkait</p>
+                <h3>Bantuan mandiri yang relevan</h3>
+                <p className="form-hint">Panduan ini bisa membantu Anda menambah konteks atau mengecek langkah dasar lebih dulu.</p>
+              </div>
+              <div className="help-inline-list">
+                {reporterHelpMatches.map((match) => (
+                  <article className="help-inline-card" key={match.article.id}>
+                    <div>
+                      <strong>{match.article.title}</strong>
+                      <p>{match.article.summary}</p>
+                      <small>{match.reason}</small>
+                    </div>
+                    <ul className="help-inline-card__steps">
+                      {match.article.steps.slice(0, 2).map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+              <Link className="button button--secondary" to="/help">
+                <AppIcon name="help" size="sm" />
+                Buka Pusat Bantuan
+              </Link>
+            </article>
+          ) : null}
 
           {relatedTicketHints.length > 0 ? (
             <article className="panel panel--section stack-md">
@@ -1109,8 +1219,8 @@ export function TicketDetailPage() {
           </article>
 
           <article className="panel panel--section">
-            <p className="section-eyebrow">Tambah catatan</p>
-            <h3>Tulis pembaruan tiket</h3>
+            <p className="section-eyebrow">{isReporterPortal ? "Balas tiket" : "Tambah catatan"}</p>
+            <h3>{isReporterPortal ? "Tambahkan informasi baru bila diperlukan" : "Tulis pembaruan tiket"}</h3>
             {permissions.canViewOperationalTickets && operatorDraftAssist ? (
               <div className="smart-assist-card smart-assist-card--subtle">
                 <div className="smart-assist-card__header">
@@ -1188,7 +1298,9 @@ export function TicketDetailPage() {
                   placeholder={
                     commentForm.visibility === "internal"
                       ? "Tuliskan catatan internal untuk koordinasi petugas."
-                      : "Tuliskan pembaruan penanganan yang relevan untuk pelapor."
+                      : isReporterPortal
+                        ? "Tuliskan informasi tambahan, dampak terbaru, atau konfirmasi hasil pengecekan Anda."
+                        : "Tuliskan pembaruan penanganan yang relevan untuk pelapor."
                   }
                   rows={5}
                 />

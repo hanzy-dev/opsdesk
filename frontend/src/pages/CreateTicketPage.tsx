@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { createTicket, listTickets, requestAttachmentUploadUrl, saveAttachment, uploadAttachmentFile } from "../api/tickets";
 import { AppIcon } from "../components/common/AppIcon";
@@ -12,6 +12,7 @@ import { getRoleLabel } from "../modules/auth/roles";
 import type { CreateTicketInput } from "../types/ticket";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
 import { getPreferredDisplayName } from "../utils/identity";
+import { findHelpArticleMatches } from "../utils/selfService";
 import { findRelatedTickets, getTicketAssistSuggestion } from "../utils/smartAssist";
 import {
   getDefaultTeamForCategory,
@@ -97,6 +98,16 @@ export function CreateTicketPage() {
     [form.description, form.title],
   );
   const debouncedAssistQuery = useDebouncedValue(`${form.title} ${form.description}`.trim(), 420);
+  const helpArticleMatches = useMemo(
+    () =>
+      findHelpArticleMatches({
+        title: form.title,
+        description: form.description,
+        category: assistSuggestion.category.value,
+        limit: 3,
+      }),
+    [assistSuggestion.category.value, form.description, form.title],
+  );
   const attachmentSummary =
     attachmentDrafts.length === 0
       ? "Belum ada lampiran dipilih."
@@ -560,6 +571,42 @@ export function CreateTicketPage() {
               </div>
             </div>
           </article>
+
+          {helpArticleMatches.length > 0 ? (
+            <article className="field field--full smart-assist-card smart-assist-card--subtle">
+              <div className="smart-assist-card__header">
+                <div>
+                  <span>Jawaban yang mungkin membantu</span>
+                  <strong>Cek panduan singkat sebelum tiket dikirim</strong>
+                </div>
+                <small>Saran ini memakai artikel bantuan lokal OpsDesk dan tidak mengubah tiket Anda secara otomatis.</small>
+              </div>
+              <div className="help-inline-list">
+                {helpArticleMatches.map((match) => (
+                  <article className="help-inline-card" key={match.article.id}>
+                    <div>
+                      <strong>{match.article.title}</strong>
+                      <p>{match.article.summary}</p>
+                      <small>{match.reason}</small>
+                    </div>
+                    <ul className="help-inline-card__steps">
+                      {match.article.steps.slice(0, 2).map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                    <p className="form-hint">{match.article.whenToCreateTicket}</p>
+                  </article>
+                ))}
+              </div>
+              <div className="form-actions form-actions--compact">
+                <Link className="button button--secondary" to="/help">
+                  <AppIcon name="help" size="sm" />
+                  Buka Pusat Bantuan
+                </Link>
+                <span className="form-hint">Jika masalah tetap terjadi setelah langkah awal, lanjutkan kirim tiket seperti biasa.</span>
+              </div>
+            </article>
+          ) : null}
 
           {(relatedTicketHints.length > 0 || isLoadingRelatedTickets) && debouncedAssistQuery.length >= 10 ? (
             <article className="field field--full smart-assist-card smart-assist-card--subtle">

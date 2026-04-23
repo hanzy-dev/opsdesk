@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "../api/client";
 import { CreateTicketPage } from "./CreateTicketPage";
@@ -77,8 +78,16 @@ describe("CreateTicketPage smoke tests", () => {
     revokeObjectURLMock.mockClear();
   });
 
+  function renderPage() {
+    return render(
+      <MemoryRouter>
+        <CreateTicketPage />
+      </MemoryRouter>,
+    );
+  }
+
   it("prevents submit while required fields are empty", async () => {
-    render(<CreateTicketPage />);
+    renderPage();
 
     const submitButton = screen.getByRole("button", { name: "Simpan Tiket" });
     expect(submitButton).toBeDisabled();
@@ -123,7 +132,7 @@ describe("CreateTicketPage smoke tests", () => {
       ticketId: "TCK-2001",
     });
 
-    render(<CreateTicketPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText("Contoh: API timeout di layanan tiket"), {
       target: { value: "API timeout pada dashboard" },
@@ -174,7 +183,7 @@ describe("CreateTicketPage smoke tests", () => {
 
   it("allows removing a selected attachment before submit", async () => {
     listTicketsMock.mockResolvedValue({ items: [], pagination: { total_items: 0 } });
-    render(<CreateTicketPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText("Contoh: API timeout di layanan tiket"), {
       target: { value: "Screenshot error gateway" },
@@ -199,7 +208,7 @@ describe("CreateTicketPage smoke tests", () => {
 
   it("shows reporter identity as derived read-only fields", () => {
     listTicketsMock.mockResolvedValue({ items: [], pagination: { total_items: 0 } });
-    render(<CreateTicketPage />);
+    renderPage();
 
     expect(screen.getByText("Pelapor aktif")).toBeInTheDocument();
     expect(screen.getByText("Aulia Rahman")).toBeInTheDocument();
@@ -222,7 +231,7 @@ describe("CreateTicketPage smoke tests", () => {
       ),
     );
 
-    render(<CreateTicketPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText("Contoh: API timeout di layanan tiket"), {
       target: { value: "API timeout pada dashboard" },
@@ -260,7 +269,7 @@ describe("CreateTicketPage smoke tests", () => {
       pagination: { total_items: 1 },
     });
 
-    render(<CreateTicketPage />);
+    renderPage();
 
     fireEvent.change(screen.getByPlaceholderText("Contoh: API timeout di layanan tiket"), {
       target: { value: "Login SSO gagal" },
@@ -271,6 +280,8 @@ describe("CreateTicketPage smoke tests", () => {
 
     expect(await screen.findByText("Saran klasifikasi awal tiket")).toBeInTheDocument();
     expect(screen.getAllByText("Akses akun").length).toBeGreaterThan(0);
+    expect(await screen.findByText("Cek panduan singkat sebelum tiket dikirim")).toBeInTheDocument();
+    expect(screen.getByText("Masalah login, sandi, atau akses SSO")).toBeInTheDocument();
     expect(await screen.findByText("Hint kemungkinan duplikat atau tiket terkait")).toBeInTheDocument();
     expect(screen.getByText("Login SSO gagal untuk dosen")).toBeInTheDocument();
   });

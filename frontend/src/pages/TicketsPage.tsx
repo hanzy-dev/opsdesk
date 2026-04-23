@@ -8,6 +8,7 @@ import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { SelectControl } from "../components/common/SelectControl";
 import { TicketTable } from "../components/tickets/TicketTable";
+import { getFeaturedHelpArticles } from "../utils/selfService";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket } from "../types/ticket";
 import { useDebouncedValue } from "../utils/useDebouncedValue";
@@ -130,6 +131,8 @@ export function TicketsPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const debouncedSearchQuery = useDebouncedValue(searchQuery.trim(), preset.isSearchLocked ? 0 : 280);
+  const isReporterPortal = !permissions.canViewOperationalTickets;
+  const featuredHelpArticles = useMemo(() => getFeaturedHelpArticles(2), []);
 
   useEffect(() => {
     setSearchQuery("");
@@ -251,14 +254,26 @@ export function TicketsPage() {
           <h2>{preset.title}</h2>
           {preset.key === "assigned" ? (
             <p className="hero-card__supporting">Pantau beban kerja aktif Anda tanpa hasil kosong, blank, atau status yang membingungkan.</p>
+          ) : isReporterPortal ? (
+            <p className="hero-card__supporting">
+              Gunakan portal ini untuk melacak progres tiket, membaca pembaruan publik, dan berpindah ke panduan bantuan bila masalahnya masih bisa diselesaikan sendiri.
+            </p>
           ) : null}
         </div>
-        {permissions.canCreateTickets ? (
-          <Link className="button button--primary" to="/tickets/new">
-            <AppIcon name="plus" size="sm" />
-            Buat Tiket
-          </Link>
-        ) : null}
+        <div className="dashboard-hero__actions">
+          {permissions.canCreateTickets ? (
+            <Link className="button button--primary" to="/tickets/new">
+              <AppIcon name="plus" size="sm" />
+              Buat Tiket
+            </Link>
+          ) : null}
+          {isReporterPortal ? (
+            <Link className="button button--secondary" to="/help">
+              <AppIcon name="help" size="sm" />
+              Pusat Bantuan
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="metrics-grid metrics-grid--compact">
@@ -284,6 +299,68 @@ export function TicketsPage() {
           <strong>{stats.resolved}</strong>
         </article>
       </div>
+
+      {isReporterPortal ? (
+        <div className="dashboard-support-grid">
+          <section className="panel panel--section dashboard-panel">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Nilai portal</p>
+                <h3>Bukan hanya kirim tiket</h3>
+              </div>
+            </div>
+            <div className="action-overview">
+              <article className="action-overview__item">
+                <div>
+                  <strong>Lacak progres dengan jelas</strong>
+                  <p>Lihat status tiket Anda, kapan terakhir diperbarui, dan tiket mana yang masih perlu dipantau.</p>
+                </div>
+                <span className="action-state action-state--allowed">Aktif</span>
+              </article>
+              <article className="action-overview__item">
+                <div>
+                  <strong>Pahami pembaruan tiket</strong>
+                  <p>Masuk ke detail tiket untuk membaca komentar publik, riwayat, dan langkah berikutnya.</p>
+                </div>
+                <span className="action-state action-state--allowed">Aktif</span>
+              </article>
+              <article className="action-overview__item">
+                <div>
+                  <strong>Cari panduan saat perlu</strong>
+                  <p>Pusat bantuan lokal memberi panduan ringkas untuk login, jaringan, perangkat, dan status tiket.</p>
+                </div>
+                <span className="action-state action-state--allowed">Aktif</span>
+              </article>
+            </div>
+          </section>
+
+          <section className="panel panel--section dashboard-panel">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Panduan cepat</p>
+                <h3>Artikel bantuan yang sering dibuka</h3>
+              </div>
+              <Link className="button button--secondary" to="/help">
+                Lihat Semua
+              </Link>
+            </div>
+            <div className="dashboard-actions-grid">
+              {featuredHelpArticles.map((article) => (
+                <article className="dashboard-action-card" key={article.id}>
+                  <div className="dashboard-action-card__header">
+                    <AppIconBadge name="help" size="sm" tone="accent" />
+                    <strong>{article.title}</strong>
+                  </div>
+                  <p>{article.summary}</p>
+                  <span className="dashboard-action-card__cue">
+                    <span>{article.readTimeMinutes} menit baca</span>
+                  </span>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       <div className="panel panel--section stack-md tickets-toolbar">
         <div className="section-heading">
@@ -506,9 +583,13 @@ export function TicketsPage() {
         <div className="stack-md">
           <TicketTable
             tickets={tickets}
-            title="Daftar tiket"
-            eyebrow="Operasional"
-            helperText="Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
+            title={isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
+            eyebrow={isReporterPortal ? "Pelapor" : "Operasional"}
+            helperText={
+              isReporterPortal
+                ? "Gunakan daftar ini untuk membuka detail tiket, memantau progres, dan melihat pembaruan terbaru."
+                : "Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
+            }
           />
 
           <div className="panel panel--section">

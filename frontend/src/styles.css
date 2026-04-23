@@ -3969,6 +3969,191 @@ textarea:focus-visible {
   padding-bottom: var(--panel-padding-compact);
 }
 
+.help-center-page {
+  gap: var(--section-gap-loose);
+}
+
+.help-center-hero,
+.help-center-layout {
+  display: grid;
+  gap: var(--section-gap);
+}
+
+.help-center-layout {
+  grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.8fr);
+  align-items: start;
+}
+
+.help-center-hero__copy {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.help-center-highlight,
+.help-inline-card,
+.reporter-guidance-card,
+.reporter-progress__step,
+.help-article-card,
+.help-article-card__section {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.help-center-highlight {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  max-width: 420px;
+}
+
+.help-center-highlight span,
+.help-article-card__section strong {
+  color: #f2b792;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.help-center-highlight strong,
+.help-article-card h4 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.help-center-highlight p,
+.help-center-highlight small,
+.help-article-card p,
+.help-article-card small,
+.help-inline-card p,
+.help-inline-card small,
+.reporter-guidance-card p,
+.reporter-guidance-card small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.help-article-list,
+.help-inline-list {
+  display: grid;
+  gap: 14px;
+}
+
+.help-article-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.help-article-card__header,
+.help-article-card__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.help-article-card__section {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.help-article-card__list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+}
+
+.help-article-card__list--ordered {
+  padding-left: 20px;
+}
+
+.help-inline-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.help-inline-card strong,
+.reporter-guidance-card strong {
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
+.help-inline-card__steps {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  color: var(--text);
+}
+
+.reporter-guidance-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.reporter-guidance-card__status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.reporter-guidance-card__status--baru {
+  background: rgba(241, 182, 77, 0.16);
+  color: #ffd788;
+}
+
+.reporter-guidance-card__status--berjalan {
+  background: rgba(94, 164, 255, 0.16);
+  color: #abd5ff;
+}
+
+.reporter-guidance-card__status--selesai {
+  background: rgba(79, 190, 139, 0.16);
+  color: #8fe1b7;
+}
+
+.reporter-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reporter-progress__step {
+  padding: 14px 12px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.reporter-progress__step--complete,
+.reporter-progress__step--current {
+  border-color: rgba(239, 142, 83, 0.18);
+  color: var(--text);
+}
+
+.reporter-progress__step--current {
+  box-shadow: inset 0 0 0 1px rgba(239, 142, 83, 0.14);
+  background:
+    linear-gradient(135deg, rgba(239, 142, 83, 0.12), rgba(94, 164, 255, 0.06)),
+    rgba(255, 255, 255, 0.03);
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -4101,6 +4286,7 @@ textarea:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .help-center-layout,
   .ticket-layout,
   .ticket-overview-grid {
     grid-template-columns: 1fr;
@@ -4125,6 +4311,7 @@ textarea:focus-visible {
   }
 
   .dashboard-hero__copy,
+  .help-center-hero__copy,
   .dashboard-ticket-card__top,
   .dashboard-bars__meta,
   .dashboard-workload-item,
@@ -4151,6 +4338,7 @@ textarea:focus-visible {
   .profile-edit-spotlight,
   .dashboard-distribution__legend,
   .dashboard-trend__bars,
+  .reporter-progress,
   .ticket-overview-grid,
   .ticket-layout,
   .attachment-draft-card {
