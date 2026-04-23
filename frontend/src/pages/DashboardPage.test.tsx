@@ -152,11 +152,12 @@ describe("DashboardPage", () => {
     );
 
     expect(await screen.findByText("Pantau kesehatan antrean, distribusi beban, dan ritme operasional")).toBeInTheDocument();
+    expect(screen.getByText("Insight utama")).toBeInTheDocument();
     expect(screen.getByText("Pola kebutuhan yang paling sering masuk")).toBeInTheDocument();
     expect(screen.getByText("Sebaran tiket per tim operasional")).toBeInTheDocument();
-    expect(screen.getByText("Antrean aktif per petugas")).toBeInTheDocument();
-    expect(screen.getByText("Tiket prioritas tinggi yang belum selesai")).toBeInTheDocument();
-    expect(screen.getByText("Rata-rata penyelesaian")).toBeInTheDocument();
+    expect(screen.getByText("Sinyal atensi yang paling perlu dibaca cepat")).toBeInTheDocument();
+    expect(screen.getByText("Distribusi kerja dan kapasitas yang paling terlihat")).toBeInTheDocument();
+    expect(screen.getAllByText("Kecepatan penyelesaian").length).toBeGreaterThan(0);
     expect(screen.getAllByText("API timeout").length).toBeGreaterThan(0);
     expect(screen.getByText("Dina Petugas")).toBeInTheDocument();
 

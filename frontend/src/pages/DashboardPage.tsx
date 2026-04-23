@@ -8,9 +8,9 @@ import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { StatusBadge } from "../components/tickets/StatusBadge";
 import { helpArticles } from "../content/helpArticles";
+import { useAuth } from "../modules/auth/AuthContext";
 import { buildDashboardAutomationSnapshot } from "../utils/operatorAutomation";
 import { getFeaturedHelpArticles } from "../utils/selfService";
-import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket, TicketActivity, TicketPriority } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage } from "../utils/errors";
@@ -88,6 +88,13 @@ type DashboardStatCard = {
   to: string;
   tone: "is-neutral" | "is-amber" | "is-blue" | "is-green" | "is-violet";
   featured?: boolean;
+};
+
+type AttentionSignal = {
+  label: string;
+  value: number;
+  description: string;
+  tone: "open" | "progress" | "resolved" | "accent" | "cool" | "neutral";
 };
 
 const analyticsPageSize = 100;
@@ -403,6 +410,108 @@ export function DashboardPage() {
         ]),
   ];
 
+  const trendPeak = data.createdTrend.reduce<TrendPoint | null>((currentPeak, point) => {
+    if (!currentPeak || point.value > currentPeak.value) {
+      return point;
+    }
+
+    return currentPeak;
+  }, null);
+  const trendWindowTotal = data.createdTrend.reduce((sum, point) => sum + point.value, 0);
+  const trendWindowAverage = data.createdTrend.length > 0 ? trendWindowTotal / data.createdTrend.length : 0;
+  const leadingCategory = data.categoryDistribution[0] ?? null;
+  const leadingTeam = data.teamDistribution[0] ?? null;
+  const topWorkloadItem = data.workloadDistribution[0] ?? null;
+
+  const attentionSignals: AttentionSignal[] = isReporterPortal
+    ? [
+        {
+          label: "Tiket terbuka",
+          value: data.stats.open,
+          description: "Masih menunggu tindak lanjut awal atau pembaruan berikutnya.",
+          tone: "open",
+        },
+        {
+          label: "Sedang diproses",
+          value: data.stats.inProgress,
+          description: "Sudah berada dalam alur tindak lanjut tim terkait.",
+          tone: "progress",
+        },
+        {
+          label: "Sudah selesai",
+          value: data.stats.resolved,
+          description: "Bisa Anda cek ulang bila masih ada kendala lanjutan.",
+          tone: "resolved",
+        },
+      ]
+    : [
+        {
+          label: "Belum ditugaskan",
+          value: data.stats.unassigned,
+          description: "Masih menunggu pemilik awal di antrean operasional.",
+          tone: "accent",
+        },
+        {
+          label: "Mendekati target",
+          value: data.stats.warning,
+          description: "Perlu follow-up sebelum melewati target prioritas.",
+          tone: "open",
+        },
+        {
+          label: "Lewat target",
+          value: data.stats.breached,
+          description: "Perlu keputusan cepat atau eskalasi yang lebih tegas.",
+          tone: "progress",
+        },
+        {
+          label: "Urgent tanpa pemilik",
+          value: data.automationSnapshot.urgentUnassigned,
+          description: "Prioritas tinggi yang masih belum punya penanggung jawab.",
+          tone: "cool",
+        },
+      ];
+
+  const workloadInsights = isReporterPortal
+    ? [
+        {
+          label: "Kategori dominan",
+          value: leadingCategory ? `${leadingCategory.value} tiket` : "Belum ada pola",
+          description: leadingCategory
+            ? `${leadingCategory.label} menjadi topik yang paling sering muncul di akses Anda.`
+            : "Kategori akan terlihat setelah ada tiket yang cukup untuk diringkas.",
+        },
+        {
+          label: "Tim tujuan utama",
+          value: leadingTeam ? leadingTeam.label : "Belum ada data",
+          description: leadingTeam
+            ? `${Math.round(leadingTeam.share)}% tiket terbaru paling sering diarahkan ke area ini.`
+            : "Area tujuan akan muncul setelah distribusi tiket mulai terbentuk.",
+        },
+      ]
+    : [
+        {
+          label: "Antrean personal tertinggi",
+          value: topWorkloadItem ? `${topWorkloadItem.value} tiket aktif` : "Belum ada pemilik aktif",
+          description: topWorkloadItem
+            ? `${topWorkloadItem.label} saat ini memegang beban kerja aktif tertinggi.`
+            : "Belum ada penanggung jawab aktif yang dapat diringkas dari data saat ini.",
+        },
+        {
+          label: "Area kerja dominan",
+          value: leadingTeam ? leadingTeam.label : "Belum ada data",
+          description: leadingTeam
+            ? `${leadingTeam.value} tiket terbaru paling banyak masuk ke ${leadingTeam.label}.`
+            : "Area tujuan akan muncul setelah data antrean cukup untuk dihitung.",
+        },
+        {
+          label: "Kecepatan penyelesaian",
+          value: data.resolutionInsight ? formatDurationHours(data.resolutionInsight.averageHours) : "Belum cukup sampel",
+          description: data.resolutionInsight
+            ? `Diringkas dari ${data.resolutionInsight.sampleSize} tiket yang benar-benar selesai.`
+            : "Belum ada tiket selesai yang cukup untuk menghitung pola penyelesaian.",
+        },
+      ];
+
   return (
     <section className="stack-lg page-shell page-shell--wide page-flow dashboard-page">
       <div className="hero-card hero-card--spotlight dashboard-hero motion-reveal">
@@ -474,25 +583,6 @@ export function DashboardPage() {
         ))}
       </div>
 
-      {data.dataScopeNote || data.resolutionInsight ? (
-        <div className="dashboard-note-strip">
-          {data.dataScopeNote ? (
-            <article className="dashboard-note-card">
-              <span>Cakupan analitik</span>
-              <strong>{data.dataScopeNote}</strong>
-            </article>
-          ) : null}
-          {data.resolutionInsight ? (
-            <article className="dashboard-note-card dashboard-note-card--cool">
-              <span>Rata-rata penyelesaian</span>
-              <strong>
-                {formatDurationHours(data.resolutionInsight.averageHours)} dari {data.resolutionInsight.sampleSize} tiket selesai
-              </strong>
-            </article>
-          ) : null}
-        </div>
-      ) : null}
-
       {data.stats.total === 0 ? (
         <div className="stack-lg">
           <section className="panel panel--section dashboard-actions-panel">
@@ -528,6 +618,7 @@ export function DashboardPage() {
                 ? "Mulai dengan membuat tiket baru agar command center OpsDesk mulai menampilkan kondisi operasional."
                 : "Belum ada tiket yang dapat Anda akses saat ini."
             }
+            supportText="Begitu tiket mulai tercatat, dashboard akan menampilkan KPI, sorotan prioritas, analitik tren, dan beban kerja dari permukaan yang sama."
             action={
               permissions.canCreateTickets ? (
                 <Link className="button button--primary" to="/tickets/new">
@@ -540,7 +631,7 @@ export function DashboardPage() {
       ) : (
         <div className="dashboard-executive-layout">
           <div className="dashboard-executive-layout__main stack-md">
-            <section className="dashboard-feature motion-reveal motion-reveal--delay-1">
+            <section className="dashboard-feature dashboard-feature--executive motion-reveal motion-reveal--delay-1">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">{isReporterPortal ? "Sorotan portal" : "Sorotan utama"}</p>
@@ -560,90 +651,184 @@ export function DashboardPage() {
                       : "Gunakan ringkasan ini untuk memutuskan apakah fokus berikutnya adalah triase, follow-up SLA, review routing, atau pembagian beban kerja."}
                   </p>
                 </div>
-                {(data.dataScopeNote || data.resolutionInsight) ? (
-                  <div className="dashboard-note-strip">
-                    {data.dataScopeNote ? (
-                      <article className="dashboard-note-card">
-                        <span>Cakupan analitik</span>
-                        <strong>{data.dataScopeNote}</strong>
-                      </article>
-                    ) : null}
-                    {data.resolutionInsight ? (
-                      <article className="dashboard-note-card dashboard-note-card--cool">
-                        <span>Kecepatan penyelesaian</span>
-                        <strong>
-                          {formatDurationHours(data.resolutionInsight.averageHours)} dari {data.resolutionInsight.sampleSize} tiket selesai
-                        </strong>
-                      </article>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="dashboard-feature__spotlight">
+                  <article className="dashboard-spotlight-card dashboard-spotlight-card--primary">
+                    <span className="section-eyebrow">Insight utama</span>
+                    <strong>
+                      {isReporterPortal
+                        ? leadingCategory
+                          ? `${leadingCategory.label} menjadi pola tiket yang paling sering muncul`
+                          : "Pola tiket akan terlihat setelah data mulai terkumpul"
+                        : leadingTeam
+                          ? `${leadingTeam.label} saat ini menerima arus tiket terbesar`
+                          : "Sebaran area kerja akan terlihat setelah data mulai terkumpul"}
+                    </strong>
+                    <p>
+                      {isReporterPortal
+                        ? leadingCategory
+                          ? `${leadingCategory.value} tiket terbaru berada pada kategori ini, sehingga panduan dan tindak lanjutnya paling layak diprioritaskan untuk dibaca cepat.`
+                          : "Dashboard akan merangkum kategori dominan setelah volume tiket cukup untuk dibandingkan."
+                        : leadingTeam
+                          ? `${leadingTeam.value} tiket terbaru paling banyak mengalir ke area ini, jadi ini adalah titik yang paling relevan untuk memantau kapasitas dan ritme kerja.`
+                          : "Dashboard akan merangkum area kerja dominan setelah volume tiket cukup untuk dibandingkan."}
+                    </p>
+                  </article>
+                  {(data.dataScopeNote || data.resolutionInsight) ? (
+                    <div className="dashboard-note-strip">
+                      {data.dataScopeNote ? (
+                        <article className="dashboard-note-card">
+                          <span>Cakupan analitik</span>
+                          <strong>{data.dataScopeNote}</strong>
+                        </article>
+                      ) : null}
+                      {data.resolutionInsight ? (
+                        <article className="dashboard-note-card dashboard-note-card--cool">
+                          <span>Kecepatan penyelesaian</span>
+                          <strong>
+                            {formatDurationHours(data.resolutionInsight.averageHours)} dari {data.resolutionInsight.sampleSize} tiket selesai
+                          </strong>
+                        </article>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </section>
 
-            <section className="dashboard-zone motion-reveal motion-reveal--delay-2">
+            <section className="dashboard-zone dashboard-zone--analytics motion-reveal motion-reveal--delay-2">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">Analitik ringkas</p>
                   <h3>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean dan pola permintaan"}</h3>
                 </div>
               </div>
-              <div className="dashboard-analytics-grid dashboard-analytics-grid--hybrid">
-                <article className="dashboard-subsection">
-                  <p className="section-eyebrow">{isReporterPortal ? "Status tiket" : "Distribusi status"}</p>
-                  <h4>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean saat ini"}</h4>
-                  <DistributionPanel items={data.statusDistribution} />
+              <div className="dashboard-analytics-stack">
+                <article className="dashboard-subsection dashboard-subsection--featured">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
+                      <h4>{isReporterPortal ? "Tiket yang Anda buat dalam 7 hari terakhir" : "Tiket masuk 7 hari terakhir"}</h4>
+                    </div>
+                  </div>
+                  <div className="dashboard-trend">
+                    <div className="dashboard-trend__bars" aria-label="Grafik tiket masuk per hari">
+                      {data.createdTrend.map((point) => (
+                        <div className="dashboard-trend__column" key={point.dateKey}>
+                          <span className="dashboard-trend__value">{point.value}</span>
+                          <div className="dashboard-trend__track" aria-hidden="true">
+                            <span
+                              className="dashboard-trend__bar"
+                              style={{
+                                height: `${Math.max((point.value / Math.max(...data.createdTrend.map((entry) => entry.value), 1)) * 100, point.value > 0 ? 18 : 6)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="dashboard-trend__label">{point.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="dashboard-trend__summary">
+                      <article className="dashboard-trend__summary-card">
+                        <span>Total 7 hari</span>
+                        <strong>{trendWindowTotal} tiket</strong>
+                      </article>
+                      <article className="dashboard-trend__summary-card">
+                        <span>Rata-rata harian</span>
+                        <strong>{trendWindowAverage.toFixed(1)} tiket</strong>
+                      </article>
+                      <article className="dashboard-trend__summary-card">
+                        <span>Puncak aktivitas</span>
+                        <strong>{trendPeak ? `${trendPeak.label} (${trendPeak.value})` : "Belum ada puncak"}</strong>
+                      </article>
+                    </div>
+                    <p className="dashboard-panel__hint">{data.trendSummary}</p>
+                  </div>
                 </article>
-                <article className="dashboard-subsection">
-                  <p className="section-eyebrow">{isReporterPortal ? "Kategori tiket" : "Kategori"}</p>
-                  <h4>{isReporterPortal ? "Masalah yang paling sering Anda laporkan" : "Pola kebutuhan yang paling sering masuk"}</h4>
-                  <DistributionPanel items={data.categoryDistribution} emptyLabel="Belum ada kategori yang dapat diringkas." />
-                </article>
-                <article className="dashboard-subsection">
-                  <p className="section-eyebrow">{isReporterPortal ? "Tim tujuan" : "Area tujuan"}</p>
-                  <h4>{isReporterPortal ? "Tiket Anda paling sering diarahkan ke tim mana" : "Sebaran tiket per tim operasional"}</h4>
-                  <DistributionPanel items={data.teamDistribution} emptyLabel="Belum ada area operasional yang dapat diringkas." />
-                </article>
+
+                <div className="dashboard-analytics-grid dashboard-analytics-grid--executive">
+                  <article className="dashboard-subsection dashboard-subsection--status">
+                    <p className="section-eyebrow">{isReporterPortal ? "Status tiket" : "Distribusi status"}</p>
+                    <h4>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean saat ini"}</h4>
+                    <StatusDistributionSpotlight items={data.statusDistribution} />
+                  </article>
+                  <article className="dashboard-subsection">
+                    <p className="section-eyebrow">{isReporterPortal ? "Kategori tiket" : "Kategori"}</p>
+                    <h4>{isReporterPortal ? "Masalah yang paling sering Anda laporkan" : "Pola kebutuhan yang paling sering masuk"}</h4>
+                    <DistributionPanel items={data.categoryDistribution} emptyLabel="Belum ada kategori yang dapat diringkas." />
+                  </article>
+                  <article className="dashboard-subsection">
+                    <p className="section-eyebrow">{isReporterPortal ? "Tim tujuan" : "Area tujuan"}</p>
+                    <h4>{isReporterPortal ? "Tiket Anda paling sering diarahkan ke tim mana" : "Sebaran tiket per tim operasional"}</h4>
+                    <DistributionPanel items={data.teamDistribution} emptyLabel="Belum ada area operasional yang dapat diringkas." />
+                  </article>
+                </div>
               </div>
             </section>
 
-            <div className="dashboard-split">
-              <section className="dashboard-zone motion-reveal motion-reveal--delay-2">
+            <div className="dashboard-split dashboard-split--executive">
+              <section className="dashboard-zone dashboard-zone--attention motion-reveal motion-reveal--delay-2">
                 <div className="section-heading">
                   <div>
-                    <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
-                    <h3>{isReporterPortal ? "Tiket yang Anda buat dalam 7 hari terakhir" : "Tiket masuk 7 hari terakhir"}</h3>
+                    <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
+                    <h3>{isReporterPortal ? "Prioritas progres yang layak Anda cek lebih dulu" : "Sinyal atensi yang paling perlu dibaca cepat"}</h3>
                   </div>
                 </div>
-                <div className="dashboard-trend">
-                  <div className="dashboard-trend__bars" aria-label="Grafik tiket masuk per hari">
-                    {data.createdTrend.map((point) => (
-                      <div className="dashboard-trend__column" key={point.dateKey}>
-                        <span className="dashboard-trend__value">{point.value}</span>
-                        <div className="dashboard-trend__track" aria-hidden="true">
-                          <span
-                            className="dashboard-trend__bar"
-                            style={{
-                              height: `${Math.max((point.value / Math.max(...data.createdTrend.map((entry) => entry.value), 1)) * 100, point.value > 0 ? 18 : 6)}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="dashboard-trend__label">{point.label}</span>
-                      </div>
+                <div className="dashboard-attention-grid">
+                  {attentionSignals.map((item) => (
+                    <article className={`dashboard-attention-card dashboard-attention-card--${item.tone}`} key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+                {data.attentionTickets.length === 0 ? (
+                  <EmptyState
+                    eyebrow={isReporterPortal ? "Prioritas" : "Atensi"}
+                    title={isReporterPortal ? "Tidak ada tiket penting yang perlu dipantau cepat" : "Tidak ada tiket prioritas tinggi aktif"}
+                    description={
+                      isReporterPortal
+                        ? "Saat ini tidak ada tiket penting yang tampak membutuhkan pengecekan cepat dari sisi pelapor."
+                        : "Saat ini tidak ada tiket prioritas tinggi yang masih menunggu penanganan."
+                    }
+                    supportText={
+                      isReporterPortal
+                        ? "Periksa daftar tiket Anda untuk update rutin. Sorotan prioritas akan muncul di sini bila ada tiket yang lebih mendesak."
+                        : "Begitu ada tiket prioritas tinggi yang belum selesai, sorotannya akan muncul di area ini untuk dipindai lebih cepat."
+                    }
+                  />
+                ) : (
+                  <div className="compact-link-list compact-link-list--attention">
+                    {data.attentionTickets.map((ticket) => (
+                      <Link className="compact-link-list__item compact-link-list__item--interactive compact-link-list__item--attention" key={ticket.id} to={`/tickets/${ticket.id}`}>
+                        <strong>{ticket.title}</strong>
+                        <p>
+                          {ticket.id} | {getTicketCategoryLabel(ticket.category)}
+                        </p>
+                        <small>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</small>
+                      </Link>
                     ))}
                   </div>
-                  <p className="dashboard-panel__hint">{data.trendSummary}</p>
-                </div>
+                )}
               </section>
 
-              {isReporterPortal ? (
-                <section className="dashboard-zone motion-reveal motion-reveal--delay-3">
-                  <div className="section-heading">
-                    <div>
-                      <p className="section-eyebrow">Panduan status</p>
-                      <h3>Apa arti status tiket Anda</h3>
-                    </div>
+              <section className="dashboard-zone dashboard-zone--workload motion-reveal motion-reveal--delay-3">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">{isReporterPortal ? "Ringkasan portal" : "Beban kerja"}</p>
+                    <h3>{isReporterPortal ? "Bacaan ringkas untuk memahami alur tiket Anda" : "Distribusi kerja dan kapasitas yang paling terlihat"}</h3>
                   </div>
+                </div>
+                <div className="dashboard-workload-insights">
+                  {workloadInsights.map((item) => (
+                    <article className="dashboard-workload-insight" key={item.label}>
+                      <span>{item.label}</span>
+                      <strong>{item.value}</strong>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
+                {isReporterPortal ? (
                   <div className="compact-list">
                     <article className="compact-list__item">
                       <strong>Terbuka</strong>
@@ -658,32 +843,27 @@ export function DashboardPage() {
                       <p>Tindak lanjut utama sudah dianggap tuntas. Anda tetap bisa membalas bila masalah berlanjut.</p>
                     </article>
                   </div>
-                </section>
-              ) : (
-                <section className="dashboard-zone motion-reveal motion-reveal--delay-3">
-                  <div className="section-heading">
-                    <div>
-                      <p className="section-eyebrow">Distribusi beban</p>
-                      <h3>Antrean aktif per petugas</h3>
-                    </div>
+                ) : data.workloadDistribution.length === 0 ? (
+                  <EmptyState
+                    eyebrow="Workload"
+                    title="Belum ada beban aktif"
+                    description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia."
+                    supportText="Begitu penugasan mulai terbentuk, area ini akan membantu membaca antrean personal, kapasitas kerja, dan penumpukan yang paling terlihat."
+                  />
+                ) : (
+                  <div className="dashboard-workload-list dashboard-workload-list--compact">
+                    {data.workloadDistribution.map((item) => (
+                      <article className="dashboard-workload-item" key={item.key}>
+                        <div>
+                          <strong>{item.label}</strong>
+                          <p>{item.sublabel}</p>
+                        </div>
+                        <span className="dashboard-workload-item__value">{item.value} tiket aktif</span>
+                      </article>
+                    ))}
                   </div>
-                  {data.workloadDistribution.length === 0 ? (
-                    <EmptyState title="Belum ada beban aktif" description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia." />
-                  ) : (
-                    <div className="dashboard-workload-list dashboard-workload-list--compact">
-                      {data.workloadDistribution.map((item) => (
-                        <article className="dashboard-workload-item" key={item.key}>
-                          <div>
-                            <strong>{item.label}</strong>
-                            <p>{item.sublabel}</p>
-                          </div>
-                          <span className="dashboard-workload-item__value">{item.value} tiket aktif</span>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
-              )}
+                )}
+              </section>
             </div>
 
             <div className="dashboard-split dashboard-split--main">
@@ -814,31 +994,6 @@ export function DashboardPage() {
               </section>
             )}
 
-            <section className="rail-section motion-reveal motion-reveal--delay-3">
-              <div>
-                <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
-                <h3>{isReporterPortal ? "Tiket penting yang belum selesai" : "Tiket prioritas tinggi yang belum selesai"}</h3>
-              </div>
-              {data.attentionTickets.length === 0 ? (
-                <EmptyState
-                  title="Tidak ada tiket prioritas tinggi aktif"
-                  description="Saat ini tidak ada tiket prioritas tinggi yang masih menunggu penanganan."
-                />
-              ) : (
-                <div className="compact-link-list">
-                  {data.attentionTickets.map((ticket) => (
-                    <Link className="compact-link-list__item compact-link-list__item--interactive" key={ticket.id} to={`/tickets/${ticket.id}`}>
-                      <strong>{ticket.title}</strong>
-                      <p>
-                        {ticket.id} · {getTicketCategoryLabel(ticket.category)}
-                      </p>
-                      <small>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</small>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-
             <section className="rail-section motion-reveal motion-reveal--delay-4">
               <div>
                 <p className="section-eyebrow">Aksi cepat</p>
@@ -868,7 +1023,14 @@ function DistributionPanel({
   emptyLabel?: string;
 }) {
   if (items.length === 0) {
-    return <EmptyState title="Belum ada distribusi" description={emptyLabel} />;
+    return (
+      <EmptyState
+        eyebrow="Distribusi"
+        title="Belum ada distribusi"
+        description={emptyLabel}
+        supportText="Begitu data cukup tersedia, dashboard akan menampilkan sebaran ini untuk membantu pembacaan pola secara cepat."
+      />
+    );
   }
 
   return (
@@ -887,6 +1049,46 @@ function DistributionPanel({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function StatusDistributionSpotlight({ items }: { items: DistributionItem[] }) {
+  if (items.length === 0) {
+    return (
+      <EmptyState
+        eyebrow="Status"
+        title="Belum ada status yang dapat diringkas"
+        description="Komposisi status akan tampil setelah ada tiket yang cukup untuk dihitung."
+      />
+    );
+  }
+
+  return (
+    <div className="dashboard-distribution">
+      <div className="dashboard-distribution__bar" aria-label="Distribusi status tiket">
+        {items.map((item) => (
+          <span
+            aria-hidden="true"
+            className={`dashboard-distribution__segment dashboard-distribution__segment--${item.tone}`}
+            key={item.key}
+            style={{ width: `${item.share}%` }}
+          />
+        ))}
+      </div>
+      <div className="dashboard-distribution__legend">
+        {items.map((item) => (
+          <article className="dashboard-distribution__legend-item" key={item.key}>
+            <span className={`dashboard-distribution__dot dashboard-distribution__dot--${item.tone}`} />
+            <div>
+              <strong>{item.label}</strong>
+              <p>
+                {item.value} tiket | {Math.round(item.share)}%
+              </p>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }

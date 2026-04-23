@@ -1408,6 +1408,11 @@ textarea:focus-visible {
 
 .state-card {
   padding: 30px 28px 34px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(22, 19, 23, 0.76);
 }
 
 .loading-state--page {
@@ -1430,6 +1435,7 @@ textarea:focus-visible {
 
 .state-card__icon {
   margin-bottom: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
 }
 
 .state-card__support,
@@ -2165,6 +2171,11 @@ textarea:focus-visible {
   gap: 18px;
 }
 
+.dashboard-feature--executive .dashboard-feature__body {
+  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
+  align-items: start;
+}
+
 .dashboard-feature__body,
 .dashboard-split {
   display: grid;
@@ -2177,6 +2188,10 @@ textarea:focus-visible {
 
 .dashboard-split--main {
   grid-template-columns: minmax(0, 1.22fr) minmax(300px, 0.88fr);
+}
+
+.dashboard-split--executive {
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
 }
 
 .dashboard-feature__story strong {
@@ -2198,6 +2213,16 @@ textarea:focus-visible {
 }
 
 .dashboard-analytics-grid--hybrid {
+  gap: 14px;
+}
+
+.dashboard-analytics-grid--executive {
+  grid-template-columns: minmax(0, 1.08fr) repeat(2, minmax(0, 0.96fr));
+  gap: 14px;
+}
+
+.dashboard-analytics-stack {
+  display: grid;
   gap: 14px;
 }
 
@@ -2253,6 +2278,60 @@ textarea:focus-visible {
 
 .dashboard-note-card strong {
   margin: 0;
+  line-height: 1.45;
+}
+
+.dashboard-feature__spotlight,
+.dashboard-workload-insights,
+.dashboard-trend__summary,
+.dashboard-attention-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-spotlight-card,
+.dashboard-workload-insight,
+.dashboard-trend__summary-card,
+.dashboard-attention-card {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-spotlight-card strong,
+.dashboard-workload-insight strong,
+.dashboard-trend__summary-card strong,
+.dashboard-attention-card strong {
+  display: block;
+  margin: 0;
+}
+
+.dashboard-spotlight-card p,
+.dashboard-workload-insight p,
+.dashboard-trend__summary-card p,
+.dashboard-attention-card p,
+.dashboard-workload-insight span,
+.dashboard-trend__summary-card span,
+.dashboard-attention-card span {
+  margin: 0;
+  color: var(--muted);
+}
+
+.dashboard-spotlight-card--primary {
+  padding: 18px 20px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(135deg, rgba(239, 142, 83, 0.1), rgba(121, 184, 255, 0.06)),
+    rgba(255, 255, 255, 0.025);
+}
+
+.dashboard-spotlight-card--primary strong {
+  font-size: 1.02rem;
   line-height: 1.45;
 }
 
@@ -2521,6 +2600,30 @@ textarea:focus-visible {
   flex-shrink: 0;
 }
 
+.dashboard-distribution__dot--open {
+  background: #f1b64d;
+}
+
+.dashboard-distribution__dot--progress {
+  background: #79b8ff;
+}
+
+.dashboard-distribution__dot--resolved {
+  background: #8fe1b7;
+}
+
+.dashboard-distribution__dot--accent {
+  background: #ef8e53;
+}
+
+.dashboard-distribution__dot--cool {
+  background: #abd5ff;
+}
+
+.dashboard-distribution__dot--neutral {
+  background: #d2c6bd;
+}
+
 .dashboard-action-card {
   display: grid;
   gap: 8px;
@@ -2597,6 +2700,65 @@ textarea:focus-visible {
   font-size: 0.74rem;
 }
 
+.dashboard-trend__summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-trend__summary-card strong {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.dashboard-trend__summary-card span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-attention-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-attention-card span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-attention-card strong {
+  font-size: 1.85rem;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.dashboard-attention-card--open {
+  border-color: rgba(241, 182, 77, 0.18);
+}
+
+.dashboard-attention-card--progress {
+  border-color: rgba(94, 164, 255, 0.18);
+}
+
+.dashboard-attention-card--resolved {
+  border-color: rgba(79, 190, 139, 0.18);
+}
+
+.dashboard-attention-card--accent {
+  border-color: rgba(239, 142, 83, 0.18);
+}
+
+.dashboard-attention-card--cool {
+  border-color: rgba(121, 184, 255, 0.18);
+}
+
+.compact-link-list--attention {
+  gap: 12px;
+}
+
+.compact-link-list__item--attention {
+  padding: 16px 18px;
+}
+
 .dashboard-workload-list {
   display: grid;
   gap: 10px;
@@ -2620,6 +2782,21 @@ textarea:focus-visible {
   color: #ffd1b2;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.dashboard-workload-insights {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-workload-insight span {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.dashboard-workload-insight strong {
+  font-size: 1rem;
+  line-height: 1.35;
 }
 
 .dashboard-ticket-card:focus-visible,
@@ -3614,6 +3791,15 @@ textarea:focus-visible {
   gap: 8px;
   max-height: 360px;
   overflow-y: auto;
+}
+
+.topbar__notification-empty .state-card {
+  padding: 18px 16px 20px;
+  min-height: 0;
+}
+
+.topbar__notification-empty .empty-state__content {
+  max-width: none;
 }
 
 .topbar__notification-item {
@@ -5165,6 +5351,10 @@ textarea:focus-visible {
   .dashboard-main-grid,
   .dashboard-support-grid,
   .dashboard-analytics-grid,
+  .dashboard-analytics-grid--executive,
+  .dashboard-attention-grid,
+  .dashboard-workload-insights,
+  .dashboard-trend__summary,
   .dashboard-hero__summary,
   .dashboard-executive-layout,
   .dashboard-split,
@@ -5213,6 +5403,7 @@ textarea:focus-visible {
 
   .dashboard-hero__copy,
   .help-center-hero__copy,
+  .dashboard-feature__body,
   .dashboard-ticket-card__top,
   .dashboard-bars__meta,
   .dashboard-workload-item,
@@ -5243,6 +5434,9 @@ textarea:focus-visible {
   .profile-edit-spotlight,
   .dashboard-distribution__legend,
   .dashboard-trend__bars,
+  .dashboard-trend__summary,
+  .dashboard-attention-grid,
+  .dashboard-workload-insights,
   .reporter-progress,
   .ticket-overview-grid,
   .ticket-layout,

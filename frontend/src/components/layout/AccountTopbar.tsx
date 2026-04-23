@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppIcon } from "../common/AppIcon";
+import { EmptyState } from "../common/EmptyState";
 import { UserAvatar } from "../common/UserAvatar";
 import { useAuth } from "../../modules/auth/AuthContext";
 import { useNotifications } from "../../modules/notifications/NotificationContext";
@@ -164,7 +165,14 @@ export function AccountTopbar({
               <div className="topbar__notification-list">
                 {isLoading && notifications.length === 0 ? <p className="topbar__menu-meta">Memuat notifikasi...</p> : null}
                 {!isLoading && notifications.length === 0 ? (
-                  <p className="topbar__menu-meta">Belum ada notifikasi penting untuk akun ini.</p>
+                  <div className="topbar__notification-empty">
+                    <EmptyState
+                      eyebrow="Notifikasi"
+                      title="Belum ada pembaruan penting"
+                      description="Tray ini akan menampilkan perubahan tiket, komentar, dan aktivitas penting yang perlu Anda lihat."
+                      supportText="Untuk saat ini tidak ada notifikasi baru yang perlu ditinjau dari akun ini."
+                    />
+                  </div>
                 ) : null}
                 {notifications.map((notification) => (
                   <Link
