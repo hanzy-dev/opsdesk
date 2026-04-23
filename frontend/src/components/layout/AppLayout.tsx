@@ -4,6 +4,7 @@ import { ConfirmationDialog } from "../common/ConfirmationDialog";
 import { useToast } from "../common/ToastProvider";
 import { useAuth } from "../../modules/auth/AuthContext";
 import { NotificationProvider } from "../../modules/notifications/NotificationContext";
+import { usePrefersReducedMotion } from "../../utils/usePrefersReducedMotion";
 import { Sidebar } from "./Sidebar";
 import { AccountTopbar } from "./AccountTopbar";
 
@@ -25,6 +26,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { logout, isSigningOut } = useAuth();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === "undefined") {
@@ -70,15 +72,20 @@ export function AppLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsRouteTransitioning(false);
+      return;
+    }
+
     setIsRouteTransitioning(true);
     const timer = window.setTimeout(() => {
       setIsRouteTransitioning(false);
-    }, 280);
+    }, 180);
 
     return () => {
       window.clearTimeout(timer);
     };
-  }, [location.pathname]);
+  }, [location.pathname, prefersReducedMotion]);
 
   const title =
     location.pathname.startsWith("/tickets/") && location.pathname !== "/tickets/new"
@@ -115,7 +122,11 @@ export function AppLayout() {
             onRequestLogout={() => setIsLogoutDialogOpen(true)}
             title={title}
           />
-          <main className="page-content">
+          <main
+            className={`page-content ${
+              prefersReducedMotion ? "page-content--steady" : isRouteTransitioning ? "page-content--transitioning" : "page-content--ready"
+            }`}
+          >
             <Outlet />
           </main>
         </NotificationProvider>

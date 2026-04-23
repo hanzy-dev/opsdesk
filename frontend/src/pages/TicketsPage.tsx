@@ -311,7 +311,7 @@ export function TicketsPage() {
 
       <div className="tickets-shell">
         <div className="tickets-shell__main stack-md">
-          <div className="tickets-toolbar tickets-toolbar--surface stack-md">
+          <div className="tickets-toolbar tickets-toolbar--surface stack-md motion-reveal">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">Pencarian cepat</p>
@@ -542,7 +542,7 @@ export function TicketsPage() {
                 }
               />
 
-              <div className="tickets-pager">
+              <div className="tickets-pager motion-reveal motion-reveal--delay-2">
                 <div>
                   <p className="section-eyebrow">Navigasi halaman</p>
                   <h3>
@@ -577,7 +577,7 @@ export function TicketsPage() {
         </div>
 
         <aside className="tickets-shell__rail stack-md">
-          <section className="rail-section rail-section--emphasis">
+          <section className="rail-section rail-section--emphasis motion-reveal motion-reveal--delay-2">
             <div>
               <p className="section-eyebrow">{isReporterPortal ? "Nilai portal" : "Konteks tampilan"}</p>
               <h3>{isReporterPortal ? "Bukan hanya kirim tiket" : "Filter aktif dan fokus kerja"}</h3>
@@ -617,7 +617,7 @@ export function TicketsPage() {
             </div>
           </section>
 
-          <section className="rail-section">
+          <section className="rail-section motion-reveal motion-reveal--delay-3">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">{isReporterPortal ? "Panduan cepat" : "Preset tampilan"}</p>
@@ -632,7 +632,7 @@ export function TicketsPage() {
             <div className="compact-link-list">
               {isReporterPortal
                 ? featuredHelpArticles.map((article) => (
-                    <article className="compact-link-list__item" key={article.id}>
+                    <article className="compact-link-list__item motion-lift" key={article.id}>
                       <strong>{article.title}</strong>
                       <p>{article.summary}</p>
                       <small>{article.readTimeMinutes} menit baca</small>

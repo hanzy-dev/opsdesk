@@ -111,8 +111,13 @@ export function HelpCenterPage() {
             />
           ) : (
             <div className="help-article-list help-article-list--reading">
-              {articleMatches.map((match) => (
-                <article className="help-article-card help-article-card--reading" key={match.article.id}>
+              {articleMatches.map((match, index) => (
+                <article
+                  className={`help-article-card help-article-card--reading motion-reveal ${
+                    match.article.id === highlightedArticle.id ? "help-article-card--featured" : ""
+                  } ${index < 2 ? `motion-reveal--delay-${index + 1}` : ""}`}
+                  key={match.article.id}
+                >
                   <div className="help-article-card__header">
                     <div>
                       <span className="section-eyebrow">{match.article.category === "general" ? "Umum" : getTicketCategoryLabel(match.article.category)}</span>
@@ -197,7 +202,7 @@ export function HelpCenterPage() {
             </div>
             <div className="compact-link-list">
               {helpArticles.slice(0, 3).map((article) => (
-                <article className="compact-link-list__item" key={article.id}>
+                <article className="compact-link-list__item motion-lift" key={article.id}>
                   <strong>{article.title}</strong>
                   <p>{article.summary}</p>
                   <small>{article.readTimeMinutes} menit baca</small>

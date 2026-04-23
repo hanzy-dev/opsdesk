@@ -23,7 +23,7 @@ export function TicketTable({
   showOperatorSignals = false,
 }: TicketTableProps) {
   return (
-    <div className="table-panel table-panel--hybrid">
+    <div className="table-panel table-panel--hybrid motion-reveal motion-reveal--delay-1">
       <div className="table-panel__header">
         <div>
           <p className="section-eyebrow">{eyebrow}</p>

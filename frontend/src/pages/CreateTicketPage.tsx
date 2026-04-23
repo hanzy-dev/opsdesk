@@ -77,6 +77,7 @@ export function CreateTicketPage() {
   const [isTeamCustomized, setIsTeamCustomized] = useState(false);
   const [relatedTicketHints, setRelatedTicketHints] = useState<ReturnType<typeof findRelatedTickets>>([]);
   const [isLoadingRelatedTickets, setIsLoadingRelatedTickets] = useState(false);
+  const [assistFeedback, setAssistFeedback] = useState<string | null>(null);
   const effectiveIdentity = profile
     ? profile
     : session
@@ -117,6 +118,20 @@ export function CreateTicketPage() {
   useEffect(() => {
     attachmentDraftsRef.current = attachmentDrafts;
   }, [attachmentDrafts]);
+
+  useEffect(() => {
+    if (!assistFeedback) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setAssistFeedback(null);
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [assistFeedback]);
 
   useEffect(() => {
     return () => {
@@ -300,6 +315,15 @@ export function CreateTicketPage() {
       delete nextErrors[field as keyof TicketFormErrors];
       return nextErrors;
     });
+  }
+
+  function applyAssistField<Field extends keyof Pick<CreateTicketInput, "category" | "priority" | "team">>(
+    field: Field,
+    value: CreateTicketInput[Field],
+    successMessage: string,
+  ) {
+    handleFieldChange(field, value);
+    setAssistFeedback(successMessage);
   }
 
   function handleAttachmentSelection(event: React.ChangeEvent<HTMLInputElement>) {
@@ -521,7 +545,7 @@ export function CreateTicketPage() {
             </p>
           </article>
 
-          <article className="field field--full smart-assist-card">
+          <article className={`field field--full smart-assist-card motion-reveal ${assistFeedback ? "status-flash status-flash--success" : ""}`}>
             <div className="smart-assist-card__header">
               <div>
                 <span>Asistensi pintar</span>
@@ -529,6 +553,7 @@ export function CreateTicketPage() {
               </div>
               <small>Berbasis kata kunci judul, deskripsi, dan pola tiket yang sudah ada.</small>
             </div>
+            {assistFeedback ? <p className="form-success">{assistFeedback}</p> : null}
             <div className="smart-assist-grid">
               <div className="smart-assist-item">
                 <span>Kategori disarankan</span>
@@ -537,7 +562,9 @@ export function CreateTicketPage() {
                 <button
                   className="button button--ghost"
                   disabled={form.category === assistSuggestion.category.value}
-                  onClick={() => handleFieldChange("category", assistSuggestion.category.value)}
+                  onClick={() =>
+                    applyAssistField("category", assistSuggestion.category.value, "Kategori saran sudah diterapkan ke formulir.")
+                  }
                   type="button"
                 >
                   {form.category === assistSuggestion.category.value ? "Sudah dipakai" : "Gunakan kategori ini"}
@@ -550,7 +577,9 @@ export function CreateTicketPage() {
                 <button
                   className="button button--ghost"
                   disabled={form.priority === assistSuggestion.priority.value}
-                  onClick={() => handleFieldChange("priority", assistSuggestion.priority.value)}
+                  onClick={() =>
+                    applyAssistField("priority", assistSuggestion.priority.value, "Prioritas saran sudah diterapkan ke formulir.")
+                  }
                   type="button"
                 >
                   {form.priority === assistSuggestion.priority.value ? "Sudah dipakai" : "Gunakan prioritas ini"}
@@ -563,7 +592,9 @@ export function CreateTicketPage() {
                 <button
                   className="button button--ghost"
                   disabled={form.team === assistSuggestion.team.value}
-                  onClick={() => handleFieldChange("team", assistSuggestion.team.value)}
+                  onClick={() =>
+                    applyAssistField("team", assistSuggestion.team.value, "Area tujuan saran sudah diterapkan ke formulir.")
+                  }
                   type="button"
                 >
                   {form.team === assistSuggestion.team.value ? "Sudah dipakai" : "Gunakan area ini"}
@@ -573,7 +604,7 @@ export function CreateTicketPage() {
           </article>
 
           {helpArticleMatches.length > 0 ? (
-            <article className="field field--full smart-assist-card smart-assist-card--subtle">
+            <article className="field field--full smart-assist-card smart-assist-card--subtle motion-reveal motion-reveal--delay-1">
               <div className="smart-assist-card__header">
                 <div>
                   <span>Jawaban yang mungkin membantu</span>
@@ -583,7 +614,7 @@ export function CreateTicketPage() {
               </div>
               <div className="help-inline-list">
                 {helpArticleMatches.map((match) => (
-                  <article className="help-inline-card" key={match.article.id}>
+                  <article className="help-inline-card motion-lift" key={match.article.id}>
                     <div>
                       <strong>{match.article.title}</strong>
                       <p>{match.article.summary}</p>
@@ -609,7 +640,7 @@ export function CreateTicketPage() {
           ) : null}
 
           {(relatedTicketHints.length > 0 || isLoadingRelatedTickets) && debouncedAssistQuery.length >= 10 ? (
-            <article className="field field--full smart-assist-card smart-assist-card--subtle">
+            <article className="field field--full smart-assist-card smart-assist-card--subtle motion-reveal motion-reveal--delay-2">
               <div className="smart-assist-card__header">
                 <div>
                   <span>Tiket mirip</span>
@@ -685,7 +716,7 @@ export function CreateTicketPage() {
           {attachmentDrafts.length > 0 ? (
             <div className="attachment-draft-list">
               {attachmentDrafts.map((draft) => (
-                <article className="attachment-draft-card" key={draft.id}>
+                <article className="attachment-draft-card motion-reveal" key={draft.id}>
                   {draft.previewUrl ? (
                     <img alt={`Pratinjau ${draft.file.name}`} className="attachment-draft-card__preview" src={draft.previewUrl} />
                   ) : (
@@ -718,7 +749,7 @@ export function CreateTicketPage() {
               aria-valuemax={100}
               aria-valuemin={0}
               aria-valuenow={uploadProgress}
-              className="inline-progress"
+              className="inline-progress motion-reveal"
               role="progressbar"
             >
               <div className="inline-progress__track">

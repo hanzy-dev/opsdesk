@@ -6,6 +6,7 @@ import { useAuth } from "../../modules/auth/AuthContext";
 import { useNotifications } from "../../modules/notifications/NotificationContext";
 import { getRoleLabel } from "../../modules/auth/roles";
 import { getPreferredDisplayName } from "../../utils/identity";
+import { usePrefersReducedMotion } from "../../utils/usePrefersReducedMotion";
 
 type AccountTopbarProps = {
   title: string;
@@ -24,6 +25,7 @@ export function AccountTopbar({
 }: AccountTopbarProps) {
   const { session, profile, isSigningOut } = useAuth();
   const { notifications, unreadCount, isLoading, markAllRead } = useNotifications();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -31,6 +33,8 @@ export function AccountTopbar({
   const notificationRef = useRef<HTMLDivElement | null>(null);
   const menuId = useId();
   const notificationId = useId();
+  const menuPresence = useAnimatedPresence(isOpen, prefersReducedMotion);
+  const notificationPresence = useAnimatedPresence(isNotificationsOpen, prefersReducedMotion);
 
   const identity = profile
     ? profile
@@ -141,8 +145,14 @@ export function AccountTopbar({
             </span>
           </button>
 
-          {isNotificationsOpen ? (
-            <div className="topbar__menu topbar__menu--open topbar__notification-menu" id={notificationId} role="menu">
+          {notificationPresence.isMounted ? (
+            <div
+              className={`topbar__menu topbar__notification-menu ${
+                notificationPresence.isVisible ? "topbar__menu--open" : "topbar__menu--closing"
+              }`}
+              id={notificationId}
+              role="menu"
+            >
               <div className="topbar__menu-header">
                 <div className="topbar__menu-header-copy">
                   <span>Notifikasi</span>
@@ -208,8 +218,8 @@ export function AccountTopbar({
             </div>
           </button>
 
-          {isOpen ? (
-            <div className="topbar__menu topbar__menu--open" id={menuId} role="menu">
+          {menuPresence.isMounted ? (
+            <div className={`topbar__menu ${menuPresence.isVisible ? "topbar__menu--open" : "topbar__menu--closing"}`} id={menuId} role="menu">
               <div className="topbar__menu-header">
                 <div className="topbar__menu-header-copy">
                   <span>Akun aktif</span>
@@ -254,4 +264,39 @@ export function AccountTopbar({
       </div>
     </header>
   );
+}
+
+function useAnimatedPresence(isOpen: boolean, prefersReducedMotion: boolean) {
+  const [isMounted, setIsMounted] = useState(isOpen);
+  const [isVisible, setIsVisible] = useState(isOpen);
+
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      setIsMounted(isOpen);
+      setIsVisible(isOpen);
+      return;
+    }
+
+    if (isOpen) {
+      setIsMounted(true);
+      const frame = window.requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame);
+      };
+    }
+
+    setIsVisible(false);
+    const timer = window.setTimeout(() => {
+      setIsMounted(false);
+    }, 180);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [isOpen, prefersReducedMotion]);
+
+  return { isMounted, isVisible };
 }

@@ -77,6 +77,7 @@ export function TicketDetailPage() {
   const [quickActionMessage, setQuickActionMessage] = useState<string | null>(null);
   const [quickActionError, setQuickActionError] = useState<string | null>(null);
   const [isRunningQuickActionId, setIsRunningQuickActionId] = useState<string | null>(null);
+  const [highlightedPanel, setHighlightedPanel] = useState<"assignment" | "macro" | "quickAction" | "status" | "attachment" | "comment" | null>(null);
   const [commentMessage, setCommentMessage] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [commentErrorReferenceId, setCommentErrorReferenceId] = useState<string | null>(null);
@@ -214,12 +215,26 @@ export function TicketDetailPage() {
 
   useEffect(() => {
     if (!permissions.canAssignTickets) {
-      setWorkloadTickets([]);
+      setWorkloadTickets([]);    
       return;
     }
 
     void loadWorkloadSnapshot();
   }, [permissions.canAssignTickets]);
+
+  useEffect(() => {
+    if (!highlightedPanel) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setHighlightedPanel(null);
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [highlightedPanel]);
 
   const actionItems = useMemo(
     () => [
@@ -376,6 +391,7 @@ export function TicketDetailPage() {
       visibility: macro.visibility,
       message: macro.buildMessage(ticket),
     }));
+    setHighlightedPanel("macro");
     setQuickActionMessage(`Macro "${macro.title}" siap ditinjau pada editor komentar.`);
     setQuickActionError(null);
   }
@@ -409,6 +425,7 @@ export function TicketDetailPage() {
           visibility: "public",
           message: macroMessage,
         });
+        setHighlightedPanel("quickAction");
         setQuickActionMessage("Permintaan informasi tambahan berhasil dikirim.");
       }
 
@@ -423,6 +440,7 @@ export function TicketDetailPage() {
           visibility: "internal",
           message: macroMessage,
         });
+        setHighlightedPanel("quickAction");
         setQuickActionMessage("Catatan follow-up internal berhasil ditambahkan.");
       }
 
@@ -445,6 +463,7 @@ export function TicketDetailPage() {
         }
 
         setQuickActionMessage("Tiket berhasil diambil ke antrean Anda dan balasan awal sudah dikirim.");
+        setHighlightedPanel("quickAction");
       }
 
       if (action.kind === "resolve-with-note" && macro) {
@@ -455,6 +474,7 @@ export function TicketDetailPage() {
           visibility: "public",
           message: macroMessage,
         });
+        setHighlightedPanel("quickAction");
         setQuickActionMessage("Tiket ditandai selesai dan balasan penutupan berhasil dikirim.");
       }
 
@@ -488,6 +508,7 @@ export function TicketDetailPage() {
     try {
       const updatedTicket = await updateTicketStatus(ticketId, selectedStatus);
       setTicket(updatedTicket);
+      setHighlightedPanel("status");
       setStatusMessage("Status tiket berhasil diperbarui.");
       showToast({
         title: "Status tiket diperbarui",
@@ -543,6 +564,7 @@ export function TicketDetailPage() {
         visibility: "public",
       });
       await loadTicket({ preserveView: true });
+      setHighlightedPanel("comment");
       setCommentMessage(
         commentForm.visibility === "internal"
           ? "Catatan internal berhasil ditambahkan ke tiket."
@@ -583,6 +605,7 @@ export function TicketDetailPage() {
       );
       setTicket(updatedTicket);
       setSelectedAssigneeId(updatedTicket.assigneeId ?? "");
+      setHighlightedPanel("assignment");
       setAssignmentMessage(
         updatedTicket.assigneeId === session?.subject
           ? "Tiket berhasil ditugaskan kepada Anda."
@@ -668,6 +691,7 @@ export function TicketDetailPage() {
 
       setSelectedFile(null);
       await loadTicket({ preserveView: true });
+      setHighlightedPanel("attachment");
       setAttachmentMessage("Lampiran berhasil ditambahkan ke tiket.");
       showToast({
         title: "Lampiran berhasil diunggah",
@@ -747,7 +771,7 @@ export function TicketDetailPage() {
 
   return (
     <section className="stack-lg page-shell page-shell--wide page-flow ticket-detail-page">
-      <article className="panel panel--section ticket-summary ticket-summary--hero">
+      <article className="panel panel--section ticket-summary ticket-summary--hero motion-reveal">
         <div className="ticket-summary__header">
           <div>
             <p className="section-eyebrow">{ticket.id}</p>
@@ -798,7 +822,7 @@ export function TicketDetailPage() {
 
       <div className="ticket-layout ticket-layout--command">
         <div className="ticket-layout__main stack-lg">
-          <article className="panel panel--section stack-md ticket-section ticket-section--meta">
+          <article className="panel panel--section stack-md ticket-section ticket-section--meta motion-reveal motion-reveal--delay-1">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">{isReporterPortal ? "Ringkasan tiket" : "Metadata"}</p>
@@ -883,7 +907,7 @@ export function TicketDetailPage() {
             </dl>
           </article>
 
-          <article className="panel panel--section stack-md ticket-section ticket-section--attachments">
+          <article className={`panel panel--section stack-md ticket-section ticket-section--attachments motion-reveal motion-reveal--delay-2 ${highlightedPanel === "attachment" ? "status-flash status-flash--success" : ""}`}>
             <div>
               <p className="section-eyebrow">Lampiran</p>
               <h3>Dokumen dan file pendukung</h3>
@@ -920,7 +944,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel panel--section stack-md ticket-section ticket-section--conversation">
+          <article className={`panel panel--section stack-md ticket-section ticket-section--conversation motion-reveal motion-reveal--delay-2 ${highlightedPanel === "comment" ? "status-flash status-flash--success" : ""}`}>
             <div>
               <p className="section-eyebrow">Kolaborasi</p>
               <h3>Komunikasi tiket</h3>
@@ -989,7 +1013,7 @@ export function TicketDetailPage() {
             ) : (
               <div className="timeline-list timeline-list--command">
                 {activities.map((activity) => (
-                  <article className="timeline-item" key={activity.id}>
+                  <article className="timeline-item motion-reveal" key={activity.id}>
                     <div aria-hidden="true" className="timeline-item__dot" />
                     <div className="timeline-item__content">
                       <div className="comment-card__header">
@@ -1008,7 +1032,7 @@ export function TicketDetailPage() {
 
         <aside className="stack-lg ticket-layout__rail">
           {!isReporterPortal && automationSignals.length > 0 ? (
-            <article className="panel panel--section stack-md">
+            <article className="panel panel--section stack-md motion-reveal motion-reveal--delay-2">
               <div>
                 <p className="section-eyebrow">Sinyal automasi ringan</p>
                 <h3>Trigger dan perhatian operator</h3>
@@ -1026,7 +1050,7 @@ export function TicketDetailPage() {
           ) : null}
 
           {isReporterPortal && reporterGuidance ? (
-            <article className="panel panel--section stack-md">
+            <article className="panel panel--section stack-md motion-reveal motion-reveal--delay-2">
               <div>
                 <p className="section-eyebrow">Portal pelapor</p>
                 <h3>Progres dan langkah berikutnya</h3>
@@ -1057,7 +1081,7 @@ export function TicketDetailPage() {
                 ))}
               </div>
 
-              <article className="smart-assist-card smart-assist-card--subtle">
+              <article className="smart-assist-card smart-assist-card--subtle motion-reveal motion-reveal--delay-2">
                 <div className="smart-assist-card__header">
                   <div>
                     <span>Langkah berikutnya</span>
@@ -1069,7 +1093,7 @@ export function TicketDetailPage() {
             </article>
           ) : null}
 
-          <article className="panel panel--section stack-md">
+          <article className="panel panel--section stack-md motion-reveal motion-reveal--delay-2">
             <div>
               <p className="section-eyebrow">{isReporterPortal ? "Pembaruan ringkas" : "Smart assist"}</p>
               <h3>{isReporterPortal ? "Ringkasan yang membantu dibaca cepat" : "Ringkasan dan sinyal cepat"}</h3>
@@ -1080,7 +1104,7 @@ export function TicketDetailPage() {
               </p>
             </div>
             {summaryAssist ? (
-              <div className="smart-assist-card smart-assist-card--subtle">
+              <div className="smart-assist-card smart-assist-card--subtle motion-reveal motion-reveal--delay-2">
                 <div className="smart-assist-card__header">
                   <div>
                     <span>Ringkasan otomatis</span>
@@ -1100,7 +1124,7 @@ export function TicketDetailPage() {
             ) : null}
 
             {!isReporterPortal && assistSuggestion ? (
-              <div className="smart-assist-card">
+              <div className="smart-assist-card motion-reveal motion-reveal--delay-3">
                 <div className="smart-assist-card__header">
                   <div>
                     <span>Saran klasifikasi</span>
@@ -1147,7 +1171,7 @@ export function TicketDetailPage() {
           </article>
 
           {!isReporterPortal && incidentCluster ? (
-            <article className="panel panel--section stack-md">
+            <article className="panel panel--section stack-md motion-reveal motion-reveal--delay-3">
               <div>
                 <p className="section-eyebrow">Kelompok gangguan</p>
                 <h3>Indikasi parent issue ringan</h3>
@@ -1203,7 +1227,7 @@ export function TicketDetailPage() {
           </article>
 
           {isReporterPortal && reporterHelpMatches.length > 0 ? (
-            <article className="panel panel--section stack-md">
+            <article className="panel panel--section stack-md motion-reveal motion-reveal--delay-3">
               <div>
                 <p className="section-eyebrow">Panduan terkait</p>
                 <h3>Bantuan mandiri yang relevan</h3>
@@ -1211,7 +1235,7 @@ export function TicketDetailPage() {
               </div>
               <div className="help-inline-list">
                 {reporterHelpMatches.map((match) => (
-                  <article className="help-inline-card" key={match.article.id}>
+                  <article className="help-inline-card motion-lift" key={match.article.id}>
                     <div>
                       <strong>{match.article.title}</strong>
                       <p>{match.article.summary}</p>
@@ -1233,7 +1257,7 @@ export function TicketDetailPage() {
           ) : null}
 
           {relatedTicketHints.length > 0 ? (
-            <article className="panel panel--section stack-md">
+            <article className="panel panel--section stack-md motion-reveal motion-reveal--delay-3">
               <div>
                 <p className="section-eyebrow">Tiket terkait</p>
                 <h3>Hint tiket yang mirip</h3>
@@ -1259,7 +1283,7 @@ export function TicketDetailPage() {
             </article>
           ) : null}
 
-          <article className="panel panel--section">
+          <article className={`panel panel--section motion-reveal motion-reveal--delay-4 ${highlightedPanel === "assignment" ? "status-flash status-flash--success" : ""}`}>
             <p className="section-eyebrow">Routing & penugasan</p>
             <h3>Tanggung jawab operasional</h3>
             {permissions.canAssignTickets ? (
@@ -1297,14 +1321,14 @@ export function TicketDetailPage() {
                   </label>
                 </div>
                 <div className="workload-strip">
-                  <article className="workload-strip__item">
+                  <article className="workload-strip__item motion-lift">
                     <span>Area tujuan</span>
                     <strong>{getTicketTeamLabel(ticket.team)}</strong>
                     <p>
                       {isLoadingWorkload ? "Memuat beban area..." : `${teamActiveLoad} tiket aktif saat ini di area ini.`}
                     </p>
                   </article>
-                  <article className="workload-strip__item">
+                  <article className="workload-strip__item motion-lift">
                     <span>Petugas saat ini</span>
                     <strong>{ticket.assigneeName || "Belum ditugaskan"}</strong>
                     <p>
@@ -1313,7 +1337,7 @@ export function TicketDetailPage() {
                         : "Belum ada antrean personal karena tiket belum ditugaskan."}
                     </p>
                   </article>
-                  <article className="workload-strip__item">
+                  <article className="workload-strip__item motion-lift">
                     <span>Pilihan penugasan</span>
                     <strong>
                       {assigneeOptions.find((option) => option.value === selectedAssigneeId)?.label || "Belum dipilih"}
@@ -1353,7 +1377,7 @@ export function TicketDetailPage() {
           </article>
 
           {!isReporterPortal ? (
-            <article className="panel panel--section stack-md">
+            <article className={`panel panel--section stack-md motion-reveal motion-reveal--delay-4 ${highlightedPanel === "macro" ? "status-flash status-flash--success" : ""}`}>
               <div>
                 <p className="section-eyebrow">Macro operator</p>
                 <h3>Respons cepat yang bisa dipakai ulang</h3>
@@ -1361,7 +1385,7 @@ export function TicketDetailPage() {
               </div>
               <div className="macro-grid">
                 {operatorMacrosForTicket.map((macro) => (
-                  <article className={`macro-card macro-card--${macro.visibility}`} key={macro.id}>
+                  <article className={`macro-card macro-card--${macro.visibility} motion-lift`} key={macro.id}>
                     <div className="macro-card__header">
                       <div>
                         <span>{macro.visibility === "internal" ? "Internal" : "Publik"}</span>
@@ -1381,7 +1405,7 @@ export function TicketDetailPage() {
           ) : null}
 
           {!isReporterPortal ? (
-            <article className="panel panel--section stack-md">
+            <article className={`panel panel--section stack-md motion-reveal motion-reveal--delay-4 ${highlightedPanel === "quickAction" ? "status-flash status-flash--success" : ""}`}>
               <div>
                 <p className="section-eyebrow">Aksi operator</p>
                 <h3>Quick actions untuk pekerjaan repetitif</h3>
@@ -1389,7 +1413,7 @@ export function TicketDetailPage() {
               </div>
               <div className="quick-action-grid">
                 {quickActionPresets.map((action) => (
-                  <article className="quick-action-card" key={action.id}>
+                  <article className="quick-action-card motion-lift" key={action.id}>
                     <div>
                       <strong>{action.title}</strong>
                       <p>{action.description}</p>
@@ -1412,7 +1436,7 @@ export function TicketDetailPage() {
             </article>
           ) : null}
 
-          <article className="panel panel--section">
+          <article className={`panel panel--section motion-reveal motion-reveal--delay-4 ${highlightedPanel === "status" ? "status-flash status-flash--success" : ""}`}>
             <p className="section-eyebrow">Status</p>
             <h3>Perbarui progres tiket</h3>
             {permissions.canUpdateTicketStatus ? (
@@ -1438,7 +1462,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel panel--section">
+          <article className={`panel panel--section motion-reveal motion-reveal--delay-4 ${highlightedPanel === "attachment" ? "status-flash status-flash--success" : ""}`}>
             <p className="section-eyebrow">Tambah lampiran</p>
             <h3>Unggah file pendukung</h3>
             <p className="form-hint">Format yang didukung: PDF, JPG, PNG, TXT, CSV, dan DOCX dengan ukuran maksimal 10 MB.</p>
@@ -1453,7 +1477,7 @@ export function TicketDetailPage() {
               </label>
               {selectedFile ? <p className="form-hint">{selectedFile.name} | {formatFileSize(selectedFile.size)}</p> : null}
               {isUploadingAttachment && uploadProgress > 0 ? (
-                <div aria-label={`Progres upload lampiran ${uploadProgress}%`} className="inline-progress" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={uploadProgress}>
+                <div aria-label={`Progres upload lampiran ${uploadProgress}%`} className="inline-progress motion-reveal" role="progressbar" aria-valuemax={100} aria-valuemin={0} aria-valuenow={uploadProgress}>
                   <div className="inline-progress__track">
                     <span className="inline-progress__bar" style={{ width: `${uploadProgress}%` }} />
                   </div>
@@ -1469,11 +1493,11 @@ export function TicketDetailPage() {
             </form>
           </article>
 
-          <article className="panel panel--section">
+          <article className={`panel panel--section motion-reveal motion-reveal--delay-4 ${highlightedPanel === "comment" ? "status-flash status-flash--success" : ""}`}>
             <p className="section-eyebrow">{isReporterPortal ? "Balas tiket" : "Tambah catatan"}</p>
             <h3>{isReporterPortal ? "Tambahkan informasi baru bila diperlukan" : "Tulis pembaruan tiket"}</h3>
             {permissions.canViewOperationalTickets && operatorDraftAssist ? (
-              <div className="smart-assist-card smart-assist-card--subtle">
+              <div className="smart-assist-card smart-assist-card--subtle motion-reveal motion-reveal--delay-2">
                 <div className="smart-assist-card__header">
                   <div>
                     <span>Draf respon</span>
@@ -1482,35 +1506,37 @@ export function TicketDetailPage() {
                   <small>{operatorDraftAssist.explanation}</small>
                 </div>
                 <div className="smart-assist-grid">
-                  <div className="smart-assist-item">
+                  <div className="smart-assist-item motion-lift">
                     <span>Draf komentar publik</span>
                     <p>{operatorDraftAssist.publicReply}</p>
                     <button
                       className="button button--ghost"
-                      onClick={() =>
+                      onClick={() => {
                         setCommentForm((current) => ({
                           ...current,
                           visibility: "public",
                           message: operatorDraftAssist.publicReply,
-                        }))
-                      }
+                        }));
+                        setHighlightedPanel("comment");
+                      }}
                       type="button"
                     >
                       Gunakan sebagai draf publik
                     </button>
                   </div>
-                  <div className="smart-assist-item">
+                  <div className="smart-assist-item motion-lift">
                     <span>Draf catatan internal</span>
                     <p>{operatorDraftAssist.internalNote}</p>
                     <button
                       className="button button--ghost"
-                      onClick={() =>
+                      onClick={() => {
                         setCommentForm((current) => ({
                           ...current,
                           visibility: "internal",
                           message: operatorDraftAssist.internalNote,
-                        }))
-                      }
+                        }));
+                        setHighlightedPanel("comment");
+                      }}
                       type="button"
                     >
                       Gunakan sebagai catatan internal

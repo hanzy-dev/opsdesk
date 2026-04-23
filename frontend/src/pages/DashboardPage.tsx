@@ -405,7 +405,7 @@ export function DashboardPage() {
 
   return (
     <section className="stack-lg page-shell page-shell--wide page-flow dashboard-page">
-      <div className="hero-card hero-card--spotlight dashboard-hero">
+      <div className="hero-card hero-card--spotlight dashboard-hero motion-reveal">
         <div className="dashboard-hero__copy">
           <div>
             <p className="section-eyebrow">{isReporterPortal ? "Portal pelapor" : "Command center"}</p>
@@ -450,9 +450,11 @@ export function DashboardPage() {
       </div>
 
       <div className="metrics-grid metrics-grid--dashboard dashboard-metrics">
-        {statCards.map((card) => (
+        {statCards.map((card, index) => (
           <Link
-            className={`metric-card metric-card--premium dashboard-stat ${card.tone} ${card.featured ? "dashboard-stat--featured" : ""}`}
+            className={`metric-card metric-card--premium dashboard-stat ${card.tone} ${card.featured ? "dashboard-stat--featured" : ""} motion-reveal ${
+              index < 3 ? `motion-reveal--delay-${index + 1}` : "motion-reveal--delay-4"
+            }`}
             key={card.label}
             to={card.to}
           >
@@ -538,7 +540,7 @@ export function DashboardPage() {
       ) : (
         <div className="dashboard-executive-layout">
           <div className="dashboard-executive-layout__main stack-md">
-            <section className="dashboard-feature">
+            <section className="dashboard-feature motion-reveal motion-reveal--delay-1">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">{isReporterPortal ? "Sorotan portal" : "Sorotan utama"}</p>
@@ -579,7 +581,7 @@ export function DashboardPage() {
               </div>
             </section>
 
-            <section className="dashboard-zone">
+            <section className="dashboard-zone motion-reveal motion-reveal--delay-2">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">Analitik ringkas</p>
@@ -606,7 +608,7 @@ export function DashboardPage() {
             </section>
 
             <div className="dashboard-split">
-              <section className="dashboard-zone">
+              <section className="dashboard-zone motion-reveal motion-reveal--delay-2">
                 <div className="section-heading">
                   <div>
                     <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
@@ -635,7 +637,7 @@ export function DashboardPage() {
               </section>
 
               {isReporterPortal ? (
-                <section className="dashboard-zone">
+                <section className="dashboard-zone motion-reveal motion-reveal--delay-3">
                   <div className="section-heading">
                     <div>
                       <p className="section-eyebrow">Panduan status</p>
@@ -658,7 +660,7 @@ export function DashboardPage() {
                   </div>
                 </section>
               ) : (
-                <section className="dashboard-zone">
+                <section className="dashboard-zone motion-reveal motion-reveal--delay-3">
                   <div className="section-heading">
                     <div>
                       <p className="section-eyebrow">Distribusi beban</p>
@@ -685,7 +687,7 @@ export function DashboardPage() {
             </div>
 
             <div className="dashboard-split dashboard-split--main">
-              <section className="dashboard-zone dashboard-zone--dominant">
+              <section className="dashboard-zone dashboard-zone--dominant motion-reveal motion-reveal--delay-2">
                 <div className="section-heading">
                   <div>
                     <p className="section-eyebrow">Tiket terbaru</p>
@@ -722,7 +724,7 @@ export function DashboardPage() {
                 </div>
               </section>
 
-              <section className="dashboard-zone">
+              <section className="dashboard-zone motion-reveal motion-reveal--delay-3">
                 <div className="section-heading">
                   <div>
                     <p className="section-eyebrow">Sorotan audit</p>
@@ -761,7 +763,7 @@ export function DashboardPage() {
 
           <aside className="dashboard-executive-layout__rail stack-md">
             {!isReporterPortal ? (
-              <section className="rail-section rail-section--emphasis">
+              <section className="rail-section rail-section--emphasis motion-reveal motion-reveal--delay-2">
                 <div>
                   <p className="section-eyebrow">Automasi ringan</p>
                   <h3>Sinyal operator yang perlu dilihat cepat</h3>
@@ -790,7 +792,7 @@ export function DashboardPage() {
                 </div>
               </section>
             ) : (
-              <section className="rail-section rail-section--emphasis">
+              <section className="rail-section rail-section--emphasis motion-reveal motion-reveal--delay-2">
                 <div className="section-heading">
                   <div>
                     <p className="section-eyebrow">Self-service</p>
@@ -812,7 +814,7 @@ export function DashboardPage() {
               </section>
             )}
 
-            <section className="rail-section">
+            <section className="rail-section motion-reveal motion-reveal--delay-3">
               <div>
                 <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
                 <h3>{isReporterPortal ? "Tiket penting yang belum selesai" : "Tiket prioritas tinggi yang belum selesai"}</h3>
@@ -837,7 +839,7 @@ export function DashboardPage() {
               )}
             </section>
 
-            <section className="rail-section">
+            <section className="rail-section motion-reveal motion-reveal--delay-4">
               <div>
                 <p className="section-eyebrow">Aksi cepat</p>
                 <h3>{isReporterPortal ? "Jalur utama untuk pelapor" : "Jalur kerja yang paling sering dibutuhkan"}</h3>
