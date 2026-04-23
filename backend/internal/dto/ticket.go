@@ -174,6 +174,10 @@ type ErrorBody struct {
 	Message   string       `json:"message"`
 	RequestID string       `json:"requestId,omitempty"`
 	Details   []FieldError `json:"details,omitempty"`
+	Status    int          `json:"status,omitempty"`
+	Method    string       `json:"method,omitempty"`
+	Path      string       `json:"path,omitempty"`
+	Timestamp string       `json:"timestamp,omitempty"`
 }
 
 type FieldError struct {

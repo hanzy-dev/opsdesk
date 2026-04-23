@@ -105,3 +105,31 @@ func TestValidateAddCommentRequestRejectsInvalidVisibility(t *testing.T) {
 		t.Fatalf("expected 1 validation error, got %d", len(errs))
 	}
 }
+
+func TestValidateAssignTicketRequestRejectsUnsafeAssigneeID(t *testing.T) {
+	t.Parallel()
+
+	validator := New()
+
+	errs := validator.ValidateAssignTicketRequest(dto.AssignTicketRequest{
+		AssigneeID: "../agent-123",
+	})
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 validation error, got %d", len(errs))
+	}
+}
+
+func TestValidateSaveAttachmentRequestRejectsTraversalObjectKey(t *testing.T) {
+	t.Parallel()
+
+	validator := New()
+
+	errs := validator.ValidateSaveAttachmentRequest(dto.SaveAttachmentRequest{
+		AttachmentID: "ATT-0001",
+		ObjectKey:    "../tickets/ATT-0001/file.pdf",
+		FileName:     "file.pdf",
+	})
+	if len(errs) != 1 {
+		t.Fatalf("expected 1 validation error, got %d", len(errs))
+	}
+}

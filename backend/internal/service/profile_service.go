@@ -56,6 +56,12 @@ var allowedAvatarContentTypes = map[string]struct{}{
 	"image/webp": {},
 }
 
+var allowedAvatarExtensionsByContentType = map[string][]string{
+	"image/jpeg": {".jpg", ".jpeg"},
+	"image/png":  {".png"},
+	"image/webp": {".webp"},
+}
+
 var ErrProfileAvatarStorageUnavailable = errors.New("profile avatar storage unavailable")
 var ErrProfileAvatarUploadMissing = errors.New("profile avatar upload missing")
 var ErrProfileAvatarTooLarge = errors.New("profile avatar too large")
@@ -142,7 +148,14 @@ func (s ProfileService) CreateAvatarUploadURL(ctx context.Context, identity auth
 		return AvatarUploadURLResult{}, ErrProfileAvatarContentTypeNotAllowed
 	}
 
+	if !isAllowedAvatarFileName(contentType, fileName) {
+		return AvatarUploadURLResult{}, ErrProfileAvatarInvalid
+	}
+
 	objectKey := buildProfileAvatarObjectKey(identity.Subject, fileName)
+	if objectKey == "" {
+		return AvatarUploadURLResult{}, ErrProfileAvatarInvalid
+	}
 	upload, err := s.avatarStorage.CreateUploadURL(ctx, objectKey, contentType)
 	if err != nil {
 		return AvatarUploadURLResult{}, err
@@ -280,15 +293,25 @@ func (s ProfileService) normalizeAvatarValue(ctx context.Context, value string) 
 		return "", ErrProfileAvatarContentTypeNotAllowed
 	}
 
+	if !isAllowedAvatarFileName(metadata.ContentType, filepath.Base(avatarValue)) {
+		return "", ErrProfileAvatarInvalid
+	}
+
 	return avatarValue, nil
 }
 
 func buildProfileAvatarObjectKey(subject string, fileName string) string {
+	subjectSegment := sanitizeProfileStoragePathSegment(subject)
+	fileSegment := sanitizeProfileAvatarObjectName(fileName)
+	if subjectSegment == "" || fileSegment == "" {
+		return ""
+	}
+
 	return fmt.Sprintf(
 		"profiles/%s/avatar/%d-%s",
-		strings.TrimSpace(subject),
+		subjectSegment,
 		time.Now().UTC().Unix(),
-		sanitizeProfileAvatarObjectName(fileName),
+		fileSegment,
 	)
 }
 
@@ -333,5 +356,47 @@ func isAllowedAvatarContentType(contentType string) bool {
 }
 
 func isStoredAvatarObjectKey(value string) bool {
-	return strings.HasPrefix(strings.TrimSpace(value), "profiles/")
+	trimmed := strings.Trim(strings.TrimSpace(value), "/")
+	if !strings.HasPrefix(trimmed, "profiles/") || strings.Contains(trimmed, "..") || strings.Contains(trimmed, "\\") {
+		return false
+	}
+
+	parts := strings.Split(trimmed, "/")
+	return len(parts) == 4 && parts[0] == "profiles" && parts[2] == "avatar" && parts[1] != "" && parts[3] != ""
+}
+
+func isAllowedAvatarFileName(contentType string, fileName string) bool {
+	extensions, ok := allowedAvatarExtensionsByContentType[strings.TrimSpace(strings.ToLower(contentType))]
+	if !ok {
+		return false
+	}
+
+	extension := strings.ToLower(filepath.Ext(sanitizeProfileAvatarFileName(fileName)))
+	if extension == "" {
+		return false
+	}
+
+	for _, allowed := range extensions {
+		if extension == allowed {
+			return true
+		}
+	}
+
+	return false
+}
+
+func sanitizeProfileStoragePathSegment(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+	for _, char := range trimmed {
+		if unicode.IsLetter(char) || unicode.IsNumber(char) || char == '-' || char == '_' {
+			builder.WriteRune(char)
+		}
+	}
+
+	return builder.String()
 }

@@ -290,12 +290,83 @@ func TestSaveAttachmentAppendsAttachmentAndActivity(t *testing.T) {
 	}
 }
 
+func TestCreateAttachmentUploadURLRejectsMismatchedFileExtension(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	svc := NewTicketService(repo, staticAttachmentStorage{
+		presignedUpload: storage.PresignedUpload{
+			ObjectKey: "tickets/TCK-0001/attachments/ATT-0001/evidence.pdf",
+			URL:       "https://example-upload",
+			Method:    "PUT",
+			Headers:   map[string]string{"Content-Type": "application/pdf"},
+			ExpiresAt: time.Now().UTC().Add(15 * time.Minute),
+		},
+	})
+
+	ticket, err := svc.CreateTicket(context.Background(), CreateTicketInput{
+		Title:         "Upload mismatch",
+		Description:   "Testing guardrails",
+		Priority:      domain.TicketPriorityMedium,
+		ReporterName:  "Ops Team",
+		ReporterEmail: "ops@example.com",
+	})
+	if err != nil {
+		t.Fatalf("CreateTicket() error = %v", err)
+	}
+
+	_, err = svc.CreateAttachmentUploadURL(context.Background(), ticket.ID, AttachmentUploadURLInput{
+		FileName:    "evidence.png",
+		ContentType: "application/pdf",
+		SizeBytes:   2048,
+	})
+	if err != ErrAttachmentInvalid {
+		t.Fatalf("expected ErrAttachmentInvalid, got %v", err)
+	}
+}
+
+func TestSaveAttachmentRejectsContentTypeAndExtensionMismatch(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	svc := NewTicketService(repo, staticAttachmentStorage{
+		headMetadata: storage.ObjectMetadata{
+			ContentType: "application/pdf",
+			SizeBytes:   2048,
+		},
+	})
+
+	ticket, err := svc.CreateTicket(context.Background(), CreateTicketInput{
+		Title:         "Upload mismatch",
+		Description:   "Testing guardrails",
+		Priority:      domain.TicketPriorityMedium,
+		ReporterName:  "Ops Team",
+		ReporterEmail: "ops@example.com",
+	})
+	if err != nil {
+		t.Fatalf("CreateTicket() error = %v", err)
+	}
+
+	_, err = svc.SaveAttachment(context.Background(), ticket.ID, SaveAttachmentInput{
+		AttachmentID: "ATT-0001",
+		ObjectKey:    buildAttachmentObjectKey(ticket.ID, "ATT-0001", "evidence.png"),
+		FileName:     "evidence.png",
+		ActorID:      "user-123",
+		ActorName:    "Ops User",
+		ActorRole:    "reporter",
+	})
+	if err != ErrAttachmentInvalid {
+		t.Fatalf("expected ErrAttachmentInvalid, got %v", err)
+	}
+}
+
 type staticAttachmentStorage struct {
-	headMetadata storage.ObjectMetadata
+	presignedUpload storage.PresignedUpload
+	headMetadata    storage.ObjectMetadata
 }
 
 func (s staticAttachmentStorage) CreateUploadURL(context.Context, string, string) (storage.PresignedUpload, error) {
-	return storage.PresignedUpload{}, nil
+	return s.presignedUpload, nil
 }
 
 func (s staticAttachmentStorage) CreateDownloadURL(context.Context, string, string) (storage.PresignedDownload, error) {

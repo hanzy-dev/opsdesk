@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+	"unicode"
 )
 
 type contextKey string
@@ -26,10 +27,7 @@ func NewLogger(level string, appEnv string) *slog.Logger {
 }
 
 func WithRequest(ctx context.Context, baseLogger *slog.Logger, requestID string) context.Context {
-	requestID = strings.TrimSpace(requestID)
-	if requestID == "" {
-		requestID = GenerateRequestID()
-	}
+	requestID = NormalizeRequestID(requestID)
 
 	logger := baseLogger
 	if logger == nil {
@@ -63,6 +61,33 @@ func GenerateRequestID() string {
 	}
 
 	return "req-" + hex.EncodeToString(buffer)
+}
+
+func NormalizeRequestID(value string) string {
+	const maxLength = 96
+
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return GenerateRequestID()
+	}
+
+	var builder strings.Builder
+	for _, char := range trimmed {
+		if unicode.IsLetter(char) || unicode.IsNumber(char) || char == '-' || char == '_' || char == '.' || char == ':' {
+			builder.WriteRune(char)
+		}
+
+		if builder.Len() >= maxLength {
+			break
+		}
+	}
+
+	normalized := strings.TrimSpace(builder.String())
+	if normalized == "" {
+		return GenerateRequestID()
+	}
+
+	return normalized
 }
 
 func parseLevel(level string) slog.Level {

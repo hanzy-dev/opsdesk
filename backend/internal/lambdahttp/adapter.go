@@ -101,8 +101,14 @@ func newRequest(ctx context.Context, event events.APIGatewayV2HTTPRequest) (*htt
 		req.Header.Set(key, value)
 	}
 
-	if req.Header.Get("X-Request-Id") == "" && strings.TrimSpace(event.RequestContext.RequestID) != "" {
-		req.Header.Set("X-Request-Id", event.RequestContext.RequestID)
+	gatewayRequestID := strings.TrimSpace(event.RequestContext.RequestID)
+	if gatewayRequestID != "" {
+		if req.Header.Get("X-Request-Id") == "" {
+			req.Header.Set("X-Request-Id", gatewayRequestID)
+		}
+		if req.Header.Get("X-Correlation-Id") == "" {
+			req.Header.Set("X-Correlation-Id", gatewayRequestID)
+		}
 	}
 
 	for _, cookie := range event.Cookies {

@@ -181,6 +181,10 @@ func TestProxyPassesGatewayRequestIDToHandler(t *testing.T) {
 			t.Fatalf("expected X-Request-Id gateway-request-123, got %q", got)
 		}
 
+		if got := r.Header.Get("X-Correlation-Id"); got != "gateway-request-123" {
+			t.Fatalf("expected X-Correlation-Id gateway-request-123, got %q", got)
+		}
+
 		w.WriteHeader(http.StatusOK)
 	}))
 

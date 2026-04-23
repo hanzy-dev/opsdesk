@@ -3,6 +3,7 @@ package validation
 import (
 	"net/url"
 	"strings"
+	"unicode/utf8"
 
 	"opsdesk/backend/internal/domain"
 	"opsdesk/backend/internal/dto"
@@ -76,7 +77,18 @@ func (v *Validator) ValidateAddCommentRequest(input dto.AddCommentRequest) []dto
 	return errs
 }
 
-func (v *Validator) ValidateAssignTicketRequest(_ dto.AssignTicketRequest) []dto.FieldError {
+func (v *Validator) ValidateAssignTicketRequest(input dto.AssignTicketRequest) []dto.FieldError {
+	assigneeID := strings.TrimSpace(input.AssigneeID)
+	if assigneeID == "" {
+		return nil
+	}
+
+	if utf8.RuneCountInString(assigneeID) > 64 || strings.ContainsAny(assigneeID, "/\\ ") {
+		return []dto.FieldError{
+			{Field: "assigneeId", Message: "assigneeId must be a valid operator identifier"},
+		}
+	}
+
 	return nil
 }
 
@@ -85,6 +97,8 @@ func (v *Validator) ValidateRequestAttachmentUploadURLRequest(input dto.RequestA
 
 	if strings.TrimSpace(input.FileName) == "" {
 		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName is required"})
+	} else if utf8.RuneCountInString(strings.TrimSpace(input.FileName)) > 120 {
+		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName must be at most 120 characters"})
 	}
 
 	if strings.TrimSpace(input.ContentType) == "" {
@@ -107,10 +121,14 @@ func (v *Validator) ValidateSaveAttachmentRequest(input dto.SaveAttachmentReques
 
 	if strings.TrimSpace(input.ObjectKey) == "" {
 		errs = append(errs, dto.FieldError{Field: "objectKey", Message: "objectKey is required"})
+	} else if strings.Contains(strings.TrimSpace(input.ObjectKey), "..") || strings.Contains(strings.TrimSpace(input.ObjectKey), "\\") || strings.HasPrefix(strings.TrimSpace(input.ObjectKey), "/") {
+		errs = append(errs, dto.FieldError{Field: "objectKey", Message: "objectKey must be a normalized storage key"})
 	}
 
 	if strings.TrimSpace(input.FileName) == "" {
 		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName is required"})
+	} else if utf8.RuneCountInString(strings.TrimSpace(input.FileName)) > 120 {
+		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName must be at most 120 characters"})
 	}
 
 	return errs
@@ -169,6 +187,10 @@ func (v *Validator) ValidateUpdateProfileRequest(input dto.UpdateProfileRequest)
 	}
 
 	avatarURL := strings.TrimSpace(input.AvatarURL)
+	if strings.HasPrefix(avatarURL, "profiles/") && (strings.Contains(avatarURL, "..") || strings.Contains(avatarURL, "\\") || strings.HasPrefix(avatarURL, "/")) {
+		errs = append(errs, dto.FieldError{Field: "avatarUrl", Message: "avatarUrl must be a normalized storage key"})
+	}
+
 	if avatarURL != "" && !strings.HasPrefix(avatarURL, "profiles/") {
 		parsed, err := url.ParseRequestURI(avatarURL)
 		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") {
@@ -184,6 +206,8 @@ func (v *Validator) ValidateRequestProfileAvatarUploadURLRequest(input dto.Reque
 
 	if strings.TrimSpace(input.FileName) == "" {
 		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName is required"})
+	} else if utf8.RuneCountInString(strings.TrimSpace(input.FileName)) > 120 {
+		errs = append(errs, dto.FieldError{Field: "fileName", Message: "fileName must be at most 120 characters"})
 	}
 
 	if strings.TrimSpace(input.ContentType) == "" {

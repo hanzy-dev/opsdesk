@@ -146,8 +146,8 @@ func TestPostTicketCommentRejectsInvalidPayload(t *testing.T) {
 		t.Fatalf("expected validation_failed, got %q", response.Error.Code)
 	}
 
-	if len(response.Error.Details) != 2 {
-		t.Fatalf("expected 2 validation details, got %d", len(response.Error.Details))
+	if len(response.Error.Details) != 1 {
+		t.Fatalf("expected 1 validation detail, got %d", len(response.Error.Details))
 	}
 }
 
@@ -552,6 +552,123 @@ func TestReporterCannotUpdateTicketStatus(t *testing.T) {
 
 	if recorder.Code != http.StatusForbidden {
 		t.Fatalf("expected status 403, got %d", recorder.Code)
+	}
+}
+
+func TestReporterCreateTicketUsesAuthenticatedReporterIdentity(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+
+	recorder := performRequest(t, router, http.MethodPost, "/v1/tickets", dto.CreateTicketRequest{
+		Title:         "Permintaan bantuan login",
+		Description:   "Tidak bisa masuk ke portal",
+		Priority:      "medium",
+		Category:      "account_access",
+		Team:          "helpdesk",
+		ReporterName:  "",
+		ReporterEmail: "",
+	})
+
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.TicketResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.ReporterName != "OpsDesk User" {
+		t.Fatalf("expected reporter name from authenticated identity, got %q", response.Data.ReporterName)
+	}
+
+	if response.Data.ReporterEmail != "opsdesk.user@example.com" {
+		t.Fatalf("expected reporter email from authenticated identity, got %q", response.Data.ReporterEmail)
+	}
+}
+
+func TestCommentAuthorNameUsesAuthenticatedProfile(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	ticket := createTestTicket(t, router)
+
+	recorder := performRequest(t, router, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
+		Message:    "Saya menambahkan detail terbaru",
+		AuthorName: "Nama Palsu",
+	})
+
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[dto.CommentResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data.AuthorName != "OpsDesk User" {
+		t.Fatalf("expected author name from authenticated profile, got %q", response.Data.AuthorName)
+	}
+}
+
+func TestUnauthorizedErrorIncludesRequestContext(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	req := httptest.NewRequest(http.MethodGet, "/v1/tickets?page=2", nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", recorder.Code)
+	}
+
+	var response dto.ErrorResponse
+	decodeResponse(t, recorder, &response)
+
+	if response.Error.Status != http.StatusUnauthorized {
+		t.Fatalf("expected error status 401, got %d", response.Error.Status)
+	}
+
+	if response.Error.Method != http.MethodGet {
+		t.Fatalf("expected method GET, got %q", response.Error.Method)
+	}
+
+	if response.Error.Path != "/tickets" {
+		t.Fatalf("expected path /tickets, got %q", response.Error.Path)
+	}
+
+	if response.Error.Timestamp == "" {
+		t.Fatal("expected timestamp to be populated")
+	}
+}
+
+func TestReporterNotificationsHideInternalCommentActivity(t *testing.T) {
+	t.Parallel()
+
+	repo := memory.NewTicketRepository()
+	reporterRouter := newTestRouterWithRepository(testReporterIdentity(), repo)
+	ticket := createTestTicket(t, reporterRouter)
+	agentRouter := newTestRouterWithRepository(testAgentIdentity(), repo)
+
+	commentRecorder := performRequest(t, agentRouter, http.MethodPost, "/v1/tickets/"+ticket.ID+"/comments", dto.AddCommentRequest{
+		Message:    "Catatan internal operator",
+		AuthorName: "OpsDesk Agent",
+		Visibility: "internal",
+	})
+	if commentRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected status 201, got %d", commentRecorder.Code)
+	}
+
+	notificationRecorder := performRequest(t, reporterRouter, http.MethodGet, "/v1/notifications?limit=10", nil)
+	if notificationRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", notificationRecorder.Code)
+	}
+
+	var response dto.SuccessResponse[[]dto.NotificationResponse]
+	decodeResponse(t, notificationRecorder, &response)
+
+	if len(response.Data) != 0 {
+		t.Fatalf("expected 0 reporter notifications for internal activity, got %d", len(response.Data))
 	}
 }
 

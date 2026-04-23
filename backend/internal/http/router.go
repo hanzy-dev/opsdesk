@@ -365,17 +365,6 @@ func (r *Router) handleTicketByPath(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
-	var payload dto.CreateTicketRequest
-	if err := decodeJSON(req, &payload); err != nil {
-		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
-		return
-	}
-
-	if fieldErrors := r.validator.ValidateCreateTicketRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
-		return
-	}
-
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
 		writeUnauthorized(w, req, "unauthorized", "authentication is required")
@@ -387,12 +376,25 @@ func (r *Router) handleCreateTicket(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var payload dto.CreateTicketRequest
+	if err := decodeJSON(req, &payload); err != nil {
+		writeBadRequest(w, req, "invalid_json", "request body must be valid JSON", nil)
+		return
+	}
+
 	reporterName := strings.TrimSpace(payload.ReporterName)
 	reporterEmail := strings.TrimSpace(payload.ReporterEmail)
 	currentProfile := r.currentProfile(req.Context(), identity)
 	if identity.Role == auth.RoleReporter {
 		reporterEmail = identity.Email
 		reporterName = currentProfile.DisplayName
+	}
+
+	payload.ReporterName = reporterName
+	payload.ReporterEmail = reporterEmail
+	if fieldErrors := r.validator.ValidateCreateTicketRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
+		return
 	}
 
 	ticket, err := r.ticketSvc.CreateTicket(req.Context(), service.CreateTicketInput{
@@ -567,11 +569,6 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 		return
 	}
 
-	if fieldErrors := r.validator.ValidateAddCommentRequest(payload); len(fieldErrors) > 0 {
-		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
-		return
-	}
-
 	identity, ok := auth.IdentityFromContext(req.Context())
 	if !ok {
 		writeUnauthorized(w, req, "unauthorized", "authentication is required")
@@ -589,6 +586,13 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 		return
 	}
 
+	actorProfile := r.currentProfile(req.Context(), identity)
+	payload.AuthorName = actorProfile.DisplayName
+	if fieldErrors := r.validator.ValidateAddCommentRequest(payload); len(fieldErrors) > 0 {
+		writeBadRequest(w, req, "validation_failed", "request validation failed", fieldErrors)
+		return
+	}
+
 	visibility := domain.CommentVisibility(strings.TrimSpace(payload.Visibility))
 	if visibility == "" {
 		visibility = domain.CommentVisibilityPublic
@@ -600,10 +604,10 @@ func (r *Router) handleAddComment(w http.ResponseWriter, req *http.Request, tick
 
 	comment, err := r.ticketSvc.AddComment(req.Context(), ticketID, service.AddCommentInput{
 		Message:    strings.TrimSpace(payload.Message),
-		AuthorName: strings.TrimSpace(payload.AuthorName),
+		AuthorName: actorProfile.DisplayName,
 		Visibility: visibility,
 		ActorID:    identity.Subject,
-		ActorName:  r.currentProfile(req.Context(), identity).DisplayName,
+		ActorName:  actorProfile.DisplayName,
 		ActorRole:  string(identity.Role),
 	})
 	if err != nil {
@@ -994,8 +998,12 @@ func writeInternalError(w http.ResponseWriter, req *http.Request, message string
 
 func writeError(w http.ResponseWriter, req *http.Request, statusCode int, code, message string, details []dto.FieldError) {
 	requestID := ""
+	method := ""
+	path := ""
 	if req != nil {
 		requestID = observability.RequestIDFromContext(req.Context())
+		method = req.Method
+		path = req.URL.Path
 	}
 
 	writeJSON(w, statusCode, dto.ErrorResponse{
@@ -1004,6 +1012,10 @@ func writeError(w http.ResponseWriter, req *http.Request, statusCode int, code, 
 			Message:   message,
 			RequestID: requestID,
 			Details:   details,
+			Status:    statusCode,
+			Method:    method,
+			Path:      path,
+			Timestamp: domain.FormatTimestamp(domain.UTCNow()),
 		},
 	})
 }

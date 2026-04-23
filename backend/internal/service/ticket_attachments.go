@@ -24,6 +24,15 @@ var allowedAttachmentContentTypes = map[string]struct{}{
 	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": {},
 }
 
+var allowedAttachmentExtensionsByContentType = map[string][]string{
+	"application/pdf": {".pdf"},
+	"image/jpeg":      {".jpg", ".jpeg"},
+	"image/png":       {".png"},
+	"text/plain":      {".txt", ".log"},
+	"text/csv":        {".csv"},
+	"application/vnd.openxmlformats-officedocument.wordprocessingml.document": {".docx"},
+}
+
 var ErrAttachmentNotFound = errors.New("attachment not found")
 var ErrAttachmentStorageUnavailable = errors.New("attachment storage unavailable")
 var ErrAttachmentUploadMissing = errors.New("attachment upload missing")
@@ -88,8 +97,15 @@ func (s *ticketService) CreateAttachmentUploadURL(ctx context.Context, ticketID 
 		return AttachmentUploadURLResult{}, ErrAttachmentContentTypeNotAllowed
 	}
 
+	if !isAllowedAttachmentFileName(contentType, fileName) {
+		return AttachmentUploadURLResult{}, ErrAttachmentInvalid
+	}
+
 	attachmentID := s.attachmentIDFactory.Next()
 	objectKey := buildAttachmentObjectKey(ticketID, attachmentID, fileName)
+	if objectKey == "" {
+		return AttachmentUploadURLResult{}, ErrAttachmentInvalid
+	}
 	upload, err := s.attachmentStorage.CreateUploadURL(ctx, objectKey, contentType)
 	if err != nil {
 		return AttachmentUploadURLResult{}, err
@@ -121,7 +137,7 @@ func (s *ticketService) SaveAttachment(ctx context.Context, ticketID string, inp
 
 	attachmentID := strings.TrimSpace(input.AttachmentID)
 	fileName := sanitizeAttachmentFileName(input.FileName)
-	objectKey := strings.TrimSpace(input.ObjectKey)
+	objectKey := normalizeObjectKey(input.ObjectKey)
 	expectedObjectKey := buildAttachmentObjectKey(ticketID, attachmentID, fileName)
 	if attachmentID == "" || fileName == "" || objectKey == "" || objectKey != expectedObjectKey {
 		return domain.Attachment{}, ErrAttachmentInvalid
@@ -153,6 +169,10 @@ func (s *ticketService) SaveAttachment(ctx context.Context, ticketID string, inp
 	contentType := strings.TrimSpace(strings.ToLower(objectMetadata.ContentType))
 	if !isAllowedAttachmentContentType(contentType) {
 		return domain.Attachment{}, ErrAttachmentContentTypeNotAllowed
+	}
+
+	if !isAllowedAttachmentFileName(contentType, fileName) {
+		return domain.Attachment{}, ErrAttachmentInvalid
 	}
 
 	now := domain.UTCNow()
@@ -233,7 +253,14 @@ func (s *ticketService) CreateAttachmentDownloadURL(ctx context.Context, ticketI
 }
 
 func buildAttachmentObjectKey(ticketID string, attachmentID string, fileName string) string {
-	return fmt.Sprintf("tickets/%s/attachments/%s/%s", strings.TrimSpace(ticketID), strings.TrimSpace(attachmentID), sanitizeAttachmentObjectName(fileName))
+	ticketSegment := sanitizeStoragePathSegment(ticketID)
+	attachmentSegment := sanitizeStoragePathSegment(attachmentID)
+	fileSegment := sanitizeAttachmentObjectName(fileName)
+	if ticketSegment == "" || attachmentSegment == "" || fileSegment == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("tickets/%s/attachments/%s/%s", ticketSegment, attachmentSegment, fileSegment)
 }
 
 func sanitizeAttachmentFileName(fileName string) string {
@@ -274,4 +301,44 @@ func sanitizeAttachmentObjectName(fileName string) string {
 func isAllowedAttachmentContentType(contentType string) bool {
 	_, ok := allowedAttachmentContentTypes[strings.TrimSpace(strings.ToLower(contentType))]
 	return ok
+}
+
+func isAllowedAttachmentFileName(contentType string, fileName string) bool {
+	extensions, ok := allowedAttachmentExtensionsByContentType[strings.TrimSpace(strings.ToLower(contentType))]
+	if !ok {
+		return false
+	}
+
+	extension := strings.ToLower(filepath.Ext(sanitizeAttachmentFileName(fileName)))
+	if extension == "" {
+		return false
+	}
+
+	for _, allowed := range extensions {
+		if extension == allowed {
+			return true
+		}
+	}
+
+	return false
+}
+
+func sanitizeStoragePathSegment(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+
+	var builder strings.Builder
+	for _, char := range trimmed {
+		if unicode.IsLetter(char) || unicode.IsNumber(char) || char == '-' || char == '_' {
+			builder.WriteRune(char)
+		}
+	}
+
+	return builder.String()
+}
+
+func normalizeObjectKey(value string) string {
+	return strings.Trim(strings.TrimSpace(value), "/")
 }

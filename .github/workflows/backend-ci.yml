@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  backend-test-and-build:
+  backend-quality:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,6 +23,13 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+
+      - name: Check gofmt
+        run: |
+          test -z "$(gofmt -l .)"
+
+      - name: Run go vet
+        run: go vet ./...
 
       - name: Run backend tests
         run: go test ./...
