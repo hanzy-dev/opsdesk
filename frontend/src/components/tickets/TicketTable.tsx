@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { AppIcon } from "../common/AppIcon";
 import type { Ticket } from "../../types/ticket";
 import { formatDateTime } from "../../utils/date";
+import { getTicketAutomationBadges } from "../../utils/operatorAutomation";
 import { formatSlaDueLabel, getSlaState, getSlaToneLabel } from "../../utils/sla";
 import { getPriorityLabel, getTicketCategoryLabel, getTicketTeamLabel } from "../../utils/ticketMetadata";
 import { StatusBadge } from "./StatusBadge";
@@ -11,6 +12,7 @@ type TicketTableProps = {
   title?: string;
   eyebrow?: string;
   helperText?: string;
+  showOperatorSignals?: boolean;
 };
 
 export function TicketTable({
@@ -18,6 +20,7 @@ export function TicketTable({
   title = "Daftar tiket aktif",
   eyebrow = "Ringkasan",
   helperText,
+  showOperatorSignals = false,
 }: TicketTableProps) {
   return (
     <div className="panel panel--section table-panel">
@@ -51,7 +54,7 @@ export function TicketTable({
           </thead>
           <tbody>
             {tickets.map((ticket) => (
-              <tr key={ticket.id}>
+              <tr className={showOperatorSignals && ticket.status === "open" && !ticket.assigneeId ? "ticket-table__row--unassigned" : ""} key={ticket.id}>
                 <td>
                   <Link to={`/tickets/${ticket.id}`} className="table-link">
                     <span>{ticket.id}</span>
@@ -61,6 +64,15 @@ export function TicketTable({
                 <td>
                   <div className="ticket-table__title-cell">
                     <strong>{ticket.title}</strong>
+                    {showOperatorSignals ? (
+                      <div className="ticket-table__signals">
+                        {getTicketAutomationBadges(ticket).map((badge) => (
+                          <span className={`automation-inline-badge automation-inline-badge--${badge.tone}`} key={badge.id}>
+                            {badge.label}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </td>
                 <td className="ticket-table__meta-cell">

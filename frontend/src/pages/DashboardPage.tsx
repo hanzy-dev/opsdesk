@@ -8,6 +8,7 @@ import { ErrorState } from "../components/common/ErrorState";
 import { LoadingState } from "../components/common/LoadingState";
 import { StatusBadge } from "../components/tickets/StatusBadge";
 import { helpArticles } from "../content/helpArticles";
+import { buildDashboardAutomationSnapshot } from "../utils/operatorAutomation";
 import { getFeaturedHelpArticles } from "../utils/selfService";
 import { useAuth } from "../modules/auth/AuthContext";
 import type { Ticket, TicketActivity, TicketPriority } from "../types/ticket";
@@ -76,6 +77,7 @@ type DashboardData = {
   resolutionInsight: ResolutionInsight | null;
   workloadDistribution: WorkloadItem[];
   attentionTickets: Ticket[];
+  automationSnapshot: ReturnType<typeof buildDashboardAutomationSnapshot>;
   dataScopeNote: string | null;
 };
 
@@ -206,6 +208,7 @@ export function DashboardPage() {
           .filter((ticket) => ticket.priority === "high")
           .sort((left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime())
           .slice(0, 4),
+        automationSnapshot: buildDashboardAutomationSnapshot(analyticsTickets),
         dataScopeNote,
       });
     } catch (requestError) {
@@ -629,6 +632,47 @@ export function DashboardPage() {
           </div>
 
           <div className="dashboard-support-grid">
+            {!isReporterPortal ? (
+              <section className="panel panel--section dashboard-panel">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Automasi ringan</p>
+                    <h3>Sinyal operator yang perlu dilihat cepat</h3>
+                  </div>
+                </div>
+                <div className="action-overview">
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Urgent belum ditugaskan</strong>
+                      <p>Tiket prioritas tinggi yang masih terbuka tanpa penanggung jawab.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">{data.automationSnapshot.urgentUnassigned}</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Tiket stale aktif</strong>
+                      <p>Tiket aktif yang butuh follow-up karena lama tidak diperbarui.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">{data.automationSnapshot.staleActive}</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Perlu cek routing</strong>
+                      <p>Tiket yang secara ringan tampak lebih cocok ke kategori atau area lain.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">{data.automationSnapshot.routingReview}</span>
+                  </article>
+                  <article className="action-overview__item">
+                    <div>
+                      <strong>Kelompok insiden potensial</strong>
+                      <p>Kumpulan tiket aktif berprioritas tinggi pada kategori dan area yang sama.</p>
+                    </div>
+                    <span className="action-state action-state--allowed">{data.automationSnapshot.possibleIncidentGroups}</span>
+                  </article>
+                </div>
+              </section>
+            ) : null}
+
             <section className="panel panel--section dashboard-panel">
               <div className="section-heading">
                 <div>

@@ -21,12 +21,19 @@ import { SelectControl } from "../components/common/SelectControl";
 import { useToast } from "../components/common/ToastProvider";
 import { UserAvatar } from "../components/common/UserAvatar";
 import { StatusBadge } from "../components/tickets/StatusBadge";
+import { operatorMacros } from "../content/operatorMacros";
 import { useAuth } from "../modules/auth/AuthContext";
 import { getRoleLabel } from "../modules/auth/roles";
 import type { AssignableUser } from "../types/profile";
 import type { Attachment, Comment, Ticket, TicketActivity, TicketStatus } from "../types/ticket";
 import { formatDateTime } from "../utils/date";
 import { getErrorMessage, getErrorReferenceId } from "../utils/errors";
+import {
+  buildOperatorQuickActionPresets,
+  buildTicketAutomationSignals,
+  detectIncidentCluster,
+  getOperatorMacroById,
+} from "../utils/operatorAutomation";
 import { buildReporterTicketGuidance, findHelpArticleMatches, getReporterProgressSteps } from "../utils/selfService";
 import { formatSlaDueLabel, formatSlaTarget, getSlaState, getSlaToneLabel, getTicketDueAt } from "../utils/sla";
 import { buildOperatorDraftAssist, buildTicketSummaryAssist, findRelatedTickets, getTicketAssistSuggestion } from "../utils/smartAssist";
@@ -67,6 +74,9 @@ export function TicketDetailPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusErrorReferenceId, setStatusErrorReferenceId] = useState<string | null>(null);
+  const [quickActionMessage, setQuickActionMessage] = useState<string | null>(null);
+  const [quickActionError, setQuickActionError] = useState<string | null>(null);
+  const [isRunningQuickActionId, setIsRunningQuickActionId] = useState<string | null>(null);
   const [commentMessage, setCommentMessage] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [commentErrorReferenceId, setCommentErrorReferenceId] = useState<string | null>(null);
@@ -307,6 +317,16 @@ export function TicketDetailPage() {
     () => (ticket ? buildOperatorDraftAssist(ticket, activities, relatedTicketHints) : null),
     [activities, relatedTicketHints, ticket],
   );
+  const operatorMacrosForTicket = useMemo(() => (ticket ? operatorMacros.map((macro) => ({ ...macro, message: macro.buildMessage(ticket) })) : []), [ticket]);
+  const automationSignals = useMemo(
+    () => (ticket ? buildTicketAutomationSignals(ticket, activities, workloadTickets) : []),
+    [activities, ticket, workloadTickets],
+  );
+  const incidentCluster = useMemo(() => (ticket ? detectIncidentCluster(ticket, workloadTickets) : null), [ticket, workloadTickets]);
+  const quickActionPresets = useMemo(
+    () => (ticket ? buildOperatorQuickActionPresets(ticket, workloadTickets) : []),
+    [ticket, workloadTickets],
+  );
   const isReporterPortal = !permissions.canViewOperationalTickets;
   const reporterGuidance = useMemo(() => (ticket ? buildReporterTicketGuidance(ticket, activities) : null), [activities, ticket]);
   const reporterProgressSteps = useMemo(() => (ticket ? getReporterProgressSteps(ticket.status) : []), [ticket]);
@@ -340,6 +360,123 @@ export function TicketDetailPage() {
 
     return options;
   }, [assignableUsers, currentIdentity?.displayName, currentIdentity?.email, session?.subject]);
+
+  function applyMacroDraft(macroId: string) {
+    if (!ticket) {
+      return;
+    }
+
+    const macro = getOperatorMacroById(macroId);
+    if (!macro) {
+      return;
+    }
+
+    setCommentForm((current) => ({
+      ...current,
+      visibility: macro.visibility,
+      message: macro.buildMessage(ticket),
+    }));
+    setQuickActionMessage(`Macro "${macro.title}" siap ditinjau pada editor komentar.`);
+    setQuickActionError(null);
+  }
+
+  async function handleRunQuickAction(actionId: string) {
+    if (!ticket || !currentIdentity) {
+      return;
+    }
+
+    const action = quickActionPresets.find((preset) => preset.id === actionId);
+    if (!action) {
+      return;
+    }
+
+    const macro = getOperatorMacroById(action.macroId);
+    const macroMessage = macro ? macro.buildMessage(ticket) : "";
+
+    setIsRunningQuickActionId(action.id);
+    setQuickActionMessage(null);
+    setQuickActionError(null);
+
+    try {
+      if (action.kind === "draft-macro") {
+        applyMacroDraft(action.macroId ?? "");
+        return;
+      }
+
+      if (action.kind === "request-info" && macro) {
+        await addComment(ticket.id, {
+          authorName: currentIdentity.displayName,
+          visibility: "public",
+          message: macroMessage,
+        });
+        setQuickActionMessage("Permintaan informasi tambahan berhasil dikirim.");
+      }
+
+      if (action.kind === "mark-follow-up" && macro) {
+        if (ticket.status === "open") {
+          await updateTicketStatus(ticket.id, "in_progress");
+          setSelectedStatus("in_progress");
+        }
+
+        await addComment(ticket.id, {
+          authorName: currentIdentity.displayName,
+          visibility: "internal",
+          message: macroMessage,
+        });
+        setQuickActionMessage("Catatan follow-up internal berhasil ditambahkan.");
+      }
+
+      if (action.kind === "take-ownership") {
+        const assignedTicket = await assignTicket(ticket.id, {});
+        setTicket(assignedTicket);
+        setSelectedAssigneeId(assignedTicket.assigneeId ?? session?.subject ?? "");
+
+        if (assignedTicket.status === "open") {
+          await updateTicketStatus(ticket.id, "in_progress");
+          setSelectedStatus("in_progress");
+        }
+
+        if (macro) {
+          await addComment(ticket.id, {
+            authorName: currentIdentity.displayName,
+            visibility: "public",
+            message: macro.buildMessage(assignedTicket),
+          });
+        }
+
+        setQuickActionMessage("Tiket berhasil diambil ke antrean Anda dan balasan awal sudah dikirim.");
+      }
+
+      if (action.kind === "resolve-with-note" && macro) {
+        await updateTicketStatus(ticket.id, "resolved");
+        setSelectedStatus("resolved");
+        await addComment(ticket.id, {
+          authorName: currentIdentity.displayName,
+          visibility: "public",
+          message: macroMessage,
+        });
+        setQuickActionMessage("Tiket ditandai selesai dan balasan penutupan berhasil dikirim.");
+      }
+
+      await loadTicket({ preserveView: true });
+      await loadWorkloadSnapshot();
+      showToast({
+        title: "Aksi cepat berhasil dijalankan",
+        description: action.description,
+        tone: "success",
+      });
+    } catch (error) {
+      const message = getErrorMessage(error, "Aksi cepat belum berhasil dijalankan.");
+      setQuickActionError(message);
+      showToast({
+        title: "Aksi cepat belum berhasil",
+        description: message,
+        tone: "error",
+      });
+    } finally {
+      setIsRunningQuickActionId(null);
+    }
+  }
 
   async function handleStatusSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -870,6 +1007,24 @@ export function TicketDetailPage() {
         </div>
 
         <aside className="stack-lg">
+          {!isReporterPortal && automationSignals.length > 0 ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Sinyal automasi ringan</p>
+                <h3>Trigger dan perhatian operator</h3>
+                <p className="form-hint">Sinyal ini memakai aturan ringan dari status, prioritas, penugasan, SLA, dan pola tiket yang sudah ada.</p>
+              </div>
+              <div className="automation-signal-list">
+                {automationSignals.map((signal) => (
+                  <article className={`automation-signal automation-signal--${signal.tone}`} key={signal.id}>
+                    <strong>{signal.title}</strong>
+                    <p>{signal.description}</p>
+                  </article>
+                ))}
+              </div>
+            </article>
+          ) : null}
+
           {isReporterPortal && reporterGuidance ? (
             <article className="panel panel--section stack-md">
               <div>
@@ -990,6 +1145,42 @@ export function TicketDetailPage() {
               ))}
             </div>
           </article>
+
+          {!isReporterPortal && incidentCluster ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Kelompok gangguan</p>
+                <h3>Indikasi parent issue ringan</h3>
+                <p className="form-hint">OpsDesk belum memakai incident command center penuh. Panel ini hanya membantu operator menyatukan konteks serupa.</p>
+              </div>
+              <article className="incident-cluster-card">
+                <div>
+                  <span>Tiket jangkar ringan</span>
+                  <strong>{incidentCluster.anchorTicket.id}</strong>
+                  <p>{incidentCluster.summary}</p>
+                </div>
+                <Link className="button button--secondary" to={`/tickets/${incidentCluster.anchorTicket.id}`}>
+                  <AppIcon name="open" size="sm" />
+                  Buka Tiket Jangkar
+                </Link>
+              </article>
+              <div className="smart-related-list">
+                {incidentCluster.relatedTickets.map((relatedTicket) => (
+                  <Link className="smart-related-item" key={relatedTicket.id} to={`/tickets/${relatedTicket.id}`}>
+                    <div>
+                      <strong>{relatedTicket.title}</strong>
+                      <p>
+                        {relatedTicket.id} · {getTicketCategoryLabel(relatedTicket.category)} · {getTicketTeamLabel(relatedTicket.team)}
+                      </p>
+                    </div>
+                    <div className="smart-related-item__meta">
+                      <StatusBadge status={relatedTicket.status} />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </article>
+          ) : null}
 
           <article className="panel panel--section stack-md">
             <div>
@@ -1160,6 +1351,66 @@ export function TicketDetailPage() {
               <p className="form-hint">Penugasan tiket hanya dapat dilakukan oleh petugas atau admin.</p>
             )}
           </article>
+
+          {!isReporterPortal ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Macro operator</p>
+                <h3>Respons cepat yang bisa dipakai ulang</h3>
+                <p className="form-hint">Gunakan template ini untuk komentar publik atau catatan internal tanpa menulis dari nol.</p>
+              </div>
+              <div className="macro-grid">
+                {operatorMacrosForTicket.map((macro) => (
+                  <article className={`macro-card macro-card--${macro.visibility}`} key={macro.id}>
+                    <div className="macro-card__header">
+                      <div>
+                        <span>{macro.visibility === "internal" ? "Internal" : "Publik"}</span>
+                        <strong>{macro.title}</strong>
+                      </div>
+                      <span className={`table-tag ${macro.visibility === "internal" ? "table-tag--muted" : ""}`}>{macro.visibility === "internal" ? "Catatan" : "Balasan"}</span>
+                    </div>
+                    <p>{macro.summary}</p>
+                    <small>{macro.message}</small>
+                    <button className="button button--ghost" onClick={() => applyMacroDraft(macro.id)} type="button">
+                      Gunakan macro ini
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </article>
+          ) : null}
+
+          {!isReporterPortal ? (
+            <article className="panel panel--section stack-md">
+              <div>
+                <p className="section-eyebrow">Aksi operator</p>
+                <h3>Quick actions untuk pekerjaan repetitif</h3>
+                <p className="form-hint">Aksi ini menjalankan langkah ringan yang tetap bisa dijelaskan dan ditinjau dari riwayat tiket.</p>
+              </div>
+              <div className="quick-action-grid">
+                {quickActionPresets.map((action) => (
+                  <article className="quick-action-card" key={action.id}>
+                    <div>
+                      <strong>{action.title}</strong>
+                      <p>{action.description}</p>
+                    </div>
+                    <button
+                      aria-label={`Jalankan ${action.title}`}
+                      aria-busy={isRunningQuickActionId === action.id}
+                      className="button button--secondary"
+                      disabled={isRunningQuickActionId !== null}
+                      onClick={() => void handleRunQuickAction(action.id)}
+                      type="button"
+                    >
+                      {isRunningQuickActionId === action.id ? "Menjalankan..." : "Jalankan"}
+                    </button>
+                  </article>
+                ))}
+              </div>
+              {quickActionError ? <p className="form-error">{quickActionError}</p> : null}
+              {quickActionMessage ? <p className="form-success">{quickActionMessage}</p> : null}
+            </article>
+          ) : null}
 
           <article className="panel panel--section">
             <p className="section-eyebrow">Status</p>

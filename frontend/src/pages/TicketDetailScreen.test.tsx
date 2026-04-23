@@ -4,21 +4,23 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TicketDetailPage } from "./TicketDetailScreen";
 
 const addCommentMock = vi.fn();
+const assignTicketMock = vi.fn();
 const getTicketMock = vi.fn();
 const getTicketActivitiesMock = vi.fn();
 const listTicketsMock = vi.fn();
 const listAssignableUsersMock = vi.fn();
+const updateTicketStatusMock = vi.fn();
 
 vi.mock("../api/tickets", () => ({
   addComment: (...args: unknown[]) => addCommentMock(...args),
-  assignTicket: vi.fn(),
+  assignTicket: (...args: unknown[]) => assignTicketMock(...args),
   getAttachmentDownloadUrl: vi.fn(),
   getTicket: (ticketId: string) => getTicketMock(ticketId),
   getTicketActivities: (ticketId: string) => getTicketActivitiesMock(ticketId),
   listTickets: (...args: unknown[]) => listTicketsMock(...args),
   requestAttachmentUploadUrl: vi.fn(),
   saveAttachment: vi.fn(),
-  updateTicketStatus: vi.fn(),
+  updateTicketStatus: (...args: unknown[]) => updateTicketStatusMock(...args),
   uploadAttachmentFile: vi.fn(),
 }));
 
@@ -52,10 +54,12 @@ vi.mock("../modules/auth/AuthContext", () => ({
 describe("TicketDetailScreen", () => {
   afterEach(() => {
     addCommentMock.mockReset();
+    assignTicketMock.mockReset();
     getTicketMock.mockReset();
     getTicketActivitiesMock.mockReset();
     listTicketsMock.mockReset();
     listAssignableUsersMock.mockReset();
+    updateTicketStatusMock.mockReset();
   });
 
   it("renders operational metadata and auth-derived comment identity", async () => {
@@ -213,6 +217,9 @@ describe("TicketDetailScreen", () => {
 
     expect(screen.getByText("Ringkasan dan sinyal cepat")).toBeInTheDocument();
     expect(screen.getByText("Hint tiket yang mirip")).toBeInTheDocument();
+    expect(screen.getByText("Trigger dan perhatian operator")).toBeInTheDocument();
+    expect(screen.getByText("Respons cepat yang bisa dipakai ulang")).toBeInTheDocument();
+    expect(screen.getByText("Quick actions untuk pekerjaan repetitif")).toBeInTheDocument();
     expect(screen.getByText("Mulai dari respons yang sudah dirapikan sistem")).toBeInTheDocument();
     expect(screen.getByText("Sinkronisasi dashboard gagal")).toBeInTheDocument();
 
@@ -264,5 +271,48 @@ describe("TicketDetailScreen", () => {
 
     expect(await screen.findByText("Isi komentar wajib diisi sebelum dikirim.")).toBeInTheDocument();
     expect(addCommentMock).not.toHaveBeenCalled();
+  });
+
+  it("runs operator quick action to request more information", async () => {
+    getTicketMock.mockResolvedValue({
+      id: "TCK-3003",
+      title: "Login SSO gagal",
+      description: "Pengguna tidak bisa masuk ke portal.",
+      status: "open",
+      priority: "high",
+      category: "account_access",
+      team: "helpdesk",
+      reporterName: "Rina Pratama",
+      reporterEmail: "rina@example.com",
+      comments: [],
+      attachments: [],
+      createdAt: "2026-04-17T09:00:00Z",
+      updatedAt: "2026-04-17T09:15:00Z",
+    });
+    getTicketActivitiesMock.mockResolvedValue([]);
+    listAssignableUsersMock.mockResolvedValue([]);
+    listTicketsMock.mockResolvedValue({
+      items: [],
+      pagination: { page: 1, page_size: 100, total_items: 0, total_pages: 0, has_next: false },
+    });
+    addCommentMock.mockResolvedValue({
+      id: "c-99",
+      ticketId: "TCK-3003",
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/tickets/TCK-3003"]}>
+        <Routes>
+          <Route path="/tickets/:ticketId" element={<TicketDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Quick actions untuk pekerjaan repetitif")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Jalankan Minta info tambahan" }));
+
+    await waitFor(() => {
+      expect(addCommentMock).toHaveBeenCalled();
+    });
   });
 });

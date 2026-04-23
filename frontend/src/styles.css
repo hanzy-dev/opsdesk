@@ -4154,6 +4154,156 @@ textarea:focus-visible {
     rgba(255, 255, 255, 0.03);
 }
 
+.automation-signal-list,
+.macro-grid,
+.quick-action-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.automation-signal,
+.macro-card,
+.quick-action-card,
+.incident-cluster-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.automation-signal,
+.macro-card,
+.quick-action-card {
+  padding: 16px;
+}
+
+.automation-signal strong,
+.macro-card strong,
+.quick-action-card strong,
+.incident-cluster-card strong {
+  display: block;
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.automation-signal p,
+.macro-card p,
+.macro-card small,
+.quick-action-card p,
+.incident-cluster-card p,
+.incident-cluster-card span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.automation-signal--attention {
+  border-color: rgba(255, 143, 126, 0.24);
+  background:
+    linear-gradient(135deg, rgba(255, 143, 126, 0.14), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.automation-signal--warning {
+  border-color: rgba(241, 182, 77, 0.2);
+  background:
+    linear-gradient(135deg, rgba(241, 182, 77, 0.12), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.automation-signal--info {
+  border-color: rgba(121, 184, 255, 0.18);
+  background:
+    linear-gradient(135deg, rgba(121, 184, 255, 0.12), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.automation-signal--success {
+  border-color: rgba(79, 190, 139, 0.18);
+  background:
+    linear-gradient(135deg, rgba(79, 190, 139, 0.12), rgba(255, 255, 255, 0.02)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.macro-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.macro-card {
+  display: grid;
+  gap: 12px;
+}
+
+.macro-card__header,
+.quick-action-card,
+.incident-cluster-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.macro-card__header span,
+.incident-cluster-card span {
+  color: #f2b792;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.macro-card--internal {
+  border-color: rgba(121, 184, 255, 0.14);
+}
+
+.quick-action-card p {
+  margin-top: 6px;
+}
+
+.quick-action-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ticket-table__signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.automation-inline-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.automation-inline-badge--attention {
+  background: rgba(255, 143, 126, 0.16);
+  color: #ffb3a6;
+}
+
+.automation-inline-badge--warning {
+  background: rgba(241, 182, 77, 0.16);
+  color: #ffd788;
+}
+
+.automation-inline-badge--info {
+  background: rgba(121, 184, 255, 0.16);
+  color: #abd5ff;
+}
+
+.ticket-table__row--unassigned {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.incident-cluster-card {
+  padding: 18px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -4335,6 +4485,8 @@ textarea:focus-visible {
   .form-grid,
   .meta-grid,
   .filter-grid,
+  .macro-grid,
+  .quick-action-grid,
   .profile-edit-spotlight,
   .dashboard-distribution__legend,
   .dashboard-trend__bars,

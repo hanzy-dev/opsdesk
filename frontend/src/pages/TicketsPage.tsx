@@ -585,6 +585,7 @@ export function TicketsPage() {
             tickets={tickets}
             title={isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
             eyebrow={isReporterPortal ? "Pelapor" : "Operasional"}
+            showOperatorSignals={!isReporterPortal}
             helperText={
               isReporterPortal
                 ? "Gunakan daftar ini untuk membuka detail tiket, memantau progres, dan melihat pembaruan terbaru."
