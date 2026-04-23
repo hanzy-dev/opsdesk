@@ -38,17 +38,20 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: backend/go.mod
+          go-version: "1.25.6"
+          check-latest: true
           cache-dependency-path: backend/go.sum
 
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
       - name: Run govulncheck
-        run: govulncheck ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
 
   frontend-dependency-audit:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE_URL: https://example.invalid/v1
+      VITE_COGNITO_REGION: ap-southeast-1
+      VITE_COGNITO_USER_POOL_ID: ap-southeast-1_ci
+      VITE_COGNITO_CLIENT_ID: ci-client-id
     defaults:
       run:
         working-directory: frontend

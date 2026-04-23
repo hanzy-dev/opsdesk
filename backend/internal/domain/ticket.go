@@ -32,7 +32,7 @@ const (
 type TicketTeam string
 
 const (
-	TicketTeamHelpdesk      TicketTeam = "helpdesk"
+	TicketTeamHelpdesk       TicketTeam = "helpdesk"
 	TicketTeamInfrastructure TicketTeam = "infrastructure"
 	TicketTeamApplications   TicketTeam = "applications"
 	TicketTeamOperations     TicketTeam = "operations"
