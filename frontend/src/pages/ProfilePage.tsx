@@ -270,7 +270,7 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div className="detail-grid">
+        <div className="profile-layout stack-md">
           <article className="panel panel--section profile-summary profile-summary--dense">
             <div className="profile-summary__header">
               <div className="profile-summary__identity">
@@ -335,7 +335,7 @@ export function ProfilePage() {
             </div>
           </article>
 
-          <div className="stack-md">
+          <section className="profile-layout__body stack-md">
             <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
               <div className="section-heading">
                 <div>
@@ -429,7 +429,7 @@ export function ProfilePage() {
               </div>
             </form>
 
-            <article className="panel panel--section profile-readonly-panel">
+            <article className="panel panel--section profile-readonly-panel profile-readonly-panel--stacked">
               <div className="section-heading">
                 <div>
                   <p className="section-eyebrow">Hanya baca</p>
@@ -456,7 +456,7 @@ export function ProfilePage() {
                 </div>
               </div>
             </article>
-          </div>
+          </section>
         </div>
       </section>
 

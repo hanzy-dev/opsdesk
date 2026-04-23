@@ -111,7 +111,7 @@ export function AccountSettingsPage() {
         </div>
       </div>
 
-      <div className="detail-grid">
+      <div className="settings-layout stack-md">
         <article className="panel panel--section profile-summary profile-summary--dense">
           <div className="profile-summary__header">
             <div className="profile-summary__identity">
@@ -174,7 +174,7 @@ export function AccountSettingsPage() {
           </div>
         </article>
 
-        <div className="stack-md settings-page__sections">
+        <div className="stack-md settings-page__sections settings-layout__body">
           <article className="panel panel--section profile-readonly-panel settings-section">
             <div className="section-heading">
               <div className="settings-section__heading">

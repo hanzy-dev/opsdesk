@@ -796,9 +796,9 @@ export function TicketDetailPage() {
         </div>
       </article>
 
-      <div className="ticket-layout">
-        <div className="stack-lg">
-          <article className="panel panel--section stack-md">
+      <div className="ticket-layout ticket-layout--command">
+        <div className="ticket-layout__main stack-lg">
+          <article className="panel panel--section stack-md ticket-section ticket-section--meta">
             <div className="section-heading">
               <div>
                 <p className="section-eyebrow">{isReporterPortal ? "Ringkasan tiket" : "Metadata"}</p>
@@ -883,7 +883,7 @@ export function TicketDetailPage() {
             </dl>
           </article>
 
-          <article className="panel panel--section stack-md">
+          <article className="panel panel--section stack-md ticket-section ticket-section--attachments">
             <div>
               <p className="section-eyebrow">Lampiran</p>
               <h3>Dokumen dan file pendukung</h3>
@@ -920,7 +920,7 @@ export function TicketDetailPage() {
             )}
           </article>
 
-          <article className="panel panel--section stack-md">
+          <article className="panel panel--section stack-md ticket-section ticket-section--conversation">
             <div>
               <p className="section-eyebrow">Kolaborasi</p>
               <h3>Komunikasi tiket</h3>
@@ -974,7 +974,7 @@ export function TicketDetailPage() {
             ) : null}
           </article>
 
-          <article className="panel panel--section stack-md">
+          <article className="panel panel--section stack-md ticket-section ticket-section--timeline">
             <div>
               <p className="section-eyebrow">Riwayat</p>
               <h3>Timeline aktivitas tiket</h3>
@@ -987,7 +987,7 @@ export function TicketDetailPage() {
                 description="Riwayat aktivitas tiket akan muncul setelah ada perubahan pada tiket ini."
               />
             ) : (
-              <div className="timeline-list">
+              <div className="timeline-list timeline-list--command">
                 {activities.map((activity) => (
                   <article className="timeline-item" key={activity.id}>
                     <div aria-hidden="true" className="timeline-item__dot" />
@@ -1006,7 +1006,7 @@ export function TicketDetailPage() {
           </article>
         </div>
 
-        <aside className="stack-lg">
+        <aside className="stack-lg ticket-layout__rail">
           {!isReporterPortal && automationSignals.length > 0 ? (
             <article className="panel panel--section stack-md">
               <div>

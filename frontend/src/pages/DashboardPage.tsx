@@ -536,10 +536,261 @@ export function DashboardPage() {
           />
         </div>
       ) : (
-        <>
-          {isReporterPortal ? (
-            <div className="dashboard-support-grid">
-              <section className="panel panel--section dashboard-panel">
+        <div className="dashboard-executive-layout">
+          <div className="dashboard-executive-layout__main stack-md">
+            <section className="dashboard-feature">
+              <div className="section-heading">
+                <div>
+                  <p className="section-eyebrow">{isReporterPortal ? "Sorotan portal" : "Sorotan utama"}</p>
+                  <h3>{isReporterPortal ? "Gunakan portal untuk membaca progres, bukan hanya mengirim tiket" : "Sinyal antrean yang paling perlu Anda lihat lebih dulu"}</h3>
+                </div>
+              </div>
+              <div className="dashboard-feature__body">
+                <div className="dashboard-feature__story">
+                  <strong>
+                    {isReporterPortal
+                      ? `${data.stats.open} tiket Anda masih terbuka dan ${data.stats.inProgress} sedang diproses.`
+                      : `${data.stats.unassigned} tiket belum ditugaskan dan ${data.stats.warning + data.stats.breached} butuh perhatian target.`}
+                  </strong>
+                  <p>
+                    {isReporterPortal
+                      ? "Dashboard ini membantu pelapor memahami apa yang sedang berjalan, tiket mana yang perlu dicek ulang, dan kapan bantuan mandiri masih relevan."
+                      : "Gunakan ringkasan ini untuk memutuskan apakah fokus berikutnya adalah triase, follow-up SLA, review routing, atau pembagian beban kerja."}
+                  </p>
+                </div>
+                {(data.dataScopeNote || data.resolutionInsight) ? (
+                  <div className="dashboard-note-strip">
+                    {data.dataScopeNote ? (
+                      <article className="dashboard-note-card">
+                        <span>Cakupan analitik</span>
+                        <strong>{data.dataScopeNote}</strong>
+                      </article>
+                    ) : null}
+                    {data.resolutionInsight ? (
+                      <article className="dashboard-note-card dashboard-note-card--cool">
+                        <span>Kecepatan penyelesaian</span>
+                        <strong>
+                          {formatDurationHours(data.resolutionInsight.averageHours)} dari {data.resolutionInsight.sampleSize} tiket selesai
+                        </strong>
+                      </article>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="dashboard-zone">
+              <div className="section-heading">
+                <div>
+                  <p className="section-eyebrow">Analitik ringkas</p>
+                  <h3>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean dan pola permintaan"}</h3>
+                </div>
+              </div>
+              <div className="dashboard-analytics-grid dashboard-analytics-grid--hybrid">
+                <article className="dashboard-subsection">
+                  <p className="section-eyebrow">{isReporterPortal ? "Status tiket" : "Distribusi status"}</p>
+                  <h4>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean saat ini"}</h4>
+                  <DistributionPanel items={data.statusDistribution} />
+                </article>
+                <article className="dashboard-subsection">
+                  <p className="section-eyebrow">{isReporterPortal ? "Kategori tiket" : "Kategori"}</p>
+                  <h4>{isReporterPortal ? "Masalah yang paling sering Anda laporkan" : "Pola kebutuhan yang paling sering masuk"}</h4>
+                  <DistributionPanel items={data.categoryDistribution} emptyLabel="Belum ada kategori yang dapat diringkas." />
+                </article>
+                <article className="dashboard-subsection">
+                  <p className="section-eyebrow">{isReporterPortal ? "Tim tujuan" : "Area tujuan"}</p>
+                  <h4>{isReporterPortal ? "Tiket Anda paling sering diarahkan ke tim mana" : "Sebaran tiket per tim operasional"}</h4>
+                  <DistributionPanel items={data.teamDistribution} emptyLabel="Belum ada area operasional yang dapat diringkas." />
+                </article>
+              </div>
+            </section>
+
+            <div className="dashboard-split">
+              <section className="dashboard-zone">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
+                    <h3>{isReporterPortal ? "Tiket yang Anda buat dalam 7 hari terakhir" : "Tiket masuk 7 hari terakhir"}</h3>
+                  </div>
+                </div>
+                <div className="dashboard-trend">
+                  <div className="dashboard-trend__bars" aria-label="Grafik tiket masuk per hari">
+                    {data.createdTrend.map((point) => (
+                      <div className="dashboard-trend__column" key={point.dateKey}>
+                        <span className="dashboard-trend__value">{point.value}</span>
+                        <div className="dashboard-trend__track" aria-hidden="true">
+                          <span
+                            className="dashboard-trend__bar"
+                            style={{
+                              height: `${Math.max((point.value / Math.max(...data.createdTrend.map((entry) => entry.value), 1)) * 100, point.value > 0 ? 18 : 6)}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="dashboard-trend__label">{point.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="dashboard-panel__hint">{data.trendSummary}</p>
+                </div>
+              </section>
+
+              {isReporterPortal ? (
+                <section className="dashboard-zone">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-eyebrow">Panduan status</p>
+                      <h3>Apa arti status tiket Anda</h3>
+                    </div>
+                  </div>
+                  <div className="compact-list">
+                    <article className="compact-list__item">
+                      <strong>Terbuka</strong>
+                      <p>Tiket sudah diterima dan menunggu triase awal dari tim terkait.</p>
+                    </article>
+                    <article className="compact-list__item">
+                      <strong>Sedang ditangani</strong>
+                      <p>Tiket sedang diperiksa, dikerjakan, atau menunggu verifikasi tambahan dari konteks yang ada.</p>
+                    </article>
+                    <article className="compact-list__item">
+                      <strong>Selesai</strong>
+                      <p>Tindak lanjut utama sudah dianggap tuntas. Anda tetap bisa membalas bila masalah berlanjut.</p>
+                    </article>
+                  </div>
+                </section>
+              ) : (
+                <section className="dashboard-zone">
+                  <div className="section-heading">
+                    <div>
+                      <p className="section-eyebrow">Distribusi beban</p>
+                      <h3>Antrean aktif per petugas</h3>
+                    </div>
+                  </div>
+                  {data.workloadDistribution.length === 0 ? (
+                    <EmptyState title="Belum ada beban aktif" description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia." />
+                  ) : (
+                    <div className="dashboard-workload-list dashboard-workload-list--compact">
+                      {data.workloadDistribution.map((item) => (
+                        <article className="dashboard-workload-item" key={item.key}>
+                          <div>
+                            <strong>{item.label}</strong>
+                            <p>{item.sublabel}</p>
+                          </div>
+                          <span className="dashboard-workload-item__value">{item.value} tiket aktif</span>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+
+            <div className="dashboard-split dashboard-split--main">
+              <section className="dashboard-zone dashboard-zone--dominant">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Tiket terbaru</p>
+                    <h3>{isReporterPortal ? "Tiket yang baru diperbarui" : "Antrian yang paling baru diperbarui"}</h3>
+                  </div>
+                  <Link className="button button--secondary" to="/tickets">
+                    Lihat Semua
+                  </Link>
+                </div>
+                <div className="dashboard-ticket-list">
+                  {data.recentTickets.map((ticket) => (
+                    <Link className="dashboard-ticket-card dashboard-ticket-card--line" key={ticket.id} to={`/tickets/${ticket.id}`}>
+                      <div className="dashboard-ticket-card__top">
+                        <div>
+                          <strong>{ticket.title}</strong>
+                          <p>
+                            {ticket.id} - {ticket.reporterName}
+                          </p>
+                        </div>
+                        <div className="dashboard-ticket-card__status">
+                          <StatusBadge status={ticket.status} />
+                          <AppIcon name="chevronRight" size="sm" />
+                        </div>
+                      </div>
+                      <div className="dashboard-ticket-card__meta">
+                        <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
+                        <span>{getTicketCategoryLabel(ticket.category)}</span>
+                        <span>{getTicketTeamLabel(ticket.team)}</span>
+                        <span>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</span>
+                        <span>Diperbarui {formatDateTime(ticket.updatedAt)}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
+              <section className="dashboard-zone">
+                <div className="section-heading">
+                  <div>
+                    <p className="section-eyebrow">Sorotan audit</p>
+                    <h3>{isReporterPortal ? "Pembaruan terbaru yang layak Anda pantau" : "Aktivitas terbaru yang layak dipantau"}</h3>
+                  </div>
+                </div>
+
+                {data.activityError ? <p className="form-hint">{data.activityError}</p> : null}
+
+                {data.recentActivities.length === 0 ? (
+                  <EmptyState
+                    eyebrow="Aktivitas"
+                    title="Belum ada sorotan aktivitas"
+                    description="Aktivitas terbaru pada tiket akan muncul di sini untuk membantu pemantauan cepat."
+                    supportText="Begitu ada perubahan status, komentar, penugasan, atau lampiran baru, sorotannya akan tampil otomatis."
+                  />
+                ) : (
+                  <div className="dashboard-activity-list dashboard-activity-list--timeline">
+                    {data.recentActivities.map((activity) => (
+                      <Link className="dashboard-activity-item dashboard-activity-item--timeline" key={activity.id} to={`/tickets/${activity.ticketId}`}>
+                        <div className={`dashboard-activity-item__marker dashboard-activity-item__marker--${activity.action}`} />
+                        <div>
+                          <strong>{activity.summary}</strong>
+                          <p>{activity.ticketTitle}</p>
+                          <span>
+                            {activity.actorLabel} - {formatDateTime(activity.timestamp)}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
+          </div>
+
+          <aside className="dashboard-executive-layout__rail stack-md">
+            {!isReporterPortal ? (
+              <section className="rail-section rail-section--emphasis">
+                <div>
+                  <p className="section-eyebrow">Automasi ringan</p>
+                  <h3>Sinyal operator yang perlu dilihat cepat</h3>
+                </div>
+                <div className="compact-list">
+                  <article className="compact-list__item">
+                    <strong>Urgent belum ditugaskan</strong>
+                    <p>Tiket prioritas tinggi yang masih terbuka tanpa penanggung jawab.</p>
+                    <small>{data.automationSnapshot.urgentUnassigned} tiket</small>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Tiket stale aktif</strong>
+                    <p>Tiket aktif yang butuh follow-up karena lama tidak diperbarui.</p>
+                    <small>{data.automationSnapshot.staleActive} tiket</small>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Perlu cek routing</strong>
+                    <p>Tiket yang secara ringan tampak lebih cocok ke kategori atau area lain.</p>
+                    <small>{data.automationSnapshot.routingReview} tiket</small>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Kelompok insiden potensial</strong>
+                    <p>Kumpulan tiket aktif berprioritas tinggi pada kategori dan area yang sama.</p>
+                    <small>{data.automationSnapshot.possibleIncidentGroups} grup</small>
+                  </article>
+                </div>
+              </section>
+            ) : (
+              <section className="rail-section rail-section--emphasis">
                 <div className="section-heading">
                   <div>
                     <p className="section-eyebrow">Self-service</p>
@@ -549,299 +800,22 @@ export function DashboardPage() {
                     Buka Pusat Bantuan
                   </Link>
                 </div>
-                <div className="dashboard-actions-grid">
+                <div className="compact-link-list">
                   {featuredHelpArticles.map((article) => (
-                    <article className="dashboard-action-card" key={article.id}>
-                      <div className="dashboard-action-card__header">
-                        <AppIconBadge name="help" size="sm" tone="accent" />
-                        <strong>{article.title}</strong>
-                      </div>
+                    <article className="compact-link-list__item" key={article.id}>
+                      <strong>{article.title}</strong>
                       <p>{article.summary}</p>
-                      <span className="dashboard-action-card__cue">
-                        <span>{article.readTimeMinutes} menit baca</span>
-                      </span>
+                      <small>{article.readTimeMinutes} menit baca</small>
                     </article>
                   ))}
                 </div>
               </section>
-
-              <section className="panel panel--section dashboard-panel">
-                <div className="section-heading">
-                  <div>
-                    <p className="section-eyebrow">Cara pakai</p>
-                    <h3>Apa yang bisa Anda lakukan dari portal ini</h3>
-                  </div>
-                </div>
-                <div className="action-overview">
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Lihat status dengan konteks</strong>
-                      <p>Setiap tiket membantu Anda memahami apakah tiket baru diterima, sedang diproses, atau sudah selesai.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">Aktif</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Baca update publik</strong>
-                      <p>Komentar publik membantu Anda mengikuti tindak lanjut tanpa perlu menghubungi tim lewat jalur lain.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">Aktif</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Tambahkan info jika perlu</strong>
-                      <p>Anda tetap bisa membalas tiket atau menambah lampiran bila ada konteks baru yang penting.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">Aktif</span>
-                  </article>
-                </div>
-              </section>
-            </div>
-          ) : null}
-
-          <div className="dashboard-analytics-grid">
-            <section className="panel panel--section dashboard-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">{isReporterPortal ? "Status tiket" : "Distribusi status"}</p>
-                  <h3>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean saat ini"}</h3>
-                </div>
-              </div>
-              <DistributionPanel items={data.statusDistribution} />
-            </section>
-
-            <section className="panel panel--section dashboard-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">{isReporterPortal ? "Kategori tiket" : "Kategori"}</p>
-                  <h3>{isReporterPortal ? "Masalah yang paling sering Anda laporkan" : "Pola kebutuhan yang paling sering masuk"}</h3>
-                </div>
-              </div>
-              <DistributionPanel items={data.categoryDistribution} emptyLabel="Belum ada kategori yang dapat diringkas." />
-            </section>
-
-            <section className="panel panel--section dashboard-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">{isReporterPortal ? "Tim tujuan" : "Area tujuan"}</p>
-                  <h3>{isReporterPortal ? "Tiket Anda paling sering diarahkan ke tim mana" : "Sebaran tiket per tim operasional"}</h3>
-                </div>
-              </div>
-              <DistributionPanel items={data.teamDistribution} emptyLabel="Belum ada area operasional yang dapat diringkas." />
-            </section>
-          </div>
-
-          <div className="dashboard-support-grid">
-            {!isReporterPortal ? (
-              <section className="panel panel--section dashboard-panel">
-                <div className="section-heading">
-                  <div>
-                    <p className="section-eyebrow">Automasi ringan</p>
-                    <h3>Sinyal operator yang perlu dilihat cepat</h3>
-                  </div>
-                </div>
-                <div className="action-overview">
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Urgent belum ditugaskan</strong>
-                      <p>Tiket prioritas tinggi yang masih terbuka tanpa penanggung jawab.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">{data.automationSnapshot.urgentUnassigned}</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Tiket stale aktif</strong>
-                      <p>Tiket aktif yang butuh follow-up karena lama tidak diperbarui.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">{data.automationSnapshot.staleActive}</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Perlu cek routing</strong>
-                      <p>Tiket yang secara ringan tampak lebih cocok ke kategori atau area lain.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">{data.automationSnapshot.routingReview}</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Kelompok insiden potensial</strong>
-                      <p>Kumpulan tiket aktif berprioritas tinggi pada kategori dan area yang sama.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">{data.automationSnapshot.possibleIncidentGroups}</span>
-                  </article>
-                </div>
-              </section>
-            ) : null}
-
-            <section className="panel panel--section dashboard-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
-                  <h3>{isReporterPortal ? "Tiket yang Anda buat dalam 7 hari terakhir" : "Tiket masuk 7 hari terakhir"}</h3>
-                </div>
-              </div>
-              <div className="dashboard-trend">
-                <div className="dashboard-trend__bars" aria-label="Grafik tiket masuk per hari">
-                  {data.createdTrend.map((point) => (
-                    <div className="dashboard-trend__column" key={point.dateKey}>
-                      <span className="dashboard-trend__value">{point.value}</span>
-                      <div className="dashboard-trend__track" aria-hidden="true">
-                        <span
-                          className="dashboard-trend__bar"
-                          style={{
-                            height: `${Math.max((point.value / Math.max(...data.createdTrend.map((entry) => entry.value), 1)) * 100, point.value > 0 ? 18 : 6)}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="dashboard-trend__label">{point.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="dashboard-panel__hint">{data.trendSummary}</p>
-              </div>
-            </section>
-
-            {isReporterPortal ? (
-              <section className="panel panel--section dashboard-panel">
-                <div className="section-heading">
-                  <div>
-                    <p className="section-eyebrow">Panduan status</p>
-                    <h3>Apa arti status tiket Anda</h3>
-                  </div>
-                </div>
-                <div className="action-overview">
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Terbuka</strong>
-                      <p>Tiket sudah diterima dan menunggu triase awal dari tim terkait.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">Langkah 1</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Sedang ditangani</strong>
-                      <p>Tiket sedang diperiksa, dikerjakan, atau menunggu verifikasi tambahan dari konteks yang ada.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">Langkah 2</span>
-                  </article>
-                  <article className="action-overview__item">
-                    <div>
-                      <strong>Selesai</strong>
-                      <p>Tindak lanjut utama sudah dianggap tuntas. Anda tetap bisa membalas bila masalah berlanjut.</p>
-                    </div>
-                    <span className="action-state action-state--allowed">Langkah 3</span>
-                  </article>
-                </div>
-              </section>
-            ) : (
-              <section className="panel panel--section dashboard-panel">
-                <div className="section-heading">
-                  <div>
-                    <p className="section-eyebrow">Distribusi beban</p>
-                    <h3>Antrean aktif per petugas</h3>
-                  </div>
-                </div>
-                {data.workloadDistribution.length === 0 ? (
-                  <EmptyState title="Belum ada beban aktif" description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia." />
-                ) : (
-                  <div className="dashboard-workload-list">
-                    {data.workloadDistribution.map((item) => (
-                      <article className="dashboard-workload-item" key={item.key}>
-                        <div>
-                          <strong>{item.label}</strong>
-                          <p>{item.sublabel}</p>
-                        </div>
-                        <span className="dashboard-workload-item__value">{item.value} tiket aktif</span>
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </section>
             )}
-          </div>
 
-          <div className="dashboard-main-grid">
-            <section className="panel panel--section dashboard-panel dashboard-panel--tickets">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">Tiket terbaru</p>
-                  <h3>{isReporterPortal ? "Tiket yang baru diperbarui" : "Antrian yang paling baru diperbarui"}</h3>
-                </div>
-                <Link className="button button--secondary" to="/tickets">
-                  Lihat Semua
-                </Link>
-              </div>
-
-              <div className="dashboard-ticket-list">
-                {data.recentTickets.map((ticket) => (
-                  <Link className="dashboard-ticket-card" key={ticket.id} to={`/tickets/${ticket.id}`}>
-                    <div className="dashboard-ticket-card__top">
-                      <div>
-                        <strong>{ticket.title}</strong>
-                        <p>
-                          {ticket.id} - {ticket.reporterName}
-                        </p>
-                      </div>
-                      <div className="dashboard-ticket-card__status">
-                        <StatusBadge status={ticket.status} />
-                        <AppIcon name="chevronRight" size="sm" />
-                      </div>
-                    </div>
-                    <div className="dashboard-ticket-card__meta">
-                      <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
-                      <span>{getTicketCategoryLabel(ticket.category)}</span>
-                      <span>{getTicketTeamLabel(ticket.team)}</span>
-                      <span>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</span>
-                      <span>Diperbarui {formatDateTime(ticket.updatedAt)}</span>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            <section className="panel panel--section dashboard-panel dashboard-panel--activity">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">Sorotan audit</p>
-                  <h3>{isReporterPortal ? "Pembaruan terbaru yang layak Anda pantau" : "Aktivitas terbaru yang layak dipantau"}</h3>
-                </div>
-              </div>
-
-              {data.activityError ? <p className="form-hint">{data.activityError}</p> : null}
-
-              {data.recentActivities.length === 0 ? (
-                <EmptyState
-                  eyebrow="Aktivitas"
-                  title="Belum ada sorotan aktivitas"
-                  description="Aktivitas terbaru pada tiket akan muncul di sini untuk membantu pemantauan cepat."
-                  supportText="Begitu ada perubahan status, komentar, penugasan, atau lampiran baru, sorotannya akan tampil otomatis."
-                />
-              ) : (
-                <div className="dashboard-activity-list">
-                  {data.recentActivities.map((activity) => (
-                    <Link className="dashboard-activity-item" key={activity.id} to={`/tickets/${activity.ticketId}`}>
-                      <div className={`dashboard-activity-item__marker dashboard-activity-item__marker--${activity.action}`} />
-                      <div>
-                        <strong>{activity.summary}</strong>
-                        <p>{activity.ticketTitle}</p>
-                        <span>
-                          {activity.actorLabel} - {formatDateTime(activity.timestamp)}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
-
-          <div className="dashboard-support-grid">
-            <section className="panel panel--section dashboard-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
-                  <h3>{isReporterPortal ? "Tiket penting yang belum selesai" : "Tiket prioritas tinggi yang belum selesai"}</h3>
-                </div>
+            <section className="rail-section">
+              <div>
+                <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
+                <h3>{isReporterPortal ? "Tiket penting yang belum selesai" : "Tiket prioritas tinggi yang belum selesai"}</h3>
               </div>
               {data.attentionTickets.length === 0 ? (
                 <EmptyState
@@ -849,57 +823,36 @@ export function DashboardPage() {
                   description="Saat ini tidak ada tiket prioritas tinggi yang masih menunggu penanganan."
                 />
               ) : (
-                <div className="dashboard-ticket-list">
+                <div className="compact-link-list">
                   {data.attentionTickets.map((ticket) => (
-                    <Link className="dashboard-ticket-card" key={ticket.id} to={`/tickets/${ticket.id}`}>
-                      <div className="dashboard-ticket-card__top">
-                        <div>
-                          <strong>{ticket.title}</strong>
-                          <p>
-                            {ticket.id} - Dibuat {formatDateTime(ticket.createdAt)}
-                          </p>
-                        </div>
-                        <div className="dashboard-ticket-card__status">
-                          <StatusBadge status={ticket.status} />
-                        </div>
-                      </div>
-                      <div className="dashboard-ticket-card__meta">
-                        <span className={`priority-pill priority-pill--${ticket.priority}`}>{formatPriority(ticket.priority)}</span>
-                        <span>{getTicketCategoryLabel(ticket.category)}</span>
-                        <span>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</span>
-                      </div>
+                    <Link className="compact-link-list__item compact-link-list__item--interactive" key={ticket.id} to={`/tickets/${ticket.id}`}>
+                      <strong>{ticket.title}</strong>
+                      <p>
+                        {ticket.id} · {getTicketCategoryLabel(ticket.category)}
+                      </p>
+                      <small>{ticket.assigneeName ? `Petugas: ${ticket.assigneeName}` : "Belum ditugaskan"}</small>
                     </Link>
                   ))}
                 </div>
               )}
             </section>
 
-            <section className="panel panel--section dashboard-actions-panel">
-              <div className="section-heading">
-                <div>
-                  <p className="section-eyebrow">Aksi cepat</p>
-                  <h3>{isReporterPortal ? "Jalur utama untuk pelapor" : "Jalur kerja yang paling sering dibutuhkan"}</h3>
-                </div>
+            <section className="rail-section">
+              <div>
+                <p className="section-eyebrow">Aksi cepat</p>
+                <h3>{isReporterPortal ? "Jalur utama untuk pelapor" : "Jalur kerja yang paling sering dibutuhkan"}</h3>
               </div>
-
-              <div className="dashboard-actions-grid">
+              <div className="compact-link-list">
                 {quickActions.map((action) => (
-                  <Link className="dashboard-action-card" key={action.to} to={action.to}>
-                    <div className="dashboard-action-card__header">
-                      <AppIconBadge name={action.icon} size="sm" tone={action.icon === "api" ? "cool" : "neutral"} />
-                      <strong>{action.title}</strong>
-                    </div>
+                  <Link className="compact-link-list__item compact-link-list__item--interactive" key={action.to} to={action.to}>
+                    <strong>{action.title}</strong>
                     <p>{action.description}</p>
-                    <span className="dashboard-action-card__cue">
-                      <span>Buka</span>
-                      <AppIcon name="chevronRight" size="sm" />
-                    </span>
                   </Link>
                 ))}
               </div>
             </section>
-          </div>
-        </>
+          </aside>
+        </div>
       )}
     </section>
   );

@@ -209,6 +209,15 @@ export function TicketsPage() {
     }),
     [tickets],
   );
+  const hasActiveFilters =
+    Boolean(activeSearchQuery) ||
+    statusFilter !== "all" ||
+    priorityFilter !== "all" ||
+    categoryFilter !== "all" ||
+    teamFilter !== "all" ||
+    assigneeFilter !== preset.assigneeFilter ||
+    sortBy !== "updated_at" ||
+    sortOrder !== "desc";
 
   if (loading) {
     return (
@@ -300,333 +309,349 @@ export function TicketsPage() {
         </article>
       </div>
 
-      {isReporterPortal ? (
-        <div className="dashboard-support-grid">
-          <section className="panel panel--section dashboard-panel">
+      <div className="tickets-shell">
+        <div className="tickets-shell__main stack-md">
+          <div className="tickets-toolbar tickets-toolbar--surface stack-md">
             <div className="section-heading">
               <div>
-                <p className="section-eyebrow">Nilai portal</p>
-                <h3>Bukan hanya kirim tiket</h3>
+                <p className="section-eyebrow">Pencarian cepat</p>
+                <h3>{preset.helperText}</h3>
               </div>
+              <p className="filter-summary">
+                Menampilkan {tickets.length} dari {pagination.totalItems} tiket
+              </p>
             </div>
-            <div className="action-overview">
-              <article className="action-overview__item">
-                <div>
-                  <strong>Lacak progres dengan jelas</strong>
-                  <p>Lihat status tiket Anda, kapan terakhir diperbarui, dan tiket mana yang masih perlu dipantau.</p>
-                </div>
-                <span className="action-state action-state--allowed">Aktif</span>
-              </article>
-              <article className="action-overview__item">
-                <div>
-                  <strong>Pahami pembaruan tiket</strong>
-                  <p>Masuk ke detail tiket untuk membaca komentar publik, riwayat, dan langkah berikutnya.</p>
-                </div>
-                <span className="action-state action-state--allowed">Aktif</span>
-              </article>
-              <article className="action-overview__item">
-                <div>
-                  <strong>Cari panduan saat perlu</strong>
-                  <p>Pusat bantuan lokal memberi panduan ringkas untuk login, jaringan, perangkat, dan status tiket.</p>
-                </div>
-                <span className="action-state action-state--allowed">Aktif</span>
-              </article>
-            </div>
-          </section>
 
-          <section className="panel panel--section dashboard-panel">
-            <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">Panduan cepat</p>
-                <h3>Artikel bantuan yang sering dibuka</h3>
+            {isRefreshing || (!preset.isSearchLocked && searchQuery.trim() !== activeSearchQuery) ? (
+              <p className="filter-summary">
+                {searchQuery.trim() !== activeSearchQuery ? "Menyaring daftar tiket..." : "Memperbarui daftar tiket..."}
+              </p>
+            ) : null}
+            {error && tickets.length > 0 ? (
+              <div className="inline-feedback inline-feedback--error">
+                <strong>Daftar belum sepenuhnya diperbarui.</strong>
+                <p>{error}</p>
+                {errorReferenceId ? <small>Kode referensi: {errorReferenceId}</small> : null}
               </div>
-              <Link className="button button--secondary" to="/help">
-                Lihat Semua
-              </Link>
+            ) : null}
+
+            <div className="filter-grid filter-grid--tickets">
+              <label className="field field--search field--span-2">
+                <span>Cari tiket</span>
+                <input
+                  disabled={preset.isSearchLocked}
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Cari ID tiket, judul, atau nama pelapor"
+                />
+                {!preset.isSearchLocked ? <small>Pencarian diterapkan otomatis setelah Anda berhenti mengetik sejenak.</small> : null}
+              </label>
+
+              <label className="field">
+                <span>Filter status</span>
+                <SelectControl
+                  ariaLabel="Filter status"
+                  value={statusFilter}
+                  onChange={(nextStatus) => {
+                    setStatusFilter(nextStatus);
+                    setPage(1);
+                  }}
+                  options={statusOptions}
+                />
+              </label>
+
+              <label className="field">
+                <span>Filter prioritas</span>
+                <SelectControl
+                  ariaLabel="Filter prioritas"
+                  value={priorityFilter}
+                  onChange={(nextPriority) => {
+                    setPriorityFilter(nextPriority);
+                    setPage(1);
+                  }}
+                  options={priorityOptions}
+                />
+              </label>
+
+              <label className="field">
+                <span>Kategori</span>
+                <SelectControl
+                  ariaLabel="Filter kategori"
+                  value={categoryFilter}
+                  onChange={(nextCategory) => {
+                    setCategoryFilter(nextCategory as "all" | Ticket["category"]);
+                    setPage(1);
+                  }}
+                  options={categoryOptions}
+                />
+              </label>
+
+              <label className="field">
+                <span>Area tujuan</span>
+                <SelectControl
+                  ariaLabel="Filter area tujuan"
+                  value={teamFilter}
+                  onChange={(nextTeam) => {
+                    setTeamFilter(nextTeam as "all" | Ticket["team"]);
+                    setPage(1);
+                  }}
+                  options={teamOptions}
+                />
+              </label>
+
+              {permissions.canAssignTickets ? (
+                <label className="field">
+                  <span>Penugasan</span>
+                  <SelectControl
+                    ariaLabel="Filter penugasan"
+                    disabled={preset.isSearchLocked}
+                    value={assigneeFilter}
+                    onChange={(nextAssignee) => {
+                      setAssigneeFilter(nextAssignee);
+                      setPage(1);
+                    }}
+                    options={assigneeOptions}
+                  />
+                </label>
+              ) : null}
+
+              <label className="field">
+                <span>Urutkan berdasarkan</span>
+                <SelectControl
+                  ariaLabel="Urutkan berdasarkan"
+                  value={sortBy}
+                  onChange={(nextSortBy) => {
+                    setSortBy(nextSortBy);
+                    setPage(1);
+                  }}
+                  options={sortByOptions}
+                />
+              </label>
+
+              <label className="field">
+                <span>Arah urutan</span>
+                <SelectControl
+                  ariaLabel="Arah urutan"
+                  value={sortOrder}
+                  onChange={(nextSortOrder) => {
+                    setSortOrder(nextSortOrder);
+                    setPage(1);
+                  }}
+                  options={sortOrderOptions}
+                />
+              </label>
             </div>
-            <div className="dashboard-actions-grid">
-              {featuredHelpArticles.map((article) => (
-                <article className="dashboard-action-card" key={article.id}>
-                  <div className="dashboard-action-card__header">
-                    <AppIconBadge name="help" size="sm" tone="accent" />
-                    <strong>{article.title}</strong>
-                  </div>
-                  <p>{article.summary}</p>
-                  <span className="dashboard-action-card__cue">
-                    <span>{article.readTimeMinutes} menit baca</span>
-                  </span>
-                </article>
-              ))}
-            </div>
-          </section>
-        </div>
-      ) : null}
 
-      <div className="panel panel--section stack-md tickets-toolbar">
-        <div className="section-heading">
-          <div>
-            <p className="section-eyebrow">Pencarian cepat</p>
-            <h3>{preset.helperText}</h3>
-          </div>
-          <p className="filter-summary">
-            Menampilkan {tickets.length} dari {pagination.totalItems} tiket
-          </p>
-        </div>
-
-        {isRefreshing || (!preset.isSearchLocked && searchQuery.trim() !== activeSearchQuery) ? (
-          <p className="filter-summary">
-            {searchQuery.trim() !== activeSearchQuery ? "Menyaring daftar tiket..." : "Memperbarui daftar tiket..."}
-          </p>
-        ) : null}
-        {error && tickets.length > 0 ? (
-          <div className="inline-feedback inline-feedback--error">
-            <strong>Daftar belum sepenuhnya diperbarui.</strong>
-            <p>{error}</p>
-            {errorReferenceId ? <small>Kode referensi: {errorReferenceId}</small> : null}
-          </div>
-        ) : null}
-
-        <div className="filter-grid filter-grid--tickets">
-          <label className="field field--search field--span-2">
-            <span>Cari tiket</span>
-            <input
-              disabled={preset.isSearchLocked}
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Cari ID tiket, judul, atau nama pelapor"
-            />
-            {!preset.isSearchLocked ? <small>Pencarian diterapkan otomatis setelah Anda berhenti mengetik sejenak.</small> : null}
-          </label>
-
-          <label className="field">
-            <span>Filter status</span>
-            <SelectControl
-              ariaLabel="Filter status"
-              value={statusFilter}
-              onChange={(nextStatus) => {
-                setStatusFilter(nextStatus);
-                setPage(1);
-              }}
-              options={statusOptions}
-            />
-          </label>
-
-          <label className="field">
-            <span>Filter prioritas</span>
-            <SelectControl
-              ariaLabel="Filter prioritas"
-              value={priorityFilter}
-              onChange={(nextPriority) => {
-                setPriorityFilter(nextPriority);
-                setPage(1);
-              }}
-              options={priorityOptions}
-            />
-          </label>
-
-          <label className="field">
-            <span>Kategori</span>
-            <SelectControl
-              ariaLabel="Filter kategori"
-              value={categoryFilter}
-              onChange={(nextCategory) => {
-                setCategoryFilter(nextCategory as "all" | Ticket["category"]);
-                setPage(1);
-              }}
-              options={categoryOptions}
-            />
-          </label>
-
-          <label className="field">
-            <span>Area tujuan</span>
-            <SelectControl
-              ariaLabel="Filter area tujuan"
-              value={teamFilter}
-              onChange={(nextTeam) => {
-                setTeamFilter(nextTeam as "all" | Ticket["team"]);
-                setPage(1);
-              }}
-              options={teamOptions}
-            />
-          </label>
-
-          {permissions.canAssignTickets ? (
-            <label className="field">
-              <span>Penugasan</span>
-              <SelectControl
-                ariaLabel="Filter penugasan"
+            <div className="form-actions form-actions--compact">
+              <button
+                className="button button--secondary"
                 disabled={preset.isSearchLocked}
-                value={assigneeFilter}
-                onChange={(nextAssignee) => {
-                  setAssigneeFilter(nextAssignee);
+                onClick={() => {
+                  setPage(1);
+                  setActiveSearchQuery(searchQuery.trim());
+                }}
+                type="button"
+              >
+                <AppIcon name="search" size="sm" />
+                Cari
+              </button>
+              <button
+                className="button button--secondary"
+                onClick={() => {
+                  setSearchQuery("");
+                  setActiveSearchQuery("");
+                  setStatusFilter("all");
+                  setPriorityFilter("all");
+                  setCategoryFilter("all");
+                  setTeamFilter("all");
+                  setAssigneeFilter(preset.assigneeFilter);
+                  setSortBy("updated_at");
+                  setSortOrder("desc");
                   setPage(1);
                 }}
-                options={assigneeOptions}
-              />
-            </label>
-          ) : null}
-
-          <label className="field">
-            <span>Urutkan berdasarkan</span>
-            <SelectControl
-              ariaLabel="Urutkan berdasarkan"
-              value={sortBy}
-              onChange={(nextSortBy) => {
-                setSortBy(nextSortBy);
-                setPage(1);
-              }}
-              options={sortByOptions}
-            />
-          </label>
-
-          <label className="field">
-            <span>Arah urutan</span>
-            <SelectControl
-              ariaLabel="Arah urutan"
-              value={sortOrder}
-              onChange={(nextSortOrder) => {
-                setSortOrder(nextSortOrder);
-                setPage(1);
-              }}
-              options={sortOrderOptions}
-            />
-          </label>
-        </div>
-
-        <div className="form-actions form-actions--compact">
-          <button
-            className="button button--secondary"
-            disabled={preset.isSearchLocked}
-            onClick={() => {
-              setPage(1);
-              setActiveSearchQuery(searchQuery.trim());
-            }}
-            type="button"
-          >
-            <AppIcon name="search" size="sm" />
-            Cari
-          </button>
-          <button
-            className="button button--secondary"
-            onClick={() => {
-              setSearchQuery("");
-              setActiveSearchQuery("");
-              setStatusFilter("all");
-              setPriorityFilter("all");
-              setCategoryFilter("all");
-              setTeamFilter("all");
-              setAssigneeFilter(preset.assigneeFilter);
-              setSortBy("updated_at");
-              setSortOrder("desc");
-              setPage(1);
-            }}
-            type="button"
-          >
-            <AppIcon name="reset" size="sm" />
-            Reset Filter
-          </button>
-        </div>
-      </div>
-
-      {pagination.totalItems === 0 ? (
-        <EmptyState
-          eyebrow={preset.key === "assigned" ? "Penugasan" : preset.key === "mine" ? "Akun Saya" : "Daftar Tiket"}
-          title={preset.emptyTitle}
-          description={
-            preset.key === "assigned"
-              ? "Belum ada tiket yang sedang menjadi tanggung jawab Anda. Ambil tiket dari antrean utama saat siap menangani."
-              : permissions.canCreateTickets
-                ? preset.emptyDescription
-                : "Belum ada tiket yang dapat Anda akses saat ini."
-          }
-          supportText={
-            preset.key === "assigned"
-              ? "Saat tiket baru ditugaskan atau Anda mengambil tiket dari antrean utama, daftarnya akan muncul di sini."
-              : preset.key === "mine"
-                ? "Gunakan halaman ini untuk memantau tiket yang Anda kirim begitu ada data yang tercatat."
-                : "Daftar ini akan mulai terisi setelah tiket baru dibuat atau diimpor ke alur operasional."
-          }
-          action={permissions.canCreateTickets ? (
-            <Link className="button button--primary" to="/tickets/new">
-              Buat Tiket Sekarang
-            </Link>
-          ) : undefined}
-        />
-      ) : tickets.length === 0 ? (
-        <EmptyState
-          eyebrow="Pencarian"
-          title="Tidak ada tiket yang cocok"
-          description="Coba ubah kata kunci, filter, atau urutan agar hasil pencarian lebih relevan."
-          supportText="Tidak ada tiket yang sesuai dengan kombinasi filter saat ini, tetapi data lain mungkin tetap tersedia di antrean utama."
-          action={
-            <button
-              className="button button--secondary"
-              onClick={() => {
-                setSearchQuery("");
-                setActiveSearchQuery("");
-                setStatusFilter("all");
-                setPriorityFilter("all");
-                setCategoryFilter("all");
-                setTeamFilter("all");
-                setAssigneeFilter(preset.assigneeFilter);
-                setSortBy("updated_at");
-                setSortOrder("desc");
-                setPage(1);
-              }}
-              type="button"
-            >
-              Reset Pencarian
-            </button>
-          }
-        />
-      ) : (
-        <div className="stack-md">
-          <TicketTable
-            tickets={tickets}
-            title={isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
-            eyebrow={isReporterPortal ? "Pelapor" : "Operasional"}
-            showOperatorSignals={!isReporterPortal}
-            helperText={
-              isReporterPortal
-                ? "Gunakan daftar ini untuk membuka detail tiket, memantau progres, dan melihat pembaruan terbaru."
-                : "Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
-            }
-          />
-
-          <div className="panel panel--section">
-            <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">Navigasi halaman</p>
-                <h3>
-                  Halaman {pagination.page} dari {Math.max(pagination.totalPages, 1)}
-                </h3>
-              </div>
-              <p className="filter-summary">{pagination.totalItems} tiket ditemukan</p>
-            </div>
-
-            <div className="form-actions">
-              <button
-                className="button button--secondary"
-                disabled={pagination.page <= 1}
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
                 type="button"
               >
-                <AppIcon name="panelClose" size="sm" />
-                Sebelumnya
-              </button>
-              <button
-                className="button button--secondary"
-                disabled={!pagination.hasNext}
-                onClick={() => setPage((current) => current + 1)}
-                type="button"
-              >
-                Berikutnya
-                <AppIcon name="panelOpen" size="sm" />
+                <AppIcon name="reset" size="sm" />
+                Reset Filter
               </button>
             </div>
           </div>
+
+          {pagination.totalItems === 0 ? (
+            <EmptyState
+              eyebrow={preset.key === "assigned" ? "Penugasan" : preset.key === "mine" ? "Akun Saya" : "Daftar Tiket"}
+              title={preset.emptyTitle}
+              description={
+                preset.key === "assigned"
+                  ? "Belum ada tiket yang sedang menjadi tanggung jawab Anda. Ambil tiket dari antrean utama saat siap menangani."
+                  : permissions.canCreateTickets
+                    ? preset.emptyDescription
+                    : "Belum ada tiket yang dapat Anda akses saat ini."
+              }
+              supportText={
+                preset.key === "assigned"
+                  ? "Saat tiket baru ditugaskan atau Anda mengambil tiket dari antrean utama, daftarnya akan muncul di sini."
+                  : preset.key === "mine"
+                    ? "Gunakan halaman ini untuk memantau tiket yang Anda kirim begitu ada data yang tercatat."
+                    : "Daftar ini akan mulai terisi setelah tiket baru dibuat atau diimpor ke alur operasional."
+              }
+              action={permissions.canCreateTickets ? (
+                <Link className="button button--primary" to="/tickets/new">
+                  Buat Tiket Sekarang
+                </Link>
+              ) : undefined}
+            />
+          ) : tickets.length === 0 ? (
+            <EmptyState
+              eyebrow="Pencarian"
+              title="Tidak ada tiket yang cocok"
+              description="Coba ubah kata kunci, filter, atau urutan agar hasil pencarian lebih relevan."
+              supportText="Tidak ada tiket yang sesuai dengan kombinasi filter saat ini, tetapi data lain mungkin tetap tersedia di antrean utama."
+              action={
+                <button
+                  className="button button--secondary"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveSearchQuery("");
+                    setStatusFilter("all");
+                    setPriorityFilter("all");
+                    setCategoryFilter("all");
+                    setTeamFilter("all");
+                    setAssigneeFilter(preset.assigneeFilter);
+                    setSortBy("updated_at");
+                    setSortOrder("desc");
+                    setPage(1);
+                  }}
+                  type="button"
+                >
+                  Reset Pencarian
+                </button>
+              }
+            />
+          ) : (
+            <>
+              <TicketTable
+                tickets={tickets}
+                title={isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
+                eyebrow={isReporterPortal ? "Pelapor" : "Operasional"}
+                showOperatorSignals={!isReporterPortal}
+                helperText={
+                  isReporterPortal
+                    ? "Gunakan daftar ini untuk membuka detail tiket, memantau progres, dan melihat pembaruan terbaru."
+                    : "Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
+                }
+              />
+
+              <div className="tickets-pager">
+                <div>
+                  <p className="section-eyebrow">Navigasi halaman</p>
+                  <h3>
+                    Halaman {pagination.page} dari {Math.max(pagination.totalPages, 1)}
+                  </h3>
+                  <p className="filter-summary">{pagination.totalItems} tiket ditemukan</p>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    className="button button--secondary"
+                    disabled={pagination.page <= 1}
+                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    type="button"
+                  >
+                    <AppIcon name="panelClose" size="sm" />
+                    Sebelumnya
+                  </button>
+                  <button
+                    className="button button--secondary"
+                    disabled={!pagination.hasNext}
+                    onClick={() => setPage((current) => current + 1)}
+                    type="button"
+                  >
+                    Berikutnya
+                    <AppIcon name="panelOpen" size="sm" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
-      )}
+
+        <aside className="tickets-shell__rail stack-md">
+          <section className="rail-section rail-section--emphasis">
+            <div>
+              <p className="section-eyebrow">{isReporterPortal ? "Nilai portal" : "Konteks tampilan"}</p>
+              <h3>{isReporterPortal ? "Bukan hanya kirim tiket" : "Filter aktif dan fokus kerja"}</h3>
+            </div>
+            <div className="compact-list">
+              {isReporterPortal ? (
+                <>
+                  <article className="compact-list__item">
+                    <strong>Lacak progres dengan jelas</strong>
+                    <p>Lihat status tiket Anda, kapan terakhir diperbarui, dan tiket mana yang masih perlu dipantau.</p>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Pahami pembaruan tiket</strong>
+                    <p>Masuk ke detail tiket untuk membaca komentar publik, riwayat, dan langkah berikutnya.</p>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Cari panduan saat perlu</strong>
+                    <p>Pusat bantuan lokal memberi panduan ringkas untuk login, jaringan, perangkat, dan status tiket.</p>
+                  </article>
+                </>
+              ) : (
+                <>
+                  <article className="compact-list__item">
+                    <strong>Preset aktif</strong>
+                    <p>{preset.helperText}</p>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Filter sedang aktif</strong>
+                    <p>{hasActiveFilters ? "Daftar sedang dipersempit oleh filter atau urutan khusus." : "Belum ada filter tambahan selain preset tampilan."}</p>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Mode pencarian</strong>
+                    <p>{preset.isSearchLocked ? "Pencarian terkunci agar fokus tetap pada penugasan Anda." : "Pencarian terbuka untuk eksplorasi antrean secara bebas."}</p>
+                  </article>
+                </>
+              )}
+            </div>
+          </section>
+
+          <section className="rail-section">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">{isReporterPortal ? "Panduan cepat" : "Preset tampilan"}</p>
+                <h3>{isReporterPortal ? "Artikel yang sering dibuka" : "Pindah fokus tanpa mengulang filter"}</h3>
+              </div>
+              {isReporterPortal ? (
+                <Link className="button button--secondary" to="/help">
+                  Lihat Semua
+                </Link>
+              ) : null}
+            </div>
+            <div className="compact-link-list">
+              {isReporterPortal
+                ? featuredHelpArticles.map((article) => (
+                    <article className="compact-link-list__item" key={article.id}>
+                      <strong>{article.title}</strong>
+                      <p>{article.summary}</p>
+                      <small>{article.readTimeMinutes} menit baca</small>
+                    </article>
+                  ))
+                : [
+                    { to: "/tickets", title: "Antrean utama", description: "Lihat semua tiket yang ada dalam jangkauan operasional." },
+                    { to: "/tickets/assigned", title: "Ditugaskan ke saya", description: "Fokus pada tiket yang menjadi tanggung jawab aktif Anda." },
+                    { to: "/tickets/mine", title: "Akses personal", description: "Lihat tiket dari sudut pandang pelapor bila perlu validasi pengalaman akhir." },
+                  ].map((item) => (
+                    <Link className="compact-link-list__item compact-link-list__item--interactive" key={item.to} to={item.to}>
+                      <strong>{item.title}</strong>
+                      <p>{item.description}</p>
+                    </Link>
+                  ))}
+            </div>
+          </section>
+        </aside>
+      </div>
     </section>
   );
 }

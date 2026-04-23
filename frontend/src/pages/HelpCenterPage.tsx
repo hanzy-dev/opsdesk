@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AppIcon, AppIconBadge } from "../components/common/AppIcon";
+import { AppIcon } from "../components/common/AppIcon";
 import { EmptyState } from "../components/common/EmptyState";
 import { helpArticles } from "../content/helpArticles";
 import { useAuth } from "../modules/auth/AuthContext";
@@ -70,8 +70,8 @@ export function HelpCenterPage() {
         </article>
       </div>
 
-      <div className="help-center-layout">
-        <section className="panel panel--section stack-md">
+      <div className="help-center-layout help-center-layout--reading">
+        <section className="help-reading-surface stack-md">
           <div className="section-heading">
             <div>
               <p className="section-eyebrow">Temukan jawaban</p>
@@ -110,9 +110,9 @@ export function HelpCenterPage() {
               description="Coba kata kunci lain, pilih topik berbeda, atau lanjutkan dengan membuat tiket jika masalahnya cukup spesifik."
             />
           ) : (
-            <div className="help-article-list">
+            <div className="help-article-list help-article-list--reading">
               {articleMatches.map((match) => (
-                <article className="help-article-card" key={match.article.id}>
+                <article className="help-article-card help-article-card--reading" key={match.article.id}>
                   <div className="help-article-card__header">
                     <div>
                       <span className="section-eyebrow">{match.article.category === "general" ? "Umum" : getTicketCategoryLabel(match.article.category)}</span>
@@ -157,8 +157,8 @@ export function HelpCenterPage() {
           )}
         </section>
 
-        <aside className="stack-lg">
-          <section className="panel panel--section stack-md">
+        <aside className="help-center-layout__rail stack-md">
+          <section className="rail-section rail-section--emphasis">
             <div>
               <p className="section-eyebrow">Nilai produk</p>
               <h3>OpsDesk juga membantu Anda sebelum dan sesudah submit tiket</h3>
@@ -188,19 +188,19 @@ export function HelpCenterPage() {
             </div>
           </section>
 
-          <section className="panel panel--section stack-md">
-            <div>
-              <p className="section-eyebrow">Topik populer</p>
-              <h3>Mulai dari panduan yang paling sering dicari</h3>
+          <section className="rail-section">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Topik populer</p>
+                <h3>Mulai dari panduan yang paling sering dicari</h3>
+              </div>
             </div>
-            <div className="dashboard-actions-grid">
+            <div className="compact-link-list">
               {helpArticles.slice(0, 3).map((article) => (
-                <article className="dashboard-action-card" key={article.id}>
-                  <div className="dashboard-action-card__header">
-                    <AppIconBadge name="help" size="sm" tone="accent" />
-                    <strong>{article.title}</strong>
-                  </div>
+                <article className="compact-link-list__item" key={article.id}>
+                  <strong>{article.title}</strong>
                   <p>{article.summary}</p>
+                  <small>{article.readTimeMinutes} menit baca</small>
                 </article>
               ))}
             </div>
