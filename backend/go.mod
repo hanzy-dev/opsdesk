@@ -1,6 +1,6 @@
 module opsdesk/backend
 
-go 1.25.5
+go 1.25.9
 
 require (
 	github.com/aws/aws-lambda-go v1.50.0
