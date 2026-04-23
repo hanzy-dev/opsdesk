@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useId, useRef } from "react";
 
 type ConfirmationDialogProps = {
   title: string;
@@ -21,6 +21,10 @@ export function ConfirmationDialog({
   onCancel,
   onConfirm,
 }: ConfirmationDialogProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -38,6 +42,14 @@ export function ConfirmationDialog({
     };
   }, [isOpen, isSubmitting, onCancel]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    cancelButtonRef.current?.focus();
+  }, [isOpen]);
+
   if (!isOpen) {
     return null;
   }
@@ -53,19 +65,19 @@ export function ConfirmationDialog({
       role="presentation"
     >
       <div
-        aria-describedby="confirmation-dialog-description"
-        aria-labelledby="confirmation-dialog-title"
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
         aria-modal="true"
         className="dialog dialog--open"
         role="dialog"
       >
         <div className="dialog__content">
           <p className="section-eyebrow">Konfirmasi</p>
-          <h2 id="confirmation-dialog-title">{title}</h2>
-          <p id="confirmation-dialog-description">{message}</p>
+          <h2 id={titleId}>{title}</h2>
+          <p id={descriptionId}>{message}</p>
         </div>
         <div className="dialog__actions">
-          <button className="button button--secondary" disabled={isSubmitting} onClick={onCancel} type="button">
+          <button className="button button--secondary" disabled={isSubmitting} onClick={onCancel} ref={cancelButtonRef} type="button">
             {cancelLabel}
           </button>
           <button

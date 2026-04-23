@@ -32,6 +32,9 @@ export function SelectControl<T extends string>({
   const controlId = id ?? generatedId;
   const listboxId = `${controlId}-listbox`;
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const wasOpenRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(() => getInitialIndex(options, value));
 
@@ -68,6 +71,22 @@ export function SelectControl<T extends string>({
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleEscape);
     };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || activeIndex < 0) {
+      return;
+    }
+
+    optionRefs.current[activeIndex]?.focus();
+  }, [activeIndex, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen && wasOpenRef.current) {
+      triggerRef.current?.focus();
+    }
+
+    wasOpenRef.current = isOpen;
   }, [isOpen]);
 
   function openSelect() {
@@ -111,7 +130,24 @@ export function SelectControl<T extends string>({
           }
         }
         return;
+      case "Home":
+        event.preventDefault();
+        setActiveIndex(getFirstEnabledIndex(options));
+        break;
+      case "End":
+        event.preventDefault();
+        setActiveIndex(getLastEnabledIndex(options));
+        break;
       default:
+        if (event.key.length === 1) {
+          const nextIndex = getTypeaheadIndex(options, event.key, activeIndex);
+          if (nextIndex >= 0) {
+            setActiveIndex(nextIndex);
+            if (!isOpen) {
+              openSelect();
+            }
+          }
+        }
         return;
     }
   }
@@ -138,10 +174,25 @@ export function SelectControl<T extends string>({
         event.preventDefault();
         setIsOpen(false);
         break;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        if (!options[index]?.disabled) {
+          onChange(options[index].value);
+          setIsOpen(false);
+        }
+        break;
       case "Tab":
         setIsOpen(false);
         break;
       default:
+        if (event.key.length === 1) {
+          const nextIndex = getTypeaheadIndex(options, event.key, index);
+          if (nextIndex >= 0) {
+            event.preventDefault();
+            setActiveIndex(nextIndex);
+          }
+        }
         break;
     }
   }
@@ -158,6 +209,7 @@ export function SelectControl<T extends string>({
       ref={rootRef}
     >
       <button
+        ref={triggerRef}
         aria-controls={listboxId}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -206,12 +258,16 @@ export function SelectControl<T extends string>({
                       .filter(Boolean)
                       .join(" ")}
                     disabled={option.disabled}
+                    id={`${controlId}-option-${index}`}
                     onClick={() => {
                       onChange(option.value);
                       setIsOpen(false);
                     }}
                     onFocus={() => setActiveIndex(index)}
                     onKeyDown={(event) => handleOptionKeyDown(event, index)}
+                    ref={(node) => {
+                      optionRefs.current[index] = node;
+                    }}
                     role="option"
                     type="button"
                   >
@@ -270,4 +326,20 @@ function getNextIndex<T extends string>(options: SelectOption<T>[], current: num
   }
 
   return current;
+}
+
+function getTypeaheadIndex<T extends string>(options: SelectOption<T>[], key: string, current: number) {
+  const normalizedKey = key.trim().toLowerCase();
+  if (!normalizedKey) {
+    return -1;
+  }
+
+  const orderedOptions = [...options.keys()].map((index) => ({
+    index,
+    option: options[index],
+  }));
+  const offset = current >= 0 ? current + 1 : 0;
+  const rotated = [...orderedOptions.slice(offset), ...orderedOptions.slice(0, offset)];
+  const match = rotated.find(({ option }) => !option.disabled && option.label.toLowerCase().startsWith(normalizedKey));
+  return match?.index ?? -1;
 }

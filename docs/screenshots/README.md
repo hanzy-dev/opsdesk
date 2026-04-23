@@ -19,3 +19,6 @@ Folder ini disiapkan untuk screenshot final yang akan membantu reviewer memahami
 - Hindari informasi pribadi nyata.
 - Ambil screenshot pada viewport desktop agar layout utama terlihat jelas.
 - Jika URL production sudah final, gunakan deployment live agar reviewer melihat hasil yang benar-benar terhubung end-to-end.
+- Untuk dashboard, pastikan surface KPI, spotlight, analitik, attention, dan workload tidak dalam keadaan kosong.
+- Untuk detail tiket, pilih contoh yang memperlihatkan status, komentar, dan lampiran agar nilai produk lebih terbaca.
+- Hindari screenshot yang memberi kesan fitur enterprise yang belum ada, seperti notifikasi real-time penuh atau otomasi SLA kompleks.

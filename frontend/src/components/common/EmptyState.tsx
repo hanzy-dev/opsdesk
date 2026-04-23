@@ -11,7 +11,7 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, action, eyebrow, supportText }: EmptyStateProps) {
   return (
-    <div className="panel empty-state state-card">
+    <div aria-live="polite" className="panel empty-state state-card" role="status">
       <AppIconBadge className="state-card__icon" name="empty" tone="cool" />
       {eyebrow ? <span className="empty-state__eyebrow">{eyebrow}</span> : null}
       <div className="empty-state__content">

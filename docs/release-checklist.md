@@ -50,6 +50,26 @@ Checklist ini dipakai untuk verifikasi rilis final OpsDesk pada baseline impleme
 15. Verifikasi dokumentasi API:
    buka `https://opsdesk-teal.vercel.app/api-docs`, pastikan Swagger UI tampil, base URL benar, dan YAML OpenAPI dapat dibuka.
 
+## Verifikasi QA Visual dan Accessibility
+
+1. Navigasikan halaman utama dengan keyboard:
+   topbar, sidebar, dashboard cards, quick actions, dan dialog penting harus tetap bisa diakses dengan fokus yang terlihat jelas.
+2. Pastikan komponen kustom seperti select, menu akun, tray notifikasi, dan dialog konfirmasi tetap nyaman dipakai tanpa mouse.
+3. Pastikan empty state, loading state, dan error state pada dashboard, daftar tiket, detail tiket, dan help center memakai tone visual yang konsisten.
+4. Pastikan warna badge status, prioritas, dan role masih konsisten pada surface yang paling sering muncul.
+5. Jika perangkat memakai `prefers-reduced-motion`, pastikan animasi utama tidak mengganggu penggunaan.
+
+## Checklist Demo dan Screenshot Final
+
+1. Siapkan minimal:
+   satu screenshot dashboard, satu daftar tiket, satu detail tiket, satu form buat tiket, dan satu login screen.
+2. Pastikan data screenshot tidak memuat informasi pribadi nyata.
+3. Ambil screenshot pada state yang paling representatif:
+   dashboard berisi data, detail tiket dengan komentar/lampiran, dan queue operasional yang tidak kosong.
+4. Untuk demo live, siapkan tiga akun:
+   `reporter`, `agent`, dan `admin`.
+5. Pastikan dokumentasi tidak mengklaim fitur yang belum ada, terutama notifikasi real-time penuh, SLA enterprise, dan observability lanjutan.
+
 ## Verifikasi Backend
 
 1. Jalankan `curl https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health`.
@@ -67,3 +87,4 @@ Checklist ini dipakai untuk verifikasi rilis final OpsDesk pada baseline impleme
 
 - malware scanning
 - observability lanjutan seperti tracing penuh dan alerting otomatis
+- audit accessibility formal tingkat WCAG menyeluruh

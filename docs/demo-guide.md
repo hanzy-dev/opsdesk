@@ -186,6 +186,13 @@ Untuk portfolio atau presentasi, screenshot yang paling bernilai adalah:
 7. riwayat aktivitas tiket
 8. Swagger UI / API docs
 
+Tambahan agar hasil screenshot terlihat final:
+
+- gunakan state yang benar-benar representatif, jangan hanya halaman kosong
+- pilih tiket yang menampilkan status, assignee, komentar, atau lampiran agar nilai produk terlihat
+- untuk dashboard, gunakan data yang cukup agar KPI, chart, attention surface, dan workload surface terbaca
+- hindari overclaim saat menjelaskan screenshot: tekankan bahwa OpsDesk adalah helpdesk internal ringan yang serius, bukan suite enterprise penuh
+
 ## Jalur Demo Yang Aman Jika Waktu Sangat Singkat
 
 Jika waktu hanya 2-3 menit:
@@ -213,3 +220,5 @@ Pilih 3-4 saja agar demo tetap fokus:
 - gunakan data demo yang sudah siap agar tidak menghabiskan waktu di setup
 - hindari demo yang bergantung pada email real-time jika koneksi tidak stabil
 - jika reviewer bertanya soal operator onboarding, arahkan ke [docs/operator-guide.md](./operator-guide.md)
+- jika reviewer bertanya soal keterbatasan produk, jawab langsung:
+  OpsDesk sudah kuat untuk alur helpdesk internal ringan, tetapi masih sengaja sederhana pada area notifikasi real-time, SLA enterprise, dan observability lanjutan

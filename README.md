@@ -55,6 +55,28 @@ OpsDesk bukan hanya tempat membuat tiket. Nilai operasionalnya muncul dari alur 
 
 Hasilnya, tim mendapatkan kombinasi ownership, histori, visibilitas, dan akuntabilitas yang jauh lebih kuat dibanding chat ad-hoc.
 
+## Mengapa OpsDesk Lebih Tepat Daripada Chat atau WA
+
+OpsDesk tidak berusaha menggantikan chat untuk komunikasi cepat antar orang. Nilainya muncul ketika laporan operasional perlu tetap bisa dibaca ulang, dipantau, dan dipertanggungjawabkan.
+
+Dalam chat atau WhatsApp:
+
+- konteks mudah tercecer di banyak percakapan
+- status terakhir sering harus ditanyakan ulang
+- ownership tidak selalu terlihat jelas
+- lampiran dan bukti tidak selalu menempel pada satu kasus
+- sulit menunjukkan histori keputusan dengan rapi saat review atau audit ringan
+
+Dalam OpsDesk:
+
+- satu isu tetap berada pada satu tiket
+- status, komentar, lampiran, dan assignment berada pada konteks yang sama
+- dashboard dan queue membantu membaca prioritas serta beban kerja
+- help center memberi jalur self-service ringan sebelum atau sesudah submit tiket
+- riwayat aktivitas memberi audit trail yang cukup kuat untuk kebutuhan internal dan demo produk
+
+Dengan kata lain, chat tetap berguna untuk koordinasi cepat, tetapi OpsDesk lebih tepat untuk pencatatan kasus, ownership, dan pelacakan progres yang perlu bertahan lebih lama dari satu percakapan.
+
 ## Link Deployment
 
 - Frontend: `https://opsdesk-teal.vercel.app`
@@ -274,6 +296,20 @@ Bagian berikut belum ada pada implementasi saat ini dan termasuk future work:
 - otomasi SLA dan eskalasi
 - observability lanjutan seperti tracing dan alerting
 - hardening produksi tambahan seperti custom domain, WAF, dan IAM tightening yang lebih granular
+
+## Known Limitations
+
+Dokumentasi ini sengaja jujur: OpsDesk sudah cukup kuat untuk demo, portfolio, dan baseline operasional internal ringan, tetapi belum diposisikan sebagai platform enterprise yang lengkap.
+
+Limitasi yang masih ada pada baseline saat ini:
+
+- notifikasi belum real-time penuh dan belum mengirim email otomatis
+- SLA masih berupa target operasional ringan berbasis prioritas, belum kalender bisnis kompleks
+- dashboard analitik memakai data yang tersedia pada model tiket saat ini, bukan engine BI terpisah
+- help center masih berupa konten lokal ringan, bukan knowledge base enterprise dengan workflow editorial
+- observability sudah cukup untuk tracing request dasar, tetapi belum mencakup alerting atau telemetry lanjutan
+- accessibility sudah dipoles pada surface utama, namun belum melalui audit WCAG formal menyeluruh
+- fokus produk tetap pada helpdesk internal ringan, bukan service management enterprise multi-proses
 
 ## Lisensi
 

@@ -51,6 +51,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
     <>
       <button
         aria-hidden={!isMobileOpen}
+        aria-label="Tutup navigasi"
         className={`sidebar-backdrop ${isMobileOpen ? "sidebar-backdrop--visible" : ""}`}
         onClick={onCloseMobile}
         tabIndex={isMobileOpen ? 0 : -1}

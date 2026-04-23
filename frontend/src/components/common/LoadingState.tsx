@@ -18,7 +18,9 @@ export function LoadingState({
   return (
     <div
       aria-live="polite"
+      aria-busy="true"
       className={`panel loading-state state-card motion-reveal ${compact ? "loading-state--compact" : "loading-state--page"}`}
+      role="status"
     >
       <div className="loading-state__header">
         <span className="spinner" aria-hidden="true" />
