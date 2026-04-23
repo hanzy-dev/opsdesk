@@ -29,6 +29,10 @@ describe("LoginPage", () => {
       </MemoryRouter>,
     );
 
+    expect(screen.getByText("Portal internal OpsDesk")).toBeInTheDocument();
+    expect(screen.getByText("Akun dibuat oleh admin internal")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buka Pusat Bantuan" })).toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText("Email"), {
       target: { value: "agent@example.com" },
     });

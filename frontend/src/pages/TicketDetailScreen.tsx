@@ -357,6 +357,23 @@ export function TicketDetailPage() {
         : [],
     [ticket],
   );
+  const reporterValueSignals = useMemo(() => {
+    if (!ticket) {
+      return [];
+    }
+
+    return [
+      ticket.assigneeName
+        ? `Tiket ini sudah memiliki penanggung jawab atau pemilik tindak lanjut di sisi operasional.`
+        : "Tiket ini tetap masuk antrean operasional meski penanggung jawab belum ditampilkan ke pelapor.",
+      ticket.attachments.length > 0
+        ? `Ada ${ticket.attachments.length} lampiran pada tiket ini sehingga bukti tidak tercecer di luar portal.`
+        : "Tambahkan lampiran bila ada bukti baru agar konteks tetap menempel pada tiket yang sama.",
+      slaDueAt
+        ? `Target SLA sudah tercatat sehingga progres bisa dipantau tanpa follow up manual lewat chat.`
+        : "Status dan riwayat tetap tercatat sehingga pelapor tidak perlu mengulang konteks dari awal.",
+    ];
+  }, [slaDueAt, ticket]);
 
   const assigneeOptions = useMemo(() => {
     const options = assignableUsers.map((user) => ({
@@ -1089,6 +1106,14 @@ export function TicketDetailPage() {
                   </div>
                 </div>
                 <p>{reporterGuidance.nextStep}</p>
+                <div className="reporter-guidance-notes">
+                  {reporterValueSignals.map((item) => (
+                    <article className="reporter-guidance-note" key={item}>
+                      <span />
+                      <p>{item}</p>
+                    </article>
+                  ))}
+                </div>
               </article>
             </article>
           ) : null}
@@ -1231,7 +1256,10 @@ export function TicketDetailPage() {
               <div>
                 <p className="section-eyebrow">Panduan terkait</p>
                 <h3>Bantuan mandiri yang relevan</h3>
-                <p className="form-hint">Panduan ini bisa membantu Anda menambah konteks atau mengecek langkah dasar lebih dulu.</p>
+                <p className="form-hint">
+                  Panduan ini membantu Anda menambah konteks, mengecek langkah dasar, dan memutuskan apakah cukup menunggu
+                  progres tiket atau perlu memberi pembaruan baru.
+                </p>
               </div>
               <div className="help-inline-list">
                 {reporterHelpMatches.map((match) => (
@@ -1249,6 +1277,11 @@ export function TicketDetailPage() {
                   </article>
                 ))}
               </div>
+              <article className="reporter-guidance-card reporter-guidance-card--compact">
+                <span className="reporter-guidance-card__status reporter-guidance-card__status--berjalan">Portal pelapor</span>
+                <strong>Lebih jelas daripada follow up lewat chat terpisah</strong>
+                <p>Di sini komentar publik, status, SLA target, dan lampiran tetap berada pada tiket yang sama sehingga tindak lanjut lebih mudah dibaca ulang.</p>
+              </article>
               <Link className="button button--secondary" to="/help">
                 <AppIcon name="help" size="sm" />
                 Buka Pusat Bantuan

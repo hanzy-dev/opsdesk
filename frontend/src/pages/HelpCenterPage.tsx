@@ -17,6 +17,27 @@ const categoryLabels = [
   { value: "service_request", label: "Permintaan layanan" },
 ] as const;
 
+const valueSignals = [
+  {
+    title: "Audit trail yang tetap utuh",
+    description: "Pembaruan, komentar, dan lampiran tidak tercecer di chat yang berbeda-beda.",
+  },
+  {
+    title: "Status dan ownership jelas",
+    description: "Pelapor bisa melihat progres, sedangkan tim operasional tetap punya penanggung jawab yang tegas.",
+  },
+  {
+    title: "Bantuan mandiri sebelum eskalasi",
+    description: "Panduan lokal membantu Anda mengecek langkah dasar sebelum membuat tiket baru.",
+  },
+];
+
+const reporterFlow = [
+  "Cari langkah awal atau FAQ yang relevan.",
+  "Buat tiket bila masalah tetap perlu tindak lanjut.",
+  "Pantau status, komentar publik, SLA target, dan lampiran dari portal yang sama.",
+];
+
 export function HelpCenterPage() {
   const { permissions } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,7 +67,8 @@ export function HelpCenterPage() {
             <h2>Cari panduan cepat sebelum membuat atau menindaklanjuti tiket</h2>
             <p>
               Pusat bantuan ini memakai konten lokal OpsDesk yang ringan dan jujur. Fokusnya membantu Anda menemukan
-              langkah awal, memahami status tiket, dan menyiapkan laporan yang lebih jelas.
+              langkah awal, memahami status tiket, menyiapkan laporan yang lebih jelas, dan tahu apa yang akan terjadi
+              setelah tiket dibuat.
             </p>
           </div>
           <div className="dashboard-hero__actions">
@@ -69,6 +91,16 @@ export function HelpCenterPage() {
           <small>{highlightedArticle.readTimeMinutes} menit baca</small>
         </article>
       </div>
+
+      <section className="help-value-grid" aria-label="Nilai produk OpsDesk">
+        {valueSignals.map((signal, index) => (
+          <article className={`help-value-card motion-reveal ${index < 2 ? `motion-reveal--delay-${index + 1}` : ""}`} key={signal.title}>
+            <span className="section-eyebrow">Kenapa OpsDesk</span>
+            <strong>{signal.title}</strong>
+            <p>{signal.description}</p>
+          </article>
+        ))}
+      </section>
 
       <div className="help-center-layout help-center-layout--reading">
         <section className="help-reading-surface stack-md">
@@ -186,11 +218,32 @@ export function HelpCenterPage() {
               <article className="action-overview__item">
                 <div>
                   <strong>Pahami langkah berikutnya</strong>
-                  <p>Detail tiket menjelaskan apa yang sedang terjadi dan kapan Anda perlu menambah informasi.</p>
+                  <p>Detail tiket menjelaskan apa yang sedang terjadi, siapa yang menindaklanjuti, dan kapan Anda perlu menambah informasi.</p>
                 </div>
                 <span className="action-state action-state--allowed">Aktif</span>
               </article>
             </div>
+          </section>
+
+          <section className="rail-section">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Alur pelapor</p>
+                <h3>Dari panduan ke tindak lanjut tanpa pindah kanal</h3>
+              </div>
+            </div>
+            <div className="help-flow-list">
+              {reporterFlow.map((item, index) => (
+                <article className="help-flow-step motion-lift" key={item}>
+                  <span>{index + 1}</span>
+                  <p>{item}</p>
+                </article>
+              ))}
+            </div>
+            <p className="form-hint">
+              Ini membuat penanganan lebih rapi daripada chat biasa karena progres, bukti, target SLA, dan konteks
+              tetap berada pada tiket yang sama.
+            </p>
           </section>
 
           <section className="rail-section">

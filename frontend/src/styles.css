@@ -3121,6 +3121,116 @@ textarea:focus-visible {
   display: grid;
   place-items: center;
   padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(239, 142, 83, 0.18), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(94, 164, 255, 0.14), transparent 28%),
+    linear-gradient(180deg, rgba(10, 11, 16, 0.98), rgba(15, 14, 19, 0.98));
+}
+
+.login-portal {
+  width: min(1180px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.login-portal--support {
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
+}
+
+.login-portal__panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 30px;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    rgba(18, 18, 22, 0.92);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+}
+
+.login-portal__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(239, 142, 83, 0.18), transparent 68%);
+  pointer-events: none;
+}
+
+.login-portal__panel--story {
+  display: grid;
+  gap: 22px;
+}
+
+.login-portal__capabilities,
+.login-portal__support-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.login-portal__capabilities {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.login-info-card,
+.login-support-card,
+.login-inline-note {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.login-info-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
+.login-info-card .app-icon {
+  color: #ffc49d;
+}
+
+.login-info-card p,
+.login-support-card p,
+.login-inline-note p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.login-support-card,
+.login-inline-note {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+}
+
+.login-support-card strong,
+.login-inline-note strong {
+  font-size: 1rem;
+}
+
+.login-value-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.login-value-strip span {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #f4d0b8;
+  font-size: 0.9rem;
 }
 
 .login-card {
@@ -3130,6 +3240,11 @@ textarea:focus-visible {
   background:
     linear-gradient(135deg, rgba(239, 142, 83, 0.16), rgba(94, 164, 255, 0.09)),
     rgba(20, 18, 20, 0.96);
+}
+
+.login-card--portal {
+  width: 100%;
+  min-height: 100%;
 }
 
 .login-card__intro {
@@ -3146,6 +3261,12 @@ textarea:focus-visible {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.login-card__context {
+  margin-top: -4px;
 }
 
 .text-link {
@@ -4383,10 +4504,40 @@ textarea:focus-visible {
   gap: var(--section-gap-loose);
 }
 
+.help-value-grid,
 .help-center-hero,
 .help-center-layout {
   display: grid;
   gap: var(--section-gap);
+}
+
+.help-value-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.help-value-card,
+.help-flow-step,
+.reporter-guidance-note {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.help-value-card {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.help-value-card p,
+.help-flow-step p,
+.reporter-guidance-note p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
 }
 
 .help-center-layout {
@@ -4468,6 +4619,31 @@ textarea:focus-visible {
 .help-inline-list {
   display: grid;
   gap: 14px;
+}
+
+.help-flow-list {
+  display: grid;
+  gap: 10px;
+}
+
+.help-flow-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px 18px;
+}
+
+.help-flow-step span {
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(239, 142, 83, 0.18);
+  color: #ffd8c2;
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .help-article-list--reading {
@@ -4552,6 +4728,10 @@ textarea:focus-visible {
   padding: 18px;
 }
 
+.reporter-guidance-card--compact {
+  gap: 10px;
+}
+
 .reporter-guidance-card__status {
   display: inline-flex;
   width: fit-content;
@@ -4575,6 +4755,28 @@ textarea:focus-visible {
 .reporter-guidance-card__status--selesai {
   background: rgba(79, 190, 139, 0.16);
   color: #8fe1b7;
+}
+
+.reporter-guidance-notes {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.reporter-guidance-note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 14px 16px;
+}
+
+.reporter-guidance-note span {
+  width: 8px;
+  height: 8px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef8e53, #5ea4ff);
 }
 
 .reporter-progress {
@@ -4975,6 +5177,8 @@ textarea:focus-visible {
   }
 
   .help-center-layout,
+  .help-value-grid,
+  .login-portal,
   .ticket-layout,
   .ticket-overview-grid,
   .help-center-layout--reading,
@@ -5032,6 +5236,8 @@ textarea:focus-visible {
   .form-grid,
   .meta-grid,
   .filter-grid,
+  .login-portal__capabilities,
+  .login-portal__support-grid,
   .macro-grid,
   .quick-action-grid,
   .profile-edit-spotlight,
@@ -5103,6 +5309,7 @@ textarea:focus-visible {
   .panel,
   .metric-card,
   .login-card,
+  .login-portal__panel,
   .hero-card {
     padding: 20px;
   }

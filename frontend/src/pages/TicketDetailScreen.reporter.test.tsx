@@ -106,6 +106,7 @@ describe("TicketDetailScreen reporter portal", () => {
     expect(await screen.findByText("Progres dan langkah berikutnya")).toBeInTheDocument();
     expect(screen.getByText("Apa yang sebaiknya dilakukan pelapor")).toBeInTheDocument();
     expect(screen.getByText("Bantuan mandiri yang relevan")).toBeInTheDocument();
+    expect(screen.getByText("Lebih jelas daripada follow up lewat chat terpisah")).toBeInTheDocument();
     expect(screen.queryByText("Pilih penanggung jawab")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Perbarui Status" })).not.toBeInTheDocument();
 
