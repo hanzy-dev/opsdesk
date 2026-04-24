@@ -29,7 +29,7 @@ describe("ResetPasswordPage", () => {
     );
 
     expect(screen.getByLabelText("Email")).toHaveValue("agent@example.com");
-    expect(screen.getByText("Selesaikan pemulihan lalu kembali ke portal internal yang sama")).toBeInTheDocument();
+    expect(screen.getByText("Masukkan kode dan kata sandi baru")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Buka Pusat Bantuan" })).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText("Kode verifikasi"), {

@@ -3675,134 +3675,149 @@ textarea:focus-visible {
   place-items: center;
   padding: 24px;
   background:
-    radial-gradient(circle at top left, rgba(239, 142, 83, 0.18), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(94, 164, 255, 0.14), transparent 28%),
+    radial-gradient(circle at top left, rgba(239, 142, 83, 0.16), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(94, 164, 255, 0.12), transparent 28%),
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05), transparent 24%),
     linear-gradient(180deg, rgba(10, 11, 16, 0.98), rgba(15, 14, 19, 0.98));
 }
 
-.login-portal {
-  width: min(1180px, 100%);
+.auth-shell {
+  width: min(1120px, 100%);
+}
+
+.auth-shell--login {
+  width: min(1080px, 100%);
+}
+
+.auth-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 520px) minmax(280px, 1fr);
+  gap: 32px;
+  align-items: center;
 }
 
-.login-portal--support {
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.95fr);
-}
-
-.login-portal__panel {
+.auth-form-surface {
   position: relative;
-  overflow: hidden;
+  width: 100%;
+  display: grid;
+  gap: 20px;
+  padding: 28px;
   border-radius: 28px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 30px;
+  overflow: hidden;
+  min-height: 0;
   background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
-    rgba(18, 18, 22, 0.92);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 24%),
+    linear-gradient(135deg, rgba(239, 142, 83, 0.14), rgba(94, 164, 255, 0.08)),
+    rgba(20, 18, 20, 0.94);
 }
 
-.login-portal__panel::before {
+.auth-form-surface::after {
   content: "";
   position: absolute;
-  inset: 0 auto auto 0;
+  inset: auto -12% -18% auto;
   width: 220px;
   height: 220px;
-  background: radial-gradient(circle, rgba(239, 142, 83, 0.18), transparent 68%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(239, 142, 83, 0.14), transparent 66%);
   pointer-events: none;
 }
 
-.login-portal__panel--story {
+.auth-form-surface__intro,
+.auth-story__intro {
   display: grid;
-  gap: 22px;
+  gap: var(--heading-to-support-gap);
 }
 
-.login-portal__capabilities,
-.login-portal__support-grid {
-  display: grid;
-  gap: 14px;
+.auth-form-surface__intro h1,
+.auth-story__intro h2 {
+  margin: 0;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
 }
 
-.login-portal__capabilities {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.auth-form-surface__intro h1 {
+  font-size: clamp(2rem, 3.6vw, 2.85rem);
 }
 
-.login-info-card,
-.login-support-card,
-.login-inline-note {
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
-    rgba(255, 255, 255, 0.02);
+.auth-story__intro h2 {
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
 }
 
-.login-info-card {
-  display: grid;
-  gap: 12px;
-  padding: 18px;
-}
-
-.login-info-card .app-icon {
-  color: #ffc49d;
-}
-
-.login-info-card p,
-.login-support-card p,
-.login-inline-note p {
+.auth-form-surface__intro p:last-child,
+.auth-story__intro p:last-child {
   margin: 0;
   color: var(--muted);
-  line-height: 1.6;
+  line-height: 1.65;
+  max-width: 58ch;
 }
 
-.login-support-card,
-.login-inline-note {
+.auth-form-surface__form {
+  gap: 16px;
+}
+
+.auth-callout {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-callout__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
   display: grid;
-  gap: 8px;
-  padding: 18px;
+  place-items: center;
+  color: #ffc49d;
+  background:
+    linear-gradient(180deg, rgba(239, 142, 83, 0.15), rgba(239, 142, 83, 0.05)),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(239, 142, 83, 0.12);
+  flex-shrink: 0;
 }
 
-.login-support-card strong,
-.login-inline-note strong {
-  font-size: 1rem;
-}
-
-.login-value-strip {
+.auth-links-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-}
-
-.login-value-strip span {
-  display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  padding: 8px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #f4d0b8;
-  font-size: 0.9rem;
+  gap: 10px 16px;
+  padding-top: 2px;
 }
 
-.login-card {
-  width: min(560px, 100%);
+.auth-rail {
   display: grid;
-  gap: 22px;
-  background:
-    linear-gradient(135deg, rgba(239, 142, 83, 0.16), rgba(94, 164, 255, 0.09)),
-    rgba(20, 18, 20, 0.96);
+  gap: 18px;
+  align-content: center;
+  min-width: 0;
 }
 
-.login-card--portal {
-  width: 100%;
-  min-height: 100%;
+.auth-story {
+  display: grid;
+  gap: 16px;
 }
 
-.login-card__intro {
+.auth-story__list {
+  padding: 0;
+}
+
+.auth-story__list .settings-row-panel__row {
+  padding-block: 14px;
+}
+
+.auth-story__list .settings-row-panel__copy strong {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.auth-support-cluster {
   display: grid;
   gap: 12px;
+}
+
+.auth-support-note {
+  padding: 16px 18px;
+}
+
+.auth-support-note strong {
+  font-size: 0.98rem;
 }
 
 .login-form {
@@ -3810,16 +3825,9 @@ textarea:focus-visible {
   gap: 18px;
 }
 
-.login-card__footer {
-  display: flex;
-  justify-content: space-between;
+.login-card__intro {
+  display: grid;
   gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.login-card__context {
-  margin-top: -4px;
 }
 
 .text-link {
@@ -5758,7 +5766,7 @@ textarea:focus-visible {
 
   .help-center-layout,
   .help-value-grid,
-  .login-portal,
+  .auth-layout,
   .ticket-layout,
   .ticket-overview-grid,
   .help-center-layout--reading,
@@ -5817,8 +5825,6 @@ textarea:focus-visible {
   .form-grid,
   .meta-grid,
   .filter-grid,
-  .login-portal__capabilities,
-  .login-portal__support-grid,
   .macro-grid,
   .quick-action-grid,
   .profile-edit-spotlight,
@@ -5892,10 +5898,36 @@ textarea:focus-visible {
 
   .panel,
   .metric-card,
-  .login-card,
-  .login-portal__panel,
+  .auth-form-surface,
   .hero-card {
     padding: 20px;
+  }
+
+  .login-page {
+    padding: 18px;
+    place-items: start center;
+  }
+
+  .auth-shell,
+  .auth-shell--login {
+    width: min(100%, 680px);
+  }
+
+  .auth-layout {
+    gap: 20px;
+  }
+
+  .auth-form-surface {
+    order: 1;
+  }
+
+  .auth-rail {
+    order: 2;
+  }
+
+  .auth-links-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .dashboard-stat--featured {

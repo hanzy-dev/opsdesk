@@ -44,81 +44,93 @@ export function ForgotPasswordPage() {
 
   return (
     <main className="login-page">
-      <section className="login-portal login-portal--support">
-        <article className="login-portal__panel login-portal__panel--story">
-          <div className="login-card__intro">
-            <p className="section-eyebrow">Pemulihan akun</p>
-            <h1>Pulihkan akses tanpa keluar dari alur kerja OpsDesk</h1>
-            <p>
-              Halaman ini tetap bagian dari portal internal yang sama, jadi panduan akses, help center, dan tindak lanjut
-              operasional tetap mudah ditemukan.
-            </p>
-          </div>
+      <section className="auth-shell">
+        <section className="auth-layout">
+          <section className="auth-form-surface surface surface--primary">
+            <div className="login-card__intro auth-form-surface__intro">
+              <p className="section-eyebrow">Pemulihan akun</p>
+              <h1>Kirim kode verifikasi ke email akun</h1>
+              <p>Masukkan email akun internal Anda untuk menerima kode verifikasi pengaturan ulang kata sandi melalui Cognito.</p>
+            </div>
 
-          <div className="login-portal__support-grid">
-            {recoveryChecklist.map((item) => (
-              <article className="login-info-card motion-lift" key={item}>
-                <AppIcon name="reset" size="sm" />
-                <p>{item}</p>
-              </article>
-            ))}
-          </div>
+            <div className="inline-callout auth-callout">
+              <div className="inline-callout__header">
+                <span className="auth-callout__icon" aria-hidden="true">
+                  <AppIcon name="reset" size="sm" />
+                </span>
+                <div className="inline-callout__header-copy">
+                  <p className="inline-callout__eyebrow">Panduan singkat</p>
+                  <strong>Gunakan email akun yang sama dengan saat masuk</strong>
+                </div>
+              </div>
+              <p>Pulihkan akses tanpa keluar dari alur portal internal yang sama.</p>
+            </div>
 
-          <article className="login-support-card">
-            <span className="section-eyebrow">Butuh bantuan tambahan</span>
-            <strong>Belum punya akun atau akses sudah berubah?</strong>
-            <p>
-              Pembuatan akun tetap dilakukan oleh admin internal. Jika kebutuhan akses Anda berubah, hubungi admin atau
-              tim operasional agar penanganannya tercatat dengan jelas.
-            </p>
-          </article>
-        </article>
+            <form className="login-form auth-form-surface__form" onSubmit={handleSubmit}>
+              <label className="field">
+                <span>Email</span>
+                <input
+                  autoComplete="email"
+                  disabled={isSubmitting}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="nama@perusahaan.com"
+                  type="email"
+                  value={email}
+                />
+              </label>
 
-        <section className="login-card login-card--portal">
-          <div className="login-card__intro">
-            <p className="section-eyebrow">Reset kata sandi</p>
-            <h2>Kirim kode verifikasi ke email akun</h2>
-            <p>Masukkan email akun internal Anda untuk menerima kode verifikasi pengaturan ulang kata sandi melalui Cognito.</p>
-          </div>
+              {successMessage ? <p className="form-success">{successMessage}</p> : null}
+              {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 
-          <form className="login-form" onSubmit={handleSubmit}>
-            <label className="field">
-              <span>Email</span>
-              <input
-                autoComplete="email"
-                disabled={isSubmitting}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="nama@perusahaan.com"
-                type="email"
-                value={email}
-              />
-            </label>
+              <p className="form-hint">Gunakan email akun yang sama dengan yang dipakai saat masuk ke OpsDesk.</p>
 
-            {successMessage ? <p className="form-success">{successMessage}</p> : null}
-            {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
+              <button aria-busy={isSubmitting} className="button button--primary button--wide" disabled={isSubmitting} type="submit">
+                {isSubmitting ? "Mengirim kode..." : "Kirim Kode Verifikasi"}
+              </button>
+            </form>
 
-            <p className="form-hint">Gunakan email akun yang sama dengan yang dipakai saat masuk ke OpsDesk.</p>
+            <div className="auth-links-row">
+              <Link className="text-link" to="/login">
+                Kembali ke halaman masuk
+              </Link>
+              <Link className="text-link" to="/help">
+                Buka Pusat Bantuan
+              </Link>
+            </div>
+          </section>
 
-            <button aria-busy={isSubmitting} className="button button--primary button--wide" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Mengirim kode..." : "Kirim Kode Verifikasi"}
-            </button>
-          </form>
+          <aside className="auth-rail">
+            <section className="auth-story">
+              <div className="auth-story__intro">
+                <p className="section-eyebrow">Portal internal yang sama</p>
+                <h2>Pulihkan akses dengan alur yang tenang dan tetap fokus pada tindakan utama.</h2>
+                <p>Halaman ini tetap satu keluarga dengan portal OpsDesk, jadi panduan akses dan bantuan operasional tetap mudah ditemukan.</p>
+              </div>
 
-          <div className="login-card__context stack-md">
-            <article className="login-inline-note">
-              <strong>Masalah akses belum selesai?</strong>
-              <p>Jika kode tidak terkirim atau akun tetap terkunci, hubungi tim operasional agar investigasi akses bisa diteruskan.</p>
+              <div className="settings-row-panel surface surface--ghost auth-story__list">
+                {recoveryChecklist.map((item) => (
+                  <article className="settings-row-panel__row" key={item}>
+                    <div className="settings-row-panel__copy">
+                      <strong>{item}</strong>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <article className="inline-callout surface surface--subtle auth-support-note">
+              <div className="inline-callout__header">
+                <span className="auth-callout__icon" aria-hidden="true">
+                  <AppIcon name="help" size="sm" />
+                </span>
+                <div className="inline-callout__header-copy">
+                  <p className="inline-callout__eyebrow">Butuh bantuan tambahan</p>
+                  <strong>Belum punya akun atau akses sudah berubah?</strong>
+                </div>
+              </div>
+              <p>Pembuatan akun tetap dilakukan oleh admin internal. Jika kebutuhan akses berubah, hubungi admin atau tim operasional.</p>
             </article>
-          </div>
-
-          <div className="login-card__footer">
-            <Link className="text-link" to="/login">
-              Kembali ke halaman masuk
-            </Link>
-            <Link className="text-link" to="/help">
-              Buka Pusat Bantuan
-            </Link>
-          </div>
+          </aside>
         </section>
       </section>
     </main>

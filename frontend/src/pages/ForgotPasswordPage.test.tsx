@@ -33,7 +33,7 @@ describe("ForgotPasswordPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Pulihkan akses tanpa keluar dari alur kerja OpsDesk")).toBeInTheDocument();
+    expect(screen.getByText("Kirim kode verifikasi ke email akun")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Buka Pusat Bantuan" })).toBeInTheDocument();
 
     fireEvent.change(screen.getByPlaceholderText("nama@perusahaan.com"), {
