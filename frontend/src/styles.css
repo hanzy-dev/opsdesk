@@ -2400,6 +2400,39 @@ textarea:focus-visible {
   padding-bottom: var(--page-bottom-space);
 }
 
+.dashboard-page .section-eyebrow + h3,
+.dashboard-page .section-eyebrow + h4 {
+  margin-top: var(--eyebrow-to-heading-gap);
+}
+
+.dashboard-page .section-heading + .dashboard-feature__body,
+.dashboard-page .section-heading + .dashboard-analytics-stack,
+.dashboard-page .section-heading + .dashboard-attention-grid,
+.dashboard-page .section-heading + .dashboard-workload-insights,
+.dashboard-page .section-heading + .dashboard-ticket-list,
+.dashboard-page .section-heading + .dashboard-activity-list,
+.dashboard-page .section-heading + .dashboard-actions-grid,
+.dashboard-page .section-heading + .compact-link-list,
+.dashboard-page .section-heading + .compact-list {
+  margin-top: 2px;
+}
+
+.dashboard-section-heading {
+  row-gap: calc(var(--support-to-content-gap) + 2px);
+}
+
+.dashboard-section-heading > div:first-child {
+  gap: calc(var(--eyebrow-to-heading-gap) + 1px);
+}
+
+.dashboard-section-heading--airy {
+  row-gap: calc(var(--support-to-content-gap) + 6px);
+}
+
+.dashboard-section-heading--compact {
+  row-gap: calc(var(--support-to-content-gap) - 2px);
+}
+
 .dashboard-hero {
   min-height: 0;
   display: grid;
@@ -2611,6 +2644,17 @@ textarea:focus-visible {
   gap: 14px;
 }
 
+.dashboard-zone,
+.dashboard-feature,
+.dashboard-actions-panel,
+.dashboard-quick-actions {
+  gap: 18px;
+}
+
+.dashboard-actions-panel--hero {
+  gap: 20px;
+}
+
 .dashboard-panel__hint {
   margin: 0;
   color: var(--muted);
@@ -2713,6 +2757,10 @@ textarea:focus-visible {
 .dashboard-actions-grid {
   display: grid;
   gap: 10px;
+}
+
+.dashboard-actions-grid--airy {
+  gap: 12px;
 }
 
 .dashboard-ticket-card,
@@ -3126,6 +3174,59 @@ textarea:focus-visible {
 
 .compact-link-list--attention {
   gap: 12px;
+}
+
+.dashboard-quick-actions {
+  gap: 18px;
+}
+
+.dashboard-quick-actions__header {
+  display: grid;
+  gap: calc(var(--eyebrow-to-heading-gap) + 2px);
+}
+
+.dashboard-quick-actions__list {
+  gap: 12px;
+}
+
+.dashboard-empty-state {
+  min-height: 0;
+  padding: 30px 28px;
+}
+
+.dashboard-empty-state .state-card__icon {
+  margin-bottom: 2px;
+}
+
+.dashboard-empty-state .empty-state__eyebrow {
+  margin-top: 2px;
+}
+
+.dashboard-empty-state .empty-state__content {
+  gap: 12px;
+}
+
+.dashboard-empty-state .empty-state__content h3 {
+  max-width: 24ch;
+  line-height: 1.24;
+}
+
+.dashboard-empty-state .empty-state__content > p,
+.dashboard-empty-state .state-card__support {
+  max-width: 46ch;
+  line-height: 1.62;
+}
+
+.dashboard-empty-state .empty-state__actions {
+  padding-top: 10px;
+}
+
+.dashboard-empty-state--compact {
+  padding: 26px 24px;
+}
+
+.dashboard-empty-state--hero {
+  padding: 34px 28px;
 }
 
 .compact-link-list__item--attention {

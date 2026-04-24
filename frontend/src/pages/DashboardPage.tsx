@@ -585,15 +585,15 @@ export function DashboardPage() {
 
       {data.stats.total === 0 ? (
         <div className="stack-lg">
-          <section className="panel panel--section dashboard-actions-panel">
-            <div className="section-heading">
+          <section className="panel panel--section dashboard-actions-panel dashboard-actions-panel--hero">
+            <div className="section-heading dashboard-section-heading dashboard-section-heading--airy">
               <div>
                 <p className="section-eyebrow">Aksi cepat</p>
                 <h3>Langkah awal yang paling sering dipakai</h3>
               </div>
             </div>
 
-            <div className="dashboard-actions-grid">
+            <div className="dashboard-actions-grid dashboard-actions-grid--airy">
               {quickActions.map((action) => (
                 <Link className="dashboard-action-card" key={action.to} to={action.to}>
                   <div className="dashboard-action-card__header">
@@ -619,6 +619,8 @@ export function DashboardPage() {
                 : "Belum ada tiket yang dapat Anda akses saat ini."
             }
             supportText="Begitu tiket mulai tercatat, dashboard akan menampilkan KPI, sorotan prioritas, analitik tren, dan beban kerja dari permukaan yang sama."
+            className="dashboard-empty-state dashboard-empty-state--hero"
+            width="narrow"
             action={
               permissions.canCreateTickets ? (
                 <Link className="button button--primary" to="/tickets/new">
@@ -632,7 +634,7 @@ export function DashboardPage() {
         <div className="dashboard-executive-layout">
           <div className="dashboard-executive-layout__main stack-md">
             <section className="dashboard-feature dashboard-feature--executive motion-reveal motion-reveal--delay-1">
-              <div className="section-heading">
+              <div className="section-heading dashboard-section-heading">
                 <div>
                   <p className="section-eyebrow">{isReporterPortal ? "Sorotan portal" : "Sorotan utama"}</p>
                   <h3>{isReporterPortal ? "Gunakan portal untuk membaca progres, bukan hanya mengirim tiket" : "Sinyal antrean yang paling perlu Anda lihat lebih dulu"}</h3>
@@ -696,7 +698,7 @@ export function DashboardPage() {
             </section>
 
             <section className="dashboard-zone dashboard-zone--analytics motion-reveal motion-reveal--delay-2">
-              <div className="section-heading">
+              <div className="section-heading dashboard-section-heading">
                 <div>
                   <p className="section-eyebrow">Analitik ringkas</p>
                   <h3>{isReporterPortal ? "Komposisi tiket dalam akses Anda" : "Komposisi antrean dan pola permintaan"}</h3>
@@ -704,7 +706,7 @@ export function DashboardPage() {
               </div>
               <div className="dashboard-analytics-stack">
                 <article className="dashboard-subsection dashboard-subsection--featured">
-                  <div className="section-heading">
+                  <div className="section-heading dashboard-section-heading dashboard-section-heading--compact">
                     <div>
                       <p className="section-eyebrow">{isReporterPortal ? "Aktivitas tiket" : "Ritme tiket"}</p>
                       <h4>{isReporterPortal ? "Tiket yang Anda buat dalam 7 hari terakhir" : "Tiket masuk 7 hari terakhir"}</h4>
@@ -767,7 +769,7 @@ export function DashboardPage() {
 
             <div className="dashboard-split dashboard-split--executive">
               <section className="dashboard-zone dashboard-zone--attention motion-reveal motion-reveal--delay-2">
-                <div className="section-heading">
+                <div className="section-heading dashboard-section-heading">
                   <div>
                     <p className="section-eyebrow">{isReporterPortal ? "Perlu dicek" : "Butuh perhatian"}</p>
                     <h3>{isReporterPortal ? "Prioritas progres yang layak Anda cek lebih dulu" : "Sinyal atensi yang paling perlu dibaca cepat"}</h3>
@@ -796,6 +798,8 @@ export function DashboardPage() {
                         ? "Periksa daftar tiket Anda untuk update rutin. Sorotan prioritas akan muncul di sini bila ada tiket yang lebih mendesak."
                         : "Begitu ada tiket prioritas tinggi yang belum selesai, sorotannya akan muncul di area ini untuk dipindai lebih cepat."
                     }
+                    className="dashboard-empty-state dashboard-empty-state--compact"
+                    width="narrow"
                   />
                 ) : (
                   <div className="compact-link-list compact-link-list--attention">
@@ -813,7 +817,7 @@ export function DashboardPage() {
               </section>
 
               <section className="dashboard-zone dashboard-zone--workload motion-reveal motion-reveal--delay-3">
-                <div className="section-heading">
+                <div className="section-heading dashboard-section-heading">
                   <div>
                     <p className="section-eyebrow">{isReporterPortal ? "Ringkasan portal" : "Beban kerja"}</p>
                     <h3>{isReporterPortal ? "Bacaan ringkas untuk memahami alur tiket Anda" : "Distribusi kerja dan kapasitas yang paling terlihat"}</h3>
@@ -849,6 +853,8 @@ export function DashboardPage() {
                     title="Belum ada beban aktif"
                     description="Semua tiket aktif saat ini belum memiliki penugasan atau belum tersedia."
                     supportText="Begitu penugasan mulai terbentuk, area ini akan membantu membaca antrean personal, kapasitas kerja, dan penumpukan yang paling terlihat."
+                    className="dashboard-empty-state dashboard-empty-state--compact"
+                    width="narrow"
                   />
                 ) : (
                   <div className="dashboard-workload-list dashboard-workload-list--compact">
@@ -868,7 +874,7 @@ export function DashboardPage() {
 
             <div className="dashboard-split dashboard-split--main">
               <section className="dashboard-zone dashboard-zone--dominant motion-reveal motion-reveal--delay-2">
-                <div className="section-heading">
+                <div className="section-heading dashboard-section-heading">
                   <div>
                     <p className="section-eyebrow">Tiket terbaru</p>
                     <h3>{isReporterPortal ? "Tiket yang baru diperbarui" : "Antrian yang paling baru diperbarui"}</h3>
@@ -905,7 +911,7 @@ export function DashboardPage() {
               </section>
 
               <section className="dashboard-zone motion-reveal motion-reveal--delay-3">
-                <div className="section-heading">
+                <div className="section-heading dashboard-section-heading">
                   <div>
                     <p className="section-eyebrow">Sorotan audit</p>
                     <h3>{isReporterPortal ? "Pembaruan terbaru yang layak Anda pantau" : "Aktivitas terbaru yang layak dipantau"}</h3>
@@ -920,6 +926,8 @@ export function DashboardPage() {
                     title="Belum ada sorotan aktivitas"
                     description="Aktivitas terbaru pada tiket akan muncul di sini untuk membantu pemantauan cepat."
                     supportText="Begitu ada perubahan status, komentar, penugasan, atau lampiran baru, sorotannya akan tampil otomatis."
+                    className="dashboard-empty-state dashboard-empty-state--compact"
+                    width="narrow"
                   />
                 ) : (
                   <div className="dashboard-activity-list dashboard-activity-list--timeline">
@@ -994,12 +1002,12 @@ export function DashboardPage() {
               </section>
             )}
 
-            <section className="rail-section motion-reveal motion-reveal--delay-4">
-              <div>
+            <section className="rail-section dashboard-quick-actions motion-reveal motion-reveal--delay-4">
+              <div className="dashboard-quick-actions__header">
                 <p className="section-eyebrow">Aksi cepat</p>
                 <h3>{isReporterPortal ? "Jalur utama untuk pelapor" : "Jalur kerja yang paling sering dibutuhkan"}</h3>
               </div>
-              <div className="compact-link-list">
+              <div className="compact-link-list dashboard-quick-actions__list">
                 {quickActions.map((action) => (
                   <Link className="compact-link-list__item compact-link-list__item--interactive" key={action.to} to={action.to}>
                     <strong>{action.title}</strong>
@@ -1029,6 +1037,8 @@ function DistributionPanel({
         title="Belum ada distribusi"
         description={emptyLabel}
         supportText="Begitu data cukup tersedia, dashboard akan menampilkan sebaran ini untuk membantu pembacaan pola secara cepat."
+        className="dashboard-empty-state dashboard-empty-state--compact"
+        width="narrow"
       />
     );
   }
@@ -1060,6 +1070,8 @@ function StatusDistributionSpotlight({ items }: { items: DistributionItem[] }) {
         eyebrow="Status"
         title="Belum ada status yang dapat diringkas"
         description="Komposisi status akan tampil setelah ada tiket yang cukup untuk dihitung."
+        className="dashboard-empty-state dashboard-empty-state--compact"
+        width="narrow"
       />
     );
   }
