@@ -4981,6 +4981,11 @@ textarea:focus-visible {
   font-size: 1.45rem;
 }
 
+.tickets-stat-strip--queue {
+  grid-template-columns: repeat(3, minmax(0, 180px));
+  justify-content: start;
+}
+
 .tickets-shell {
   display: grid;
   grid-template-columns: minmax(0, 1.75fr) minmax(250px, 0.72fr);
@@ -5001,6 +5006,10 @@ textarea:focus-visible {
   position: static;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   display: grid;
+}
+
+.tickets-shell__rail--queue {
+  gap: 12px;
 }
 
 .tickets-toolbar--surface {
@@ -5127,6 +5136,10 @@ textarea:focus-visible {
   gap: 8px;
 }
 
+.tickets-shell__rail--queue .tickets-rail-section {
+  padding: 16px 16px 18px;
+}
+
 .tickets-pager {
   display: flex;
   justify-content: space-between;
@@ -5140,8 +5153,33 @@ textarea:focus-visible {
   padding: 32px 24px;
 }
 
+.tickets-empty-state--queue {
+  min-height: 360px;
+  padding: 40px 28px;
+}
+
 .tickets-empty-state .empty-state__content {
   max-width: 52ch;
+}
+
+.tickets-empty-state--queue .state-card__icon {
+  margin-bottom: 6px;
+}
+
+.tickets-empty-state--queue .empty-state__content {
+  gap: 12px;
+  max-width: 48ch;
+}
+
+.tickets-empty-state--queue .empty-state__actions {
+  padding-top: 14px;
+}
+
+.tickets-empty-state__cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 .tickets-empty-state .state-card__actions,

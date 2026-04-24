@@ -218,7 +218,9 @@ export function TicketsPage() {
     assigneeFilter !== preset.assigneeFilter ||
     sortBy !== "updated_at" ||
     sortOrder !== "desc";
+  const isAssignedQueue = preset.key === "assigned";
   const isEmptyLayout = pagination.totalItems === 0 || tickets.length === 0;
+  const isAssignedEmptyState = isAssignedQueue && pagination.totalItems === 0;
 
   function resetFilters() {
     setSearchQuery("");
@@ -299,9 +301,9 @@ export function TicketsPage() {
         </div>
       </div>
 
-      <div className="stat-strip tickets-stat-strip" aria-label="Ringkasan tiket">
+      <div className={`stat-strip tickets-stat-strip ${isAssignedQueue ? "tickets-stat-strip--queue" : ""}`} aria-label="Ringkasan tiket">
         <article className="stat-strip__item surface surface--row">
-          <p className="stat-strip__eyebrow">Tampilan</p>
+          <p className="stat-strip__eyebrow">{isAssignedQueue ? "Antrean saya" : "Tampilan"}</p>
           <p className="stat-strip__label">
             <AppIconBadge name="tickets" size="sm" />
             <span>Total tiket</span>
@@ -309,7 +311,7 @@ export function TicketsPage() {
           <strong className="stat-strip__value">{stats.total}</strong>
         </article>
         <article className="stat-strip__item surface surface--row">
-          <p className="stat-strip__eyebrow">Perlu tindak lanjut</p>
+          <p className="stat-strip__eyebrow">{isAssignedQueue ? "Perlu ditangani" : "Perlu tindak lanjut"}</p>
           <p className="stat-strip__label">
             <AppIconBadge name="search" size="sm" tone="accent" />
             <span>Tiket terbuka</span>
@@ -317,7 +319,7 @@ export function TicketsPage() {
           <strong className="stat-strip__value">{stats.open}</strong>
         </article>
         <article className="stat-strip__item surface surface--row">
-          <p className="stat-strip__eyebrow">Arsip kerja</p>
+          <p className="stat-strip__eyebrow">{isAssignedQueue ? "Selesai di antrean" : "Arsip kerja"}</p>
           <p className="stat-strip__label">
             <AppIconBadge name="dashboard" size="sm" tone="cool" />
             <span>Tiket selesai</span>
@@ -481,30 +483,43 @@ export function TicketsPage() {
 
           {pagination.totalItems === 0 ? (
             <EmptyState
-              className="tickets-empty-state"
+              className={`tickets-empty-state ${isAssignedEmptyState ? "tickets-empty-state--queue" : ""}`}
               eyebrow={preset.key === "assigned" ? "Penugasan" : preset.key === "mine" ? "Akun Saya" : "Daftar Tiket"}
               width="wide"
               surface="subtle"
               title={preset.emptyTitle}
               description={
                 preset.key === "assigned"
-                  ? "Belum ada tiket yang sedang menjadi tanggung jawab Anda. Ambil tiket dari antrean utama saat siap menangani."
+                  ? "Belum ada tiket yang sedang menjadi tanggung jawab aktif Anda saat ini."
                   : permissions.canCreateTickets
                     ? preset.emptyDescription
                     : "Belum ada tiket yang dapat Anda akses saat ini."
               }
               supportText={
                 preset.key === "assigned"
-                  ? "Saat tiket baru ditugaskan atau Anda mengambil tiket dari antrean utama, daftarnya akan muncul di sini."
+                  ? "Buka antrean utama untuk mengambil tiket baru atau kembali lagi saat ada penugasan yang masuk ke akun Anda."
                   : preset.key === "mine"
                     ? "Gunakan halaman ini untuk memantau tiket yang Anda kirim begitu ada data yang tercatat."
                     : "Daftar ini akan mulai terisi setelah tiket baru dibuat atau diimpor ke alur operasional."
               }
-              action={permissions.canCreateTickets ? (
-                <Link className="button button--primary" to="/tickets/new">
-                  Buat Tiket Sekarang
-                </Link>
-              ) : undefined}
+              action={
+                preset.key === "assigned" ? (
+                  <div className="tickets-empty-state__cta-group">
+                    <Link className="button button--primary" to="/tickets">
+                      Buka Antrean Utama
+                    </Link>
+                    {permissions.canCreateTickets ? (
+                      <Link className="button button--secondary" to="/tickets/new">
+                        Buat Tiket Baru
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : permissions.canCreateTickets ? (
+                  <Link className="button button--primary" to="/tickets/new">
+                    Buat Tiket Sekarang
+                  </Link>
+                ) : undefined
+              }
             />
           ) : tickets.length === 0 ? (
             <EmptyState
@@ -526,11 +541,13 @@ export function TicketsPage() {
               <TicketTable
                 className="table-panel--workspace"
                 tickets={tickets}
-                title={isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
+                title={isAssignedQueue ? "Antrean kerja saya" : isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
                 eyebrow={isReporterPortal ? "Pelapor" : "Operasional"}
                 showOperatorSignals={!isReporterPortal}
                 helperText={
-                  isReporterPortal
+                  isAssignedQueue
+                    ? "Gunakan daftar ini untuk memilih tiket yang perlu Anda tangani lebih dulu."
+                    : isReporterPortal
                     ? "Gunakan daftar ini untuk membuka detail tiket, memantau progres, dan melihat pembaruan terbaru."
                     : "Daftar ini memakai pencarian, filter, pengurutan, dan pagination dari server."
                 }
@@ -570,11 +587,12 @@ export function TicketsPage() {
           )}
         </div>
 
-        <aside className={`tickets-shell__rail stack-md ${isEmptyLayout ? "tickets-shell__rail--empty" : ""}`}>
+        {!isAssignedEmptyState ? (
+        <aside className={`tickets-shell__rail stack-md ${isEmptyLayout ? "tickets-shell__rail--empty" : ""} ${isAssignedQueue ? "tickets-shell__rail--queue" : ""}`}>
           <section className="rail-section surface surface--subtle tickets-rail-section motion-reveal motion-reveal--delay-2">
             <div>
               <p className="section-eyebrow">{isReporterPortal ? "Nilai portal" : "Konteks tampilan"}</p>
-              <h3>{isReporterPortal ? "Ringkasan penggunaan portal" : "Status workspace saat ini"}</h3>
+              <h3>{isReporterPortal ? "Ringkasan penggunaan portal" : isAssignedQueue ? "Status antrean pribadi" : "Status workspace saat ini"}</h3>
             </div>
             <div className="compact-list">
               {isReporterPortal ? (
@@ -599,23 +617,23 @@ export function TicketsPage() {
                     <p>{preset.helperText}</p>
                   </article>
                   <article className="compact-list__item">
-                    <strong>Filter sedang aktif</strong>
-                    <p>{hasActiveFilters ? "Daftar sedang dipersempit oleh filter atau urutan khusus." : "Belum ada filter tambahan selain preset tampilan."}</p>
+                    <strong>{isAssignedQueue ? "Ritme antrean" : "Filter sedang aktif"}</strong>
+                    <p>{isAssignedQueue ? "Antrean ini selalu dikunci pada tiket yang memang sudah ditugaskan kepada Anda." : hasActiveFilters ? "Daftar sedang dipersempit oleh filter atau urutan khusus." : "Belum ada filter tambahan selain preset tampilan."}</p>
                   </article>
                   <article className="compact-list__item">
-                    <strong>Mode pencarian</strong>
-                    <p>{preset.isSearchLocked ? "Pencarian terkunci agar fokus tetap pada penugasan Anda." : "Pencarian terbuka untuk eksplorasi antrean secara bebas."}</p>
+                    <strong>{isAssignedQueue ? "Fokus kerja" : "Mode pencarian"}</strong>
+                    <p>{preset.isSearchLocked ? "Pencarian dikunci agar fokus tetap pada penugasan aktif Anda." : "Pencarian terbuka untuk eksplorasi antrean secara bebas."}</p>
                   </article>
                 </>
               )}
             </div>
           </section>
 
-          <section className="rail-section surface surface--ghost tickets-rail-section motion-reveal motion-reveal--delay-3">
+          <section className={`rail-section surface ${isAssignedQueue ? "surface--subtle" : "surface--ghost"} tickets-rail-section motion-reveal motion-reveal--delay-3`}>
             <div className="compact-toolbar tickets-rail-section__header">
               <div className="compact-toolbar__copy">
                 <p className="compact-toolbar__eyebrow">{isReporterPortal ? "Panduan cepat" : "Preset tampilan"}</p>
-                <strong>{isReporterPortal ? "Artikel yang sering dibuka" : "Pindah fokus tanpa mengulang filter"}</strong>
+                <strong>{isReporterPortal ? "Artikel yang sering dibuka" : isAssignedQueue ? "Pindah fokus kerja dengan cepat" : "Pindah fokus tanpa mengulang filter"}</strong>
               </div>
               {isReporterPortal ? (
                 <div className="compact-toolbar__group">
@@ -659,7 +677,7 @@ export function TicketsPage() {
                 <div className="compact-list tickets-preset-notes">
                   <article className="compact-list__item">
                     <strong>Antrean utama</strong>
-                    <p>Lihat semua tiket yang ada dalam jangkauan operasional.</p>
+                    <p>{isAssignedQueue ? "Buka antrean utama saat Anda siap mengambil tiket berikutnya." : "Lihat semua tiket yang ada dalam jangkauan operasional."}</p>
                   </article>
                   <article className="compact-list__item">
                     <strong>Ditugaskan ke saya</strong>
@@ -670,6 +688,7 @@ export function TicketsPage() {
             )}
           </section>
         </aside>
+        ) : null}
       </div>
     </section>
   );

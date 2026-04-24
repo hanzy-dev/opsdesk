@@ -112,5 +112,6 @@ describe("TicketsPage error handling", () => {
     });
 
     expect(screen.getByText("Fokus pada tiket yang ditugaskan ke Anda")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buka Antrean Utama" })).toHaveAttribute("href", "/tickets");
   });
 });
