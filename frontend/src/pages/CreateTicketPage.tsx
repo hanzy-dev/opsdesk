@@ -58,6 +58,17 @@ type AttachmentDraft = {
 };
 
 type TicketFormErrors = Partial<Record<"title" | "priority" | "category" | "team" | "description", string>>;
+type ImpactForm = {
+  affectedUsers: string;
+  workStopped: "yes" | "partial" | "no";
+  affectedService: string;
+};
+
+const initialImpactForm: ImpactForm = {
+  affectedUsers: "",
+  workStopped: "no",
+  affectedService: "",
+};
 
 export function CreateTicketPage() {
   const { session, profile, permissions } = useAuth();
@@ -75,6 +86,7 @@ export function CreateTicketPage() {
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isTeamCustomized, setIsTeamCustomized] = useState(false);
+  const [impactForm, setImpactForm] = useState<ImpactForm>(initialImpactForm);
   const [relatedTicketHints, setRelatedTicketHints] = useState<ReturnType<typeof findRelatedTickets>>([]);
   const [isLoadingRelatedTickets, setIsLoadingRelatedTickets] = useState(false);
   const [assistFeedback, setAssistFeedback] = useState<string | null>(null);
@@ -114,6 +126,18 @@ export function CreateTicketPage() {
       ? "Belum ada lampiran dipilih."
       : `${attachmentDrafts.length} lampiran siap disertakan pada tiket ini.`;
   const isSubmitDisabled = isSubmitting || !isFormValid;
+  const handlingPreview = useMemo(() => buildHandlingPreview(form.priority, form.category, form.team, impactForm), [form.category, form.priority, form.team, impactForm]);
+  const relatedHintSummary = useMemo(() => {
+    if (isLoadingRelatedTickets) {
+      return "Mencari tiket serupa untuk membantu Anda mengecek konteks yang mungkin sudah pernah masuk.";
+    }
+
+    if (relatedTicketHints.length === 0) {
+      return "Belum ada tiket mirip yang cukup kuat untuk ditampilkan dari judul dan deskripsi saat ini.";
+    }
+
+    return `${relatedTicketHints.length} tiket serupa ditemukan. Gunakan sebagai pengecekan cepat sebelum Anda mengirim tiket baru.`;
+  }, [isLoadingRelatedTickets, relatedTicketHints.length]);
 
   useEffect(() => {
     attachmentDraftsRef.current = attachmentDrafts;
@@ -326,6 +350,10 @@ export function CreateTicketPage() {
     setAssistFeedback(successMessage);
   }
 
+  function handleImpactChange<Field extends keyof ImpactForm>(field: Field, value: ImpactForm[Field]) {
+    setImpactForm((current) => ({ ...current, [field]: value }));
+  }
+
   function handleAttachmentSelection(event: React.ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? []);
     if (selectedFiles.length === 0) {
@@ -521,6 +549,51 @@ export function CreateTicketPage() {
             {fieldErrors.team ? <small>{fieldErrors.team}</small> : <small>Tentukan area operasional yang paling relevan untuk triase awal.</small>}
           </label>
 
+          <article className="field field--full create-ticket-impact">
+            <div className="compact-toolbar__copy">
+              <p className="compact-toolbar__eyebrow">Dampak gangguan</p>
+              <strong>Tambahkan konteks operasional singkat</strong>
+              <p>Bantu triase awal dengan perkiraan dampak, apakah pekerjaan terhenti, dan layanan yang paling terasa terdampak.</p>
+            </div>
+            <div className="create-ticket-impact__grid">
+              <label className="field field--compact">
+                <span>Jumlah user terdampak</span>
+                <input
+                  inputMode="numeric"
+                  onChange={(event) => handleImpactChange("affectedUsers", event.target.value)}
+                  placeholder="Contoh: 12"
+                  value={impactForm.affectedUsers}
+                />
+                <small>Bisa berupa angka perkiraan atau tim kecil yang terdampak.</small>
+              </label>
+
+              <label className="field field--compact">
+                <span>Pekerjaan terhenti</span>
+                <SelectControl
+                  ariaLabel="Status pekerjaan terhenti"
+                  onChange={(value) => handleImpactChange("workStopped", value as ImpactForm["workStopped"])}
+                  options={[
+                    { value: "no", label: "Tidak" },
+                    { value: "partial", label: "Terganggu sebagian" },
+                    { value: "yes", label: "Ya, terhenti" },
+                  ]}
+                  value={impactForm.workStopped}
+                />
+                <small>Pakai status yang paling mendekati kondisi pengguna saat ini.</small>
+              </label>
+
+              <label className="field field--compact">
+                <span>Layanan atau sistem terdampak</span>
+                <input
+                  onChange={(event) => handleImpactChange("affectedService", event.target.value)}
+                  placeholder="Contoh: Dashboard tiket / VPN / Email"
+                  value={impactForm.affectedService}
+                />
+                <small>Tulis nama layanan utama agar konteks gangguan lebih cepat dibaca.</small>
+              </label>
+            </div>
+          </article>
+
           <label className={`field field--full ${fieldErrors.description ? "field--invalid" : ""}`}>
             <span>Deskripsi</span>
             <textarea
@@ -543,6 +616,19 @@ export function CreateTicketPage() {
               Pilihan ini membantu petugas memahami area kerja tiket sejak awal. Penugasan ke petugas dilakukan pada tahap
               triase atau tindak lanjut operasional.
             </p>
+          </article>
+
+          <article className="field field--full inline-callout create-ticket-target-preview">
+            <p className="inline-callout__eyebrow">Preview target penanganan</p>
+            <strong>{handlingPreview.title}</strong>
+            <p>{handlingPreview.description}</p>
+            <div className="preset-group create-ticket-target-preview__chips">
+              {handlingPreview.tags.map((tag) => (
+                <span className="preset-chip preset-chip--active" key={tag}>
+                  {tag}
+                </span>
+              ))}
+            </div>
           </article>
 
           <article className={`field field--full smart-assist-card motion-reveal ${assistFeedback ? "status-flash status-flash--success" : ""}`}>
@@ -651,6 +737,10 @@ export function CreateTicketPage() {
                     ? "Mencari tiket serupa..."
                     : "Gunakan hint ini untuk mengecek apakah kendala serupa sudah pernah masuk."}
                 </small>
+              </div>
+              <div className="smart-related-summary">
+                <strong>{relatedHintSummary}</strong>
+                <p>Hint ini bersifat opsional dan tidak mengubah isi tiket Anda. Gunakan untuk menghindari tiket ganda atau memperkaya konteks deskripsi.</p>
               </div>
               {relatedTicketHints.length === 0 ? (
                 <p className="form-hint">Belum ada tiket mirip yang cukup kuat untuk ditampilkan.</p>
@@ -841,6 +931,41 @@ async function uploadAttachmentsForTicket(
   setSubmitNotice(failedUploads.length > 0 ? "Tiket berhasil dibuat. Sebagian lampiran perlu diunggah ulang dari halaman detail." : "Tiket dan lampiran berhasil disimpan.");
 
   return failedUploads;
+}
+
+function buildHandlingPreview(
+  priority: CreateTicketInput["priority"],
+  category: CreateTicketInput["category"],
+  team: CreateTicketInput["team"],
+  impact: ImpactForm,
+) {
+  const impactTags = [
+    `${getPriorityLabel(priority)}`,
+    `${getTicketCategoryLabel(category)}`,
+    `${getTicketTeamLabel(team)}`,
+    impact.affectedService.trim() ? `Layanan: ${impact.affectedService.trim()}` : "Layanan belum ditentukan",
+    impact.affectedUsers.trim() ? `${impact.affectedUsers.trim()} user terdampak` : "Jumlah user belum diisi",
+    impact.workStopped === "yes" ? "Pekerjaan terhenti" : impact.workStopped === "partial" ? "Pekerjaan terganggu sebagian" : "Pekerjaan masih berjalan",
+  ];
+
+  const priorityText =
+    priority === "high"
+      ? "tindak lanjut cepat dan pembacaan urgensi di antrean prioritas"
+      : priority === "medium"
+        ? "triase reguler dengan validasi dampak operasional"
+        : "penanganan terjadwal setelah antrean yang lebih mendesak stabil";
+  const workStopText =
+    impact.workStopped === "yes"
+      ? "Karena pekerjaan disebut terhenti, petugas kemungkinan akan memeriksa jalan keluar sementara lebih dulu."
+      : impact.workStopped === "partial"
+        ? "Karena gangguan masih sebagian, triase akan cenderung fokus pada ruang lingkup dampak dan prioritas layanan."
+        : "Karena pekerjaan masih berjalan, triase awal biasanya fokus memastikan detail gejala dan konteks layanan.";
+
+  return {
+    title: `${getTicketTeamLabel(team)} kemungkinan menjadi titik triase awal untuk ${getTicketCategoryLabel(category).toLowerCase()} ini`,
+    description: `Dengan prioritas ${getPriorityLabel(priority).toLowerCase()}, tiket ini akan masuk ke antrean ${priorityText}. ${workStopText}`,
+    tags: impactTags,
+  };
 }
 
 function formatFileSize(sizeBytes: number) {

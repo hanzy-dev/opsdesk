@@ -140,6 +140,12 @@ describe("CreateTicketPage smoke tests", () => {
     fireEvent.change(screen.getByPlaceholderText("Jelaskan gejala, dampak, dan konteks singkat."), {
       target: { value: "Dashboard gagal memuat data tiket selama jam sibuk." },
     });
+    fireEvent.change(screen.getByPlaceholderText("Contoh: 12"), {
+      target: { value: "18" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Contoh: Dashboard tiket / VPN / Email"), {
+      target: { value: "Dashboard tiket" },
+    });
 
     const file = new File(["mock image"], "dashboard-error.png", { type: "image/png" });
     fireEvent.change(screen.getByLabelText("Lampiran pendukung"), {
@@ -162,6 +168,10 @@ describe("CreateTicketPage smoke tests", () => {
         reporterEmail: "aulia@example.com",
       });
     });
+
+    expect(screen.getByText("Preview target penanganan")).toBeInTheDocument();
+    expect(screen.getByText("Layanan: Dashboard tiket")).toBeInTheDocument();
+    expect(screen.getByText("18 user terdampak")).toBeInTheDocument();
 
     await waitFor(() => {
       expect(requestAttachmentUploadUrlMock).toHaveBeenCalledWith("TCK-2001", {
@@ -283,6 +293,7 @@ describe("CreateTicketPage smoke tests", () => {
     expect(await screen.findByText("Cek panduan singkat sebelum tiket dikirim")).toBeInTheDocument();
     expect(screen.getByText("Masalah login, sandi, atau akses SSO")).toBeInTheDocument();
     expect(await screen.findByText("Hint kemungkinan duplikat atau tiket terkait")).toBeInTheDocument();
+    expect(screen.getByText(/1 tiket serupa ditemukan/i)).toBeInTheDocument();
     expect(screen.getByText("Login SSO gagal untuk dosen")).toBeInTheDocument();
   });
 });
