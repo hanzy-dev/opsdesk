@@ -996,12 +996,12 @@ textarea:focus-visible {
 .section-heading {
   align-items: flex-start;
   flex-wrap: wrap;
-  row-gap: var(--support-to-content-gap);
+  row-gap: calc(var(--support-to-content-gap) + 2px);
 }
 
 .section-heading > div:first-child {
   display: grid;
-  gap: var(--eyebrow-to-heading-gap);
+  gap: calc(var(--eyebrow-to-heading-gap) + 1px);
 }
 
 .hero-card__supporting {
@@ -1185,7 +1185,7 @@ textarea:focus-visible {
 
 .compact-toolbar__copy {
   display: grid;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -1224,7 +1224,7 @@ textarea:focus-visible {
 
 .settings-row-panel__copy {
   display: grid;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
 }
 
@@ -1264,8 +1264,8 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: var(--icon-to-label-gap);
-  min-height: 36px;
-  padding: 8px 14px;
+  min-height: 38px;
+  padding: 8px 15px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
@@ -1290,7 +1290,7 @@ textarea:focus-visible {
 
 .inline-callout {
   display: grid;
-  gap: 10px;
+  gap: 12px;
   padding: 16px 18px;
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1302,7 +1302,7 @@ textarea:focus-visible {
 .inline-callout__header {
   display: flex;
   align-items: flex-start;
-  gap: var(--icon-to-label-gap);
+  gap: 12px;
 }
 
 .inline-callout__header strong,
@@ -1312,7 +1312,7 @@ textarea:focus-visible {
 
 .inline-callout__header-copy {
   display: grid;
-  gap: 4px;
+  gap: 5px;
 }
 
 .inline-callout__actions {
@@ -1759,7 +1759,7 @@ textarea:focus-visible {
 }
 
 .state-card {
-  padding: 28px;
+  padding: 30px 28px;
   border-radius: 24px;
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.06), transparent 26%),
@@ -1800,17 +1800,17 @@ textarea:focus-visible {
 .loading-state__body {
   display: grid;
   justify-items: center;
-  gap: var(--heading-to-support-gap);
+  gap: 12px;
 }
 
 .state-card__body {
   display: grid;
   justify-items: center;
-  gap: var(--heading-to-support-gap);
+  gap: 12px;
 }
 
 .state-card__icon {
-  margin-bottom: 0;
+  margin-bottom: 2px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
 }
 
@@ -1824,6 +1824,7 @@ textarea:focus-visible {
 .state-card__support {
   max-width: var(--empty-shell-content-max);
   font-size: 0.86rem;
+  line-height: 1.6;
 }
 
 .state-card__reference {
@@ -1835,15 +1836,16 @@ textarea:focus-visible {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  gap: 10px;
   width: 100%;
   margin-top: 0;
-  padding-top: var(--cta-to-helper-gap);
+  padding-top: 10px;
 }
 
 .empty-state__content {
   display: grid;
   justify-items: center;
-  gap: var(--heading-to-support-gap);
+  gap: 12px;
   width: 100%;
   max-width: var(--empty-shell-content-max);
 }
@@ -1853,13 +1855,23 @@ textarea:focus-visible {
   margin: 0;
 }
 
+.empty-state__content h3 {
+  max-width: 24ch;
+  line-height: 1.24;
+}
+
+.empty-state__content > p {
+  line-height: 1.6;
+}
+
 .empty-state__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  gap: 10px;
   width: 100%;
   margin-top: 0;
-  padding-top: var(--cta-to-helper-gap);
+  padding-top: 10px;
 }
 
 .loading-state--compact {
@@ -1889,7 +1901,7 @@ textarea:focus-visible {
   width: min(420px, 100%);
   display: grid;
   gap: 10px;
-  margin-top: 0;
+  margin-top: 2px;
   animation: content-fade-in var(--motion-base) var(--ease-emphasis);
 }
 
@@ -3861,7 +3873,7 @@ textarea:focus-visible {
   position: relative;
   width: 100%;
   display: grid;
-  gap: 20px;
+  gap: 22px;
   padding: 28px;
   border-radius: 28px;
   overflow: hidden;
@@ -3886,7 +3898,7 @@ textarea:focus-visible {
 .auth-form-surface__intro,
 .auth-story__intro {
   display: grid;
-  gap: var(--heading-to-support-gap);
+  gap: 12px;
 }
 
 .auth-form-surface__intro h1,
@@ -3940,19 +3952,19 @@ textarea:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 16px;
-  padding-top: 2px;
+  padding-top: 4px;
 }
 
 .auth-rail {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   align-content: center;
   min-width: 0;
 }
 
 .auth-story {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .auth-story__list {
@@ -5425,12 +5437,12 @@ textarea:focus-visible {
 
 .tickets-empty-state {
   min-height: 320px;
-  padding: 32px 24px;
+  padding: 34px 24px;
 }
 
 .tickets-empty-state--queue {
   min-height: 360px;
-  padding: 40px 28px;
+  padding: 42px 28px;
 }
 
 .tickets-empty-state .empty-state__content {
@@ -5472,11 +5484,11 @@ textarea:focus-visible {
 }
 
 .ticket-detail-page .stack-lg > .panel {
-  gap: 14px;
+  gap: 16px;
 }
 
 .ticket-detail-page aside.stack-lg {
-  gap: var(--section-gap);
+  gap: var(--section-gap-loose);
 }
 
 .create-ticket-page,
@@ -5663,7 +5675,7 @@ textarea:focus-visible {
 
 .help-center-highlight {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   padding: 18px 20px;
   max-width: 420px;
 }
