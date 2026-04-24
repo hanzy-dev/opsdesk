@@ -427,9 +427,12 @@ textarea:focus-visible {
 .sidebar__nav {
   display: grid;
   gap: 4px;
+  align-content: start;
+  grid-auto-rows: max-content;
 }
 
 .sidebar__body {
+  display: block;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -490,6 +493,7 @@ textarea:focus-visible {
 
 .sidebar__link {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   min-height: 54px;
   gap: 9px;
@@ -549,6 +553,9 @@ textarea:focus-visible {
   font-weight: 600;
   font-size: 0.88rem;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar__link-cue {
