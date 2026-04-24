@@ -56,6 +56,29 @@ Alur aman yang direkomendasikan:
 4. Minta user login ke OpsDesk minimal satu kali.
 5. Jika user adalah operator, verifikasi bahwa profilnya sudah tersinkron sehingga bisa muncul di assignment picker.
 
+## Matriks Role Praktis
+
+Matriks ini sengaja ditulis berdasarkan implementasi saat ini, bukan asumsi future enterprise feature.
+
+| Kemampuan praktis | Reporter | Agent | Admin |
+| --- | --- | --- | --- |
+| Login ke aplikasi | Ya | Ya | Ya |
+| Melihat dashboard operasional | Tidak | Ya | Ya |
+| Melihat daftar tiket operasional | Tidak | Ya | Ya |
+| Melihat tiket milik sendiri | Ya | Ya | Ya |
+| Membuat tiket baru | Ya | Tidak | Ya |
+| Membuka Help Center, Profil, dan Pengaturan | Ya | Ya | Ya |
+| Mengubah status tiket yang bisa diakses | Tidak | Ya | Ya |
+| Menambahkan komentar pada tiket yang bisa diakses | Ya | Ya | Ya |
+| Mengelola assignment tiket | Tidak | Ya | Ya |
+| Melihat queue `Ditugaskan ke Saya` | Tidak | Ya | Ya |
+
+Catatan penting:
+
+- `agent` dan `admin` adalah role operasional.
+- `reporter` tetap dapat login dan mengelola identitas akun, tetapi tidak mendapat workspace operasional penuh.
+- Assignment picker membaca profil aplikasi yang sudah tersimpan, bukan daftar Cognito mentah saat runtime.
+
 ## Opsi 1: Membuat User Via AWS Console
 
 Langkah ini cocok untuk demo, onboarding cepat, atau operator yang tidak memakai terminal.
@@ -95,63 +118,188 @@ Pastikan:
 - email sesuai
 - akun dalam status aktif
 
+### Contoh setup akun `Reporter`
+
+Gunakan langkah Console di atas, lalu pastikan:
+
+1. username memakai email reviewer, misalnya `demo.reporter@contoh.com`
+2. user masuk ke group `reporter`
+3. user dapat login dan membuka:
+   - halaman login
+   - buat tiket
+   - tiket saya
+
+### Contoh setup akun `Agent`
+
+Gunakan langkah Console di atas, lalu pastikan:
+
+1. username memakai email reviewer, misalnya `demo.agent@contoh.com`
+2. user masuk ke group `agent`
+3. user login ke aplikasi minimal satu kali
+4. bila perlu assignment lintas operator saat demo, buka `Profil` lalu klik `Simpan Profil` agar record profil ikut sinkron
+
+### Contoh setup akun `Admin`
+
+Gunakan langkah Console di atas, lalu pastikan:
+
+1. username memakai email reviewer, misalnya `demo.admin@contoh.com`
+2. user masuk ke group `admin`
+3. user login ke aplikasi minimal satu kali
+4. gunakan akun ini untuk reviewer yang perlu melihat visibilitas operasional paling luas
+
 ## Opsi 2: Membuat User Via AWS CLI
 
 Contoh berikut praktis untuk operator teknis dan mudah dicopy.
 
-### Bash / Git Bash
+### Contoh `Reporter` via Bash / Git Bash
 
 ```bash
 aws cognito-idp admin-create-user \
   --region ap-southeast-1 \
   --user-pool-id ap-southeast-1_sMFqei7IT \
-  --username user.baru@contoh.com \
-  --user-attributes Name=email,Value=user.baru@contoh.com Name=email_verified,Value=true \
+  --username demo.reporter@contoh.com \
+  --user-attributes Name=email,Value=demo.reporter@contoh.com Name=email_verified,Value=true \
   --message-action SUPPRESS
 
 aws cognito-idp admin-set-user-password \
   --region ap-southeast-1 \
   --user-pool-id ap-southeast-1_sMFqei7IT \
-  --username user.baru@contoh.com \
+  --username demo.reporter@contoh.com \
   --password 'PasswordAwal123' \
   --permanent
 
 aws cognito-idp admin-add-user-to-group \
   --region ap-southeast-1 \
   --user-pool-id ap-southeast-1_sMFqei7IT \
-  --username user.baru@contoh.com \
+  --username demo.reporter@contoh.com \
   --group-name reporter
 ```
 
-### PowerShell
+### Contoh `Agent` via Bash / Git Bash
+
+```bash
+aws cognito-idp admin-create-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username demo.agent@contoh.com \
+  --user-attributes Name=email,Value=demo.agent@contoh.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username demo.agent@contoh.com \
+  --password 'PasswordAwal123' \
+  --permanent
+
+aws cognito-idp admin-add-user-to-group \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username demo.agent@contoh.com \
+  --group-name agent
+```
+
+### Contoh `Admin` via Bash / Git Bash
+
+```bash
+aws cognito-idp admin-create-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username demo.admin@contoh.com \
+  --user-attributes Name=email,Value=demo.admin@contoh.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username demo.admin@contoh.com \
+  --password 'PasswordAwal123' \
+  --permanent
+
+aws cognito-idp admin-add-user-to-group \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username demo.admin@contoh.com \
+  --group-name admin
+```
+
+### Contoh `Reporter` via PowerShell
 
 ```powershell
 aws cognito-idp admin-create-user `
   --region ap-southeast-1 `
   --user-pool-id ap-southeast-1_sMFqei7IT `
-  --username user.baru@contoh.com `
-  --user-attributes Name=email,Value=user.baru@contoh.com Name=email_verified,Value=true `
+  --username demo.reporter@contoh.com `
+  --user-attributes Name=email,Value=demo.reporter@contoh.com Name=email_verified,Value=true `
   --message-action SUPPRESS
 
 aws cognito-idp admin-set-user-password `
   --region ap-southeast-1 `
   --user-pool-id ap-southeast-1_sMFqei7IT `
-  --username user.baru@contoh.com `
+  --username demo.reporter@contoh.com `
   --password 'PasswordAwal123' `
   --permanent
 
 aws cognito-idp admin-add-user-to-group `
   --region ap-southeast-1 `
   --user-pool-id ap-southeast-1_sMFqei7IT `
-  --username user.baru@contoh.com `
+  --username demo.reporter@contoh.com `
   --group-name reporter
+```
+
+### Contoh `Agent` via PowerShell
+
+```powershell
+aws cognito-idp admin-create-user `
+  --region ap-southeast-1 `
+  --user-pool-id ap-southeast-1_sMFqei7IT `
+  --username demo.agent@contoh.com `
+  --user-attributes Name=email,Value=demo.agent@contoh.com Name=email_verified,Value=true `
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password `
+  --region ap-southeast-1 `
+  --user-pool-id ap-southeast-1_sMFqei7IT `
+  --username demo.agent@contoh.com `
+  --password 'PasswordAwal123' `
+  --permanent
+
+aws cognito-idp admin-add-user-to-group `
+  --region ap-southeast-1 `
+  --user-pool-id ap-southeast-1_sMFqei7IT `
+  --username demo.agent@contoh.com `
+  --group-name agent
+```
+
+### Contoh `Admin` via PowerShell
+
+```powershell
+aws cognito-idp admin-create-user `
+  --region ap-southeast-1 `
+  --user-pool-id ap-southeast-1_sMFqei7IT `
+  --username demo.admin@contoh.com `
+  --user-attributes Name=email,Value=demo.admin@contoh.com Name=email_verified,Value=true `
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password `
+  --region ap-southeast-1 `
+  --user-pool-id ap-southeast-1_sMFqei7IT `
+  --username demo.admin@contoh.com `
+  --password 'PasswordAwal123' `
+  --permanent
+
+aws cognito-idp admin-add-user-to-group `
+  --region ap-southeast-1 `
+  --user-pool-id ap-southeast-1_sMFqei7IT `
+  --username demo.admin@contoh.com `
+  --group-name admin
 ```
 
 Catatan:
 
 - `--message-action SUPPRESS` berarti Cognito tidak mengirim undangan otomatis.
-- Ganti `reporter` menjadi `agent` atau `admin` sesuai kebutuhan.
 - Pada implementasi saat ini, hanya `agent` dan `admin` yang bisa menerima assignment tiket.
+- Untuk akun demo reviewer, lebih aman menyiapkan email terpisah per role daripada sering memindahkan satu akun antar group.
 
 ## Command Referensi Inti
 
@@ -286,6 +434,48 @@ curl -H "Authorization: Bearer <id-token>" \
   https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/profile/me
 ```
 
+## Panduan Akun Demo Reviewer
+
+Untuk demo atau review, siapkan minimal tiga akun:
+
+### 1. Akun `Reporter`
+
+Gunakan untuk:
+
+- login reviewer dari sudut pandang pelapor
+- membuat tiket baru
+- menunjukkan tiket milik sendiri
+- menunjukkan detail tiket tanpa menu operasional
+
+### 2. Akun `Agent`
+
+Gunakan untuk:
+
+- membuka dashboard operasional
+- membuka `Daftar Tiket`
+- membuka `Ditugaskan ke Saya`
+- update status dan komentar
+
+Catatan:
+
+- minta akun ini login minimal sekali sebelum demo
+- jika akun baru dipromosikan dari `reporter`, minta user buka `Profil` lalu klik `Simpan Profil`
+
+### 3. Akun `Admin`
+
+Gunakan untuk:
+
+- menunjukkan visibilitas operasional paling luas
+- membantu triage
+- menunjukkan assignment dan distribusi kerja
+
+Checklist sebelum demo:
+
+- semua akun bisa login
+- password sudah permanen atau flow reset sudah selesai
+- akun `agent` dan `admin` sudah pernah login ke aplikasi
+- ada minimal satu tiket terbuka agar reviewer tidak melihat state kosong sepanjang demo
+
 ## Mengapa User Tidak Langsung Muncul Di Assignment Picker
 
 Ini adalah bagian paling penting untuk operator.
@@ -326,6 +516,7 @@ Biasanya JWT tidak membawa group yang sesuai. Verifikasi:
 
 - hasil `admin-list-groups-for-user`
 - hasil endpoint `/v1/auth/me`
+- user sudah logout lalu login ulang setelah perubahan group
 
 ### User lama masih terbaca dengan role lama
 
@@ -334,6 +525,15 @@ Biasanya profil DynamoDB belum tersinkron ulang. Minta user:
 1. login ulang
 2. buka `Profil`
 3. klik `Simpan Profil`
+
+### User dibuat di Cognito tetapi reviewer tetap gagal login
+
+Periksa:
+
+1. password sudah di-set sebagai permanen atau flow reset selesai
+2. username yang dipakai sama dengan email yang dibuat di Cognito
+3. app client frontend masih mengarah ke User Pool deployment aktif
+4. user tidak berada pada status yang masih menunggu challenge lama
 
 ## Referensi
 

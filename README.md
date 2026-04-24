@@ -85,6 +85,8 @@ Dengan kata lain, chat tetap berguna untuk koordinasi cepat, tetapi OpsDesk lebi
 - AWS region: `ap-southeast-1`
 - SAM stack aktif: `opsdesk-dev`
 
+Kontrak API live untuk deployment ini didokumentasikan di [docs/openapi.yaml](./docs/openapi.yaml) dan ditampilkan ulang di Swagger UI `https://opsdesk-teal.vercel.app/api-docs`. Keduanya mengikuti endpoint backend AWS yang benar-benar aktif saat ini, bukan mock docs.
+
 Konfigurasi Cognito deployment aktif:
 
 - User Pool ID: `ap-southeast-1_sMFqei7IT`
@@ -157,6 +159,147 @@ Makna praktis tiap role:
 - `reporter`: fokus pada pelaporan masalah dan pemantauan tiket miliknya sendiri.
 - `agent`: fokus pada triage, penanganan, update status, komentar, dan pengambilan assignment.
 - `admin`: memiliki cakupan operasional penuh dan dapat membuat tiket selain mengelola penugasan.
+
+## Setup Akun Reviewer Dan Demo
+
+Bagian ini dibuat untuk reviewer, dosen, atau operator yang ingin menyiapkan akun demo dengan cepat tanpa menebak-nebak alur Cognito.
+
+### Prinsip yang perlu diingat
+
+- Sumber kebenaran role ada di Cognito group `reporter`, `agent`, dan `admin`.
+- Role tidak diubah dari halaman profil frontend.
+- User operasional baru biasanya baru muncul di assignment picker setelah login ke OpsDesk minimal satu kali.
+- Jika role user baru saja berubah, minta user logout lalu login ulang agar JWT dan profil aplikasi tersinkron.
+
+### Langkah cepat via AWS CLI
+
+Contoh berikut memakai deployment aktif saat ini:
+
+- Region: `ap-southeast-1`
+- User Pool ID: `ap-southeast-1_sMFqei7IT`
+
+Contoh `Reporter`:
+
+```bash
+aws cognito-idp admin-create-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.reporter@contoh.com \
+  --user-attributes Name=email,Value=reviewer.reporter@contoh.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.reporter@contoh.com \
+  --password 'PasswordAwal123' \
+  --permanent
+
+aws cognito-idp admin-add-user-to-group \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.reporter@contoh.com \
+  --group-name reporter
+```
+
+Contoh `Agent`:
+
+```bash
+aws cognito-idp admin-create-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.agent@contoh.com \
+  --user-attributes Name=email,Value=reviewer.agent@contoh.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.agent@contoh.com \
+  --password 'PasswordAwal123' \
+  --permanent
+
+aws cognito-idp admin-add-user-to-group \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.agent@contoh.com \
+  --group-name agent
+```
+
+Contoh `Admin`:
+
+```bash
+aws cognito-idp admin-create-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.admin@contoh.com \
+  --user-attributes Name=email,Value=reviewer.admin@contoh.com Name=email_verified,Value=true \
+  --message-action SUPPRESS
+
+aws cognito-idp admin-set-user-password \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.admin@contoh.com \
+  --password 'PasswordAwal123' \
+  --permanent
+
+aws cognito-idp admin-add-user-to-group \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.admin@contoh.com \
+  --group-name admin
+```
+
+Verifikasi group user:
+
+```bash
+aws cognito-idp admin-list-groups-for-user \
+  --region ap-southeast-1 \
+  --user-pool-id ap-southeast-1_sMFqei7IT \
+  --username reviewer.agent@contoh.com
+```
+
+### Langkah cepat via AWS Management Console
+
+Ulangi alur berikut untuk setiap role demo:
+
+1. Buka AWS Console lalu masuk ke Amazon Cognito.
+2. Pilih User Pool `opsdesk-dev-users` atau pool dengan ID `ap-southeast-1_sMFqei7IT`.
+3. Buka menu `Users`, lalu pilih `Create user`.
+4. Isi email reviewer sebagai username dan atribut email.
+5. Tandai email sebagai verified bila Anda ingin akun langsung siap dipakai untuk demo.
+6. Set password permanen, atau buat user lalu tetapkan password dari halaman detail user.
+7. Buka tab `Groups` dan tambahkan user ke salah satu group:
+   - `reporter`
+   - `agent`
+   - `admin`
+8. Minta user login ke OpsDesk minimal sekali.
+9. Untuk `agent` atau `admin`, verifikasi bahwa akun tersebut akhirnya muncul di assignment picker setelah sinkronisasi profil.
+
+### Panduan akun demo
+
+Untuk demo reviewer, akun minimum yang disarankan:
+
+- `Reporter`: dipakai untuk login, membuat tiket, melihat tiket sendiri, dan menunjukkan sudut pandang pelapor.
+- `Agent`: dipakai untuk dashboard operasional, `Ditugaskan ke Saya`, update status, dan komentar tindak lanjut.
+- `Admin`: dipakai untuk visibilitas operasional penuh dan distribusi assignment.
+
+Praktik yang paling aman:
+
+- siapkan 3 akun berbeda, bukan 1 akun dengan role yang sering diganti
+- minta akun `agent` dan `admin` login minimal satu kali sebelum demo agar profilnya tersimpan
+- siapkan minimal satu tiket terbuka dan satu tiket yang sudah punya assignee agar flow lebih mudah dijelaskan
+
+### Troubleshooting singkat
+
+- User bisa login tetapi menu operasional tidak muncul:
+  Pastikan user benar-benar berada di group `agent` atau `admin`, lalu logout dan login ulang agar token terbaru dipakai.
+- User `agent` atau `admin` belum muncul di assignment picker:
+  Pastikan user sudah pernah login minimal sekali, lalu buka `Profil` dan klik `Simpan Profil` agar role tersimpan ke tabel profil aplikasi.
+- Reviewer salah group atau role terasa tidak sesuai:
+  Cek hasil `admin-list-groups-for-user`. Jika perlu, remove dari group lama lalu add ke group baru, kemudian minta login ulang.
+
+Panduan operator yang lebih rinci tersedia di [docs/operator-guide.md](./docs/operator-guide.md).
 
 ## Fitur Yang Sudah Tersedia
 

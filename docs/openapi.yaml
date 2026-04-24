@@ -5,6 +5,8 @@ info:
   description: |
     OpenAPI specification for the current OpsDesk backend implementation.
 
+    This file is the live API contract for the currently deployed AWS-backed backend used by the frontend and Swagger UI viewer. It documents the endpoints that are actually registered in the Go router today; it is not a mock or aspirational API.
+
     The deployed API is exposed through AWS API Gateway HTTP API and served by a Go backend running on AWS Lambda container image. Data persistence uses DynamoDB, authentication uses Amazon Cognito, and ticket attachments use private Amazon S3 objects with presigned URLs.
 
     The API provides a simple serverless helpdesk workflow for:
@@ -39,6 +41,8 @@ tags:
     description: Identity lookup endpoints backed by Cognito JWT verification.
   - name: Profile
     description: Current-account profile retrieval and partial update operations.
+  - name: Notifications
+    description: Authenticated notification feed derived from ticket activity relevant to the current user.
   - name: Tickets
     description: Ticket CRUD-style workflow, activities, comments, assignment, and attachment operations.
 
@@ -103,6 +107,41 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProfileSuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags:
+        - Profile
+      summary: Update current profile
+      operationId: updateCurrentProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+            example:
+              displayName: Rina Aulia
+              avatarUrl: https://images.example.com/rina.jpg
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProfileSuccessResponse"
+        "400":
+          description: Profile update request is invalid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Missing or invalid bearer token
           content:
@@ -175,35 +214,43 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    patch:
+
+  /notifications:
+    get:
       tags:
-        - Profile
-      summary: Update current profile
-      operationId: updateCurrentProfile
+        - Notifications
+      summary: List notifications relevant to the authenticated user
+      operationId: listNotifications
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateProfileRequest"
-            example:
-              displayName: Rina Aulia
-              avatarUrl: https://images.example.com/rina.jpg
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 12
+          description: Optional notification limit. Values outside `1..30` fall back to the backend default of `12`.
       responses:
         "200":
-          description: Profile updated successfully
+          description: Notifications returned successfully
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ProfileSuccessResponse"
-        "400":
-          description: Profile update request is invalid
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/NotificationListSuccessResponse"
+              example:
+                data:
+                  - id: ACT-0009
+                    ticketId: TCK-0002
+                    ticketTitle: API Gateway timeout
+                    type: assignment_changed
+                    title: Tiket ditugaskan ke Anda
+                    message: API Gateway timeout sekarang masuk ke antrean kerja Anda.
+                    timestamp: "2026-04-14T09:18:00Z"
+                    actorName: Admin OpsDesk
+                    link: /tickets/TCK-0002
         "401":
           description: Missing or invalid bearer token
           content:
@@ -238,6 +285,18 @@ paths:
           schema:
             $ref: "#/components/schemas/TicketPriority"
           description: Optional priority filter.
+        - in: query
+          name: category
+          required: false
+          schema:
+            $ref: "#/components/schemas/TicketCategory"
+          description: Optional category filter.
+        - in: query
+          name: team
+          required: false
+          schema:
+            $ref: "#/components/schemas/TicketTeam"
+          description: Optional team filter.
         - in: query
           name: assignee
           required: false
@@ -329,6 +388,18 @@ paths:
                     total_items: 24
                     total_pages: 3
                     has_next: true
+        "400":
+          description: Invalid query parameter or filter value
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
     post:
       tags:
         - Tickets
@@ -346,6 +417,8 @@ paths:
               title: API Gateway timeout
               description: Investigate repeated timeout errors in the ticket service
               priority: high
+              category: application_bug
+              team: infrastructure
               reporterName: Cloud Lab
               reporterEmail: lab@example.com
       responses:
@@ -377,6 +450,12 @@ paths:
                       details:
                         - field: priority
                           message: "priority must be one of: low, medium, high"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to create a ticket
           content:
@@ -401,6 +480,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketSuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Ticket was not found
           content:
@@ -458,6 +543,12 @@ paths:
                   details:
                     - field: status
                       message: "status must be one of: open, in_progress, resolved"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Ticket was not found
           content:
@@ -496,6 +587,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketSuccessResponse"
+        "400":
+          description: Invalid assignment request payload
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to assign the ticket
           content:
@@ -526,6 +629,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TicketActivityListSuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to view this ticket
           content:
@@ -572,6 +681,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to add attachments to this ticket
           content:
@@ -612,6 +727,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to add attachments to this ticket
           content:
@@ -643,6 +764,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/AttachmentDownloadUrlSuccessResponse"
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "403":
           description: Authenticated but not allowed to view this ticket
           content:
@@ -675,6 +802,7 @@ paths:
             example:
               message: Investigation has started
               authorName: Support Engineer
+              visibility: public
       responses:
         "201":
           description: Comment created successfully
@@ -696,6 +824,12 @@ paths:
                   details:
                     - field: message
                       message: message is required
+        "401":
+          description: Missing or invalid bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Ticket was not found
           content:
@@ -743,6 +877,33 @@ components:
         - high
       description: Allowed ticket priority values.
 
+    TicketCategory:
+      type: string
+      enum:
+        - account_access
+        - network
+        - hardware
+        - application_bug
+        - service_request
+        - other
+      description: Allowed ticket category values.
+
+    TicketTeam:
+      type: string
+      enum:
+        - helpdesk
+        - infrastructure
+        - applications
+        - operations
+      description: Allowed routing team values.
+
+    CommentVisibility:
+      type: string
+      enum:
+        - public
+        - internal
+      description: Comment visibility. `internal` comments are only visible to operational roles.
+
     Timestamp:
       type: string
       format: date-time
@@ -782,6 +943,17 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FieldError"
+        status:
+          type: integer
+          example: 400
+        method:
+          type: string
+          example: PATCH
+        path:
+          type: string
+          example: /v1/profile/me
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
 
     ErrorResponse:
       type: object
@@ -960,6 +1132,7 @@ components:
         - ticketId
         - message
         - authorName
+        - visibility
         - createdAt
         - updatedAt
       properties:
@@ -975,10 +1148,60 @@ components:
         authorName:
           type: string
           example: Support Engineer
+        authorRole:
+          type: string
+          enum:
+            - reporter
+            - agent
+            - admin
+        visibility:
+          $ref: "#/components/schemas/CommentVisibility"
         createdAt:
           $ref: "#/components/schemas/Timestamp"
         updatedAt:
           $ref: "#/components/schemas/Timestamp"
+
+    Notification:
+      type: object
+      required:
+        - id
+        - ticketId
+        - ticketTitle
+        - type
+        - title
+        - message
+        - timestamp
+        - link
+      properties:
+        id:
+          type: string
+          example: ACT-0009
+        ticketId:
+          type: string
+          example: TCK-0002
+        ticketTitle:
+          type: string
+          example: API Gateway timeout
+        type:
+          type: string
+          enum:
+            - assignment_changed
+            - status_changed
+            - comment_added
+        title:
+          type: string
+          example: Tiket ditugaskan ke Anda
+        message:
+          type: string
+          example: API Gateway timeout sekarang masuk ke antrean kerja Anda.
+        timestamp:
+          $ref: "#/components/schemas/Timestamp"
+        actorName:
+          type: string
+          example: Admin OpsDesk
+        link:
+          type: string
+          example: /tickets/TCK-0002
 
     Attachment:
       type: object
@@ -1092,6 +1315,10 @@ components:
           $ref: "#/components/schemas/TicketStatus"
         priority:
           $ref: "#/components/schemas/TicketPriority"
+        category:
+          $ref: "#/components/schemas/TicketCategory"
+        team:
+          $ref: "#/components/schemas/TicketTeam"
         createdBy:
           type: string
           example: user-123
@@ -1139,6 +1366,8 @@ components:
         - title
         - description
         - priority
+        - category
+        - team
         - reporterName
         - reporterEmail
       properties:
@@ -1150,6 +1379,10 @@ components:
           example: Investigate repeated timeout errors in the ticket service
         priority:
           $ref: "#/components/schemas/TicketPriority"
+        category:
+          $ref: "#/components/schemas/TicketCategory"
+        team:
+          $ref: "#/components/schemas/TicketTeam"
         reporterName:
           type: string
           example: Cloud Lab
@@ -1185,6 +1418,8 @@ components:
         authorName:
           type: string
           example: Support Engineer
+        visibility:
+          $ref: "#/components/schemas/CommentVisibility"
 
     RequestAttachmentUploadUrlRequest:
       type: object
@@ -1262,6 +1497,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AssignableUser"
+
+    NotificationListSuccessResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
 
     TicketSuccessResponse:
       type: object
