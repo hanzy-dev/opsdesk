@@ -62,14 +62,15 @@ describe("AccountSettingsPage", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText("Ringkasan identitas")).toBeInTheDocument();
+    expect(screen.getByText("Panel kontrol akun")).toBeInTheDocument();
     expect(screen.getByText("Akses masuk dan proteksi akun")).toBeInTheDocument();
-    expect(screen.getByText("Akses akun dan referensi")).toBeInTheDocument();
-    expect(screen.getByText("Ingin mengganti nama yang tampil di OpsDesk?")).toBeInTheDocument();
+    expect(screen.getByText("Ringkasan akun aktif")).toBeInTheDocument();
+    expect(screen.getByText("Buka area yang sering dipakai")).toBeInTheDocument();
     expect(screen.getAllByText("ID sistem")).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Ubah Kata Sandi" })).toBeDisabled();
     expect(screen.getByRole("link", { name: "Dokumentasi API" })).toHaveAttribute("href", "/api-docs");
-    expect(screen.getByRole("link", { name: "Edit Nama Tampilan" })).toHaveAttribute("href", "/profile");
-    expect(screen.getByRole("link", { name: /Ganti nama tampilan dan avatar profil/i })).toHaveAttribute("href", "/profile");
+    expect(screen.getByRole("link", { name: "Profil" })).toHaveAttribute("href", "/profile");
+    expect(screen.getByRole("link", { name: "Pusat Bantuan" })).toHaveAttribute("href", "/help");
+    expect(screen.getByRole("button", { name: "Ubah Kata Sandi" })).toBeDisabled();
   });
 });

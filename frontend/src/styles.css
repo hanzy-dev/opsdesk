@@ -4552,6 +4552,120 @@ textarea:focus-visible {
   align-content: start;
 }
 
+.settings-page__heading {
+  padding: 0;
+}
+
+.settings-page__heading h2 {
+  margin: 0;
+  line-height: 1.15;
+}
+
+.settings-page__heading p:last-child {
+  max-width: 62ch;
+  line-height: 1.6;
+}
+
+.settings-control-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.78fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.settings-security-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.settings-security-panel__heading {
+  align-items: flex-start;
+}
+
+.settings-security-panel__callout {
+  padding: 16px 18px;
+}
+
+.settings-inline-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #ffc49d;
+  background:
+    linear-gradient(180deg, rgba(239, 142, 83, 0.15), rgba(239, 142, 83, 0.05)),
+    rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(239, 142, 83, 0.12);
+  flex-shrink: 0;
+}
+
+.settings-security-form {
+  gap: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.settings-security-form__header {
+  padding: 0;
+}
+
+.settings-control-rail {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.settings-control-rail__section {
+  padding: 18px;
+  gap: 14px;
+}
+
+.settings-control-rail__header {
+  padding: 0;
+}
+
+.settings-account-identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.settings-account-identity__copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settings-account-identity__copy strong,
+.settings-account-identity__copy p {
+  margin: 0;
+}
+
+.settings-account-identity__copy p {
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.settings-control-rail__helper {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.settings-quick-links {
+  gap: 10px;
+}
+
+.settings-quick-links .preset-chip {
+  min-height: 38px;
+}
+
 .settings-page__system {
   margin-top: 2px;
 }
@@ -5920,6 +6034,7 @@ textarea:focus-visible {
   .help-value-grid,
   .auth-layout,
   .tickets-shell__rail--empty,
+  .settings-control-layout,
   .ticket-layout,
   .ticket-overview-grid,
   .help-center-layout--reading,
@@ -5955,6 +6070,7 @@ textarea:focus-visible {
   .dashboard-hero__copy,
   .help-center-hero__copy,
   .tickets-workspace-heading,
+  .settings-account-identity,
   .dashboard-feature__body,
   .dashboard-ticket-card__top,
   .dashboard-bars__meta,
@@ -5980,6 +6096,7 @@ textarea:focus-visible {
   .form-grid,
   .meta-grid,
   .filter-grid,
+  .settings-control-layout,
   .macro-grid,
   .quick-action-grid,
   .profile-edit-spotlight,
@@ -6071,6 +6188,11 @@ textarea:focus-visible {
 
   .auth-layout {
     gap: 20px;
+  }
+
+  .settings-control-rail__section,
+  .settings-security-panel__callout {
+    padding: 16px;
   }
 
   .tickets-shell__rail {
