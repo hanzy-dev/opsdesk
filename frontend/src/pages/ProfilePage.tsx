@@ -15,7 +15,7 @@ const allowedAvatarTypes = ["image/jpeg", "image/png", "image/webp"];
 const maxAvatarSizeBytes = 5 * 1024 * 1024;
 
 export function ProfilePage() {
-  const { profile, session, isProfileLoading, profileError, refreshProfile, saveProfile } = useAuth();
+  const { profile, session, isProfileLoading, profileError, refreshProfile, saveProfile, permissions } = useAuth();
   const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -85,6 +85,87 @@ export function ProfilePage() {
     avatarUrl !== (effectiveProfile?.avatarUrl ?? "") ||
     avatarPreviewUrl !== (effectiveProfile?.avatarUrl ?? "") ||
     selectedAvatarFile !== null;
+  const availableWorkspaces = [permissions.canCreateTickets, permissions.canViewOperationalTickets, permissions.canAssignTickets].filter(Boolean).length;
+  const accessRows = useMemo(
+    () =>
+      [
+        permissions.canCreateTickets
+          ? {
+              label: "Buat tiket baru",
+              description: "Anda bisa membuat laporan atau permintaan baru langsung dari antrean utama.",
+            }
+          : null,
+        permissions.canViewOperationalTickets
+          ? {
+              label: "Lihat antrean operasional",
+              description: "Anda dapat membuka daftar tiket kerja untuk membaca status, prioritas, dan distribusi antrean.",
+            }
+          : null,
+        permissions.canUpdateTicketStatus
+          ? {
+              label: "Perbarui progres tiket",
+              description: "Anda dapat mengubah status kerja saat tindak lanjut berjalan atau sudah selesai.",
+            }
+          : null,
+        permissions.canAssignTickets
+          ? {
+              label: "Atur penugasan",
+              description: "Anda dapat membagi tiket ke petugas yang relevan saat antrean perlu ditata ulang.",
+            }
+          : null,
+      ].filter((item): item is { label: string; description: string } => item !== null),
+    [permissions.canAssignTickets, permissions.canCreateTickets, permissions.canUpdateTicketStatus, permissions.canViewOperationalTickets],
+  );
+  const completenessItems = useMemo(
+    () => [
+      {
+        label: "Nama tampilan",
+        value: currentProfileLabel(normalizedDisplayName || effectiveProfile?.displayName || ""),
+        status: (normalizedDisplayName || effectiveProfile?.displayName || "").trim() ? "Siap dipakai" : "Masih kosong",
+        ready: Boolean((normalizedDisplayName || effectiveProfile?.displayName || "").trim()),
+      },
+      {
+        label: "Avatar",
+        value: hasAvatar ? "Foto atau gambar aktif" : "Masih memakai inisial",
+        status: hasAvatar ? "Siap dipakai" : "Bisa dilengkapi",
+        ready: hasAvatar,
+      },
+      {
+        label: "Email",
+        value: effectiveProfile?.email || "Belum tersedia",
+        status: effectiveProfile?.email ? "Tersedia" : "Belum tersedia",
+        ready: Boolean(effectiveProfile?.email),
+      },
+      {
+        label: "Peran aktif",
+        value: getRoleLabel(effectiveProfile?.role ?? "reporter"),
+        status: "Aktif",
+        ready: true,
+      },
+    ],
+    [effectiveProfile?.displayName, effectiveProfile?.email, effectiveProfile?.role, hasAvatar, normalizedDisplayName],
+  );
+  const completionReadyCount = completenessItems.filter((item) => item.ready).length;
+  const accountSummaryItems = useMemo(
+    () => [
+      {
+        label: "Sinkronisasi profil",
+        value: profileError ? "Cadangan sesi aktif" : "Tersinkron",
+        helper: profileError ? "Profil utama sedang fallback ke data sesi." : "Identitas memakai data profil terbaru yang tersedia.",
+      },
+      {
+        label: "Perubahan lokal",
+        value: isDirty ? "Belum disimpan" : "Tidak ada draft",
+        helper: isDirty ? "Ada penyesuaian yang masih menunggu disimpan." : "Belum ada perubahan lokal pada nama atau avatar.",
+      },
+      {
+        label: "Akses workspace",
+        value: `${availableWorkspaces} area`,
+        helper: "Menggambarkan area kerja yang saat ini bisa Anda buka dari navigasi utama.",
+      },
+    ],
+    [availableWorkspaces, isDirty, profileError],
+  );
 
   if (isProfileLoading && !effectiveProfile) {
     return (
@@ -335,6 +416,83 @@ export function ProfilePage() {
             </div>
           </article>
 
+          <article className="panel panel--section surface surface--subtle profile-utility-panel">
+            <div className="section-heading">
+              <div>
+                <p className="section-eyebrow">Profil aktif</p>
+                <h3>Peran, akses, dan kesiapan akun</h3>
+              </div>
+              <p className="filter-summary">Ringkasan ini membantu membaca identitas kerja Anda di OpsDesk tanpa meninggalkan halaman profil.</p>
+            </div>
+
+            <div className="profile-utility-group">
+              <div className="profile-utility-group__header">
+                <p className="section-eyebrow">Peran & akses saya</p>
+                <h4>{getRoleLabel(currentProfile.role)} dengan akses yang sesuai untuk alur kerja saat ini</h4>
+                <p>
+                  {currentProfile.role === "admin"
+                    ? "Akun admin dapat menjaga antrean, pembagian kerja, dan kualitas tindak lanjut dari satu workspace."
+                    : currentProfile.role === "agent"
+                      ? "Akun petugas difokuskan pada penanganan tiket, pembaruan status, dan pembacaan antrean operasional."
+                      : "Akun pelapor difokuskan pada pelaporan kebutuhan, pemantauan progres, dan akses bantuan mandiri."}
+                </p>
+              </div>
+
+              <div className="profile-role-access">
+                <div className="profile-role-access__chips">
+                  <span className="role-pill">{getRoleLabel(currentProfile.role)}</span>
+                  <span className="status-pill">{availableWorkspaces} area kerja tersedia</span>
+                </div>
+                <div className="settings-row-panel">
+                  {accessRows.map((item) => (
+                    <div className="settings-row-panel__row" key={item.label}>
+                      <div className="settings-row-panel__copy">
+                        <strong>{item.label}</strong>
+                        <p>{item.description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="profile-utility-group">
+              <div className="profile-utility-group__header">
+                <p className="section-eyebrow">Status kelengkapan profil</p>
+                <h4>{completionReadyCount} dari {completenessItems.length} elemen utama sudah siap</h4>
+                <p>Pastikan identitas inti ini rapi agar profil tetap jelas di area akun, tiket, dan ringkasan aktivitas.</p>
+              </div>
+
+              <div className="stat-strip profile-completeness-strip">
+                {completenessItems.map((item) => (
+                  <article className="stat-strip__item surface surface--row profile-completeness-item" key={item.label}>
+                    <p className="stat-strip__eyebrow">{item.label}</p>
+                    <strong>{item.status}</strong>
+                    <p className="stat-strip__label">{item.value}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="profile-utility-group">
+              <div className="profile-utility-group__header">
+                <p className="section-eyebrow">Ringkasan aktivitas akun</p>
+                <h4>Keadaan akun Anda saat ini</h4>
+                <p>Ringkas, personal, dan langsung menunjukkan apakah identitas profil sudah tersinkron dan siap dipakai.</p>
+              </div>
+
+              <div className="stat-strip profile-account-strip">
+                {accountSummaryItems.map((item) => (
+                  <article className="stat-strip__item surface surface--ghost profile-account-strip__item" key={item.label}>
+                    <p className="stat-strip__eyebrow">{item.label}</p>
+                    <strong>{item.value}</strong>
+                    <p className="stat-strip__label">{item.helper}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </article>
+
           <section className="profile-layout__body stack-md">
             <form className="panel panel--section stack-md form-panel form-panel--compact" onSubmit={handleSubmit}>
               <div className="section-heading">
@@ -471,4 +629,9 @@ export function ProfilePage() {
       />
     </>
   );
+}
+
+function currentProfileLabel(value: string) {
+  const normalized = value.trim();
+  return normalized ? normalized : "Belum diatur";
 }

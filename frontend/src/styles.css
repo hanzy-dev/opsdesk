@@ -5444,6 +5444,76 @@ textarea:focus-visible {
   gap: 18px;
 }
 
+.profile-utility-panel {
+  gap: 20px;
+}
+
+.profile-utility-group {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-utility-group + .profile-utility-group {
+  padding-top: 2px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profile-utility-group__header {
+  display: grid;
+  gap: 6px;
+}
+
+.profile-utility-group__header h4,
+.profile-utility-group__header p {
+  margin: 0;
+}
+
+.profile-utility-group__header p {
+  color: var(--muted);
+  line-height: 1.58;
+  max-width: 62ch;
+}
+
+.profile-role-access {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-role-access__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-completeness-strip,
+.profile-account-strip {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.profile-completeness-item,
+.profile-account-strip__item {
+  min-height: 0;
+}
+
+.profile-completeness-item strong,
+.profile-account-strip__item strong {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.profile-completeness-item .stat-strip__label,
+.profile-account-strip__item .stat-strip__label {
+  font-size: 0.84rem;
+}
+
+.profile-account-strip__item {
+  border-color: rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.008)),
+    rgba(255, 255, 255, 0.012);
+}
+
 .create-ticket-page .form-panel,
 .profile-page .form-panel,
 .settings-page .form-panel {

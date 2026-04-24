@@ -15,6 +15,12 @@ const useAuthMock = vi.fn(() => ({
   session: null,
   isProfileLoading: false,
   profileError: null,
+  permissions: {
+    canAssignTickets: false,
+    canCreateTickets: true,
+    canUpdateTicketStatus: false,
+    canViewOperationalTickets: false,
+  },
   refreshProfile: refreshProfileMock,
   saveProfile: saveProfileMock,
 }));
@@ -39,6 +45,12 @@ describe("ProfilePage", () => {
       session: null,
       isProfileLoading: false,
       profileError: null,
+      permissions: {
+        canAssignTickets: false,
+        canCreateTickets: true,
+        canUpdateTicketStatus: false,
+        canViewOperationalTickets: false,
+      },
       refreshProfile: refreshProfileMock,
       saveProfile: saveProfileMock,
     });
@@ -57,6 +69,13 @@ describe("ProfilePage", () => {
 
     expect(screen.getByDisplayValue("OpsDesk User")).toBeInTheDocument();
     expect(screen.getByText("Informasi sistem akun")).toBeInTheDocument();
+    expect(screen.getByText("Peran, akses, dan kesiapan akun")).toBeInTheDocument();
+    expect(screen.getByText("Peran & akses saya")).toBeInTheDocument();
+    expect(screen.getByText("Status kelengkapan profil")).toBeInTheDocument();
+    expect(screen.getByText("Ringkasan aktivitas akun")).toBeInTheDocument();
+    expect(screen.getByText("Buat tiket baru")).toBeInTheDocument();
+    expect(screen.getByText("3 dari 4 elemen utama sudah siap")).toBeInTheDocument();
+    expect(screen.getByText("Sinkronisasi profil")).toBeInTheDocument();
     expect(screen.getByText("Ganti nama tampilan dan avatar")).toBeInTheDocument();
     expect(screen.getByText("Nama yang tampil saat ini")).toBeInTheDocument();
     expect(screen.getByText("Setelah disimpan akan tampil sebagai")).toBeInTheDocument();
