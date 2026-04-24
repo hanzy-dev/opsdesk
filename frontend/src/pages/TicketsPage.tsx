@@ -218,6 +218,20 @@ export function TicketsPage() {
     assigneeFilter !== preset.assigneeFilter ||
     sortBy !== "updated_at" ||
     sortOrder !== "desc";
+  const isEmptyLayout = pagination.totalItems === 0 || tickets.length === 0;
+
+  function resetFilters() {
+    setSearchQuery("");
+    setActiveSearchQuery("");
+    setStatusFilter("all");
+    setPriorityFilter("all");
+    setCategoryFilter("all");
+    setTeamFilter("all");
+    setAssigneeFilter(preset.assigneeFilter);
+    setSortBy("updated_at");
+    setSortOrder("desc");
+    setPage(1);
+  }
 
   if (loading) {
     return (
@@ -257,19 +271,19 @@ export function TicketsPage() {
 
   return (
     <section className="stack-lg page-shell page-shell--wide page-flow tickets-page">
-      <div className="hero-card hero-card--compact hero-card--spotlight">
-        <div>
+      <div className="compact-toolbar surface surface--ghost tickets-workspace-heading">
+        <div className="compact-toolbar__copy">
           <p className="section-eyebrow">{preset.eyebrow}</p>
           <h2>{preset.title}</h2>
           {preset.key === "assigned" ? (
-            <p className="hero-card__supporting">Pantau beban kerja aktif Anda tanpa hasil kosong, blank, atau status yang membingungkan.</p>
+            <p>Pantau beban kerja aktif Anda dengan daftar yang tetap fokus pada tiket yang perlu ditangani.</p>
           ) : isReporterPortal ? (
-            <p className="hero-card__supporting">
-              Gunakan portal ini untuk melacak progres tiket, membaca pembaruan publik, dan berpindah ke panduan bantuan bila masalahnya masih bisa diselesaikan sendiri.
-            </p>
-          ) : null}
+            <p>Gunakan daftar ini untuk melacak progres tiket, membaca pembaruan publik, dan berpindah ke panduan bantuan saat diperlukan.</p>
+          ) : (
+            <p>Gunakan workspace ini untuk mencari, menyaring, dan meninjau tiket tanpa distraksi pola dashboard.</p>
+          )}
         </div>
-        <div className="dashboard-hero__actions">
+        <div className="compact-toolbar__group">
           {permissions.canCreateTickets ? (
             <Link className="button button--primary" to="/tickets/new">
               <AppIcon name="plus" size="sm" />
@@ -285,48 +299,51 @@ export function TicketsPage() {
         </div>
       </div>
 
-      <div className="metrics-grid metrics-grid--compact">
-        <article className="metric-card metric-card--premium">
-          <p className="metric-card__label">
+      <div className="stat-strip tickets-stat-strip" aria-label="Ringkasan tiket">
+        <article className="stat-strip__item surface surface--row">
+          <p className="stat-strip__eyebrow">Tampilan</p>
+          <p className="stat-strip__label">
             <AppIconBadge name="tickets" size="sm" />
             <span>Total tiket</span>
           </p>
-          <strong>{stats.total}</strong>
+          <strong className="stat-strip__value">{stats.total}</strong>
         </article>
-        <article className="metric-card metric-card--premium">
-          <p className="metric-card__label">
+        <article className="stat-strip__item surface surface--row">
+          <p className="stat-strip__eyebrow">Perlu tindak lanjut</p>
+          <p className="stat-strip__label">
             <AppIconBadge name="search" size="sm" tone="accent" />
             <span>Tiket terbuka</span>
           </p>
-          <strong>{stats.open}</strong>
+          <strong className="stat-strip__value">{stats.open}</strong>
         </article>
-        <article className="metric-card metric-card--premium">
-          <p className="metric-card__label">
+        <article className="stat-strip__item surface surface--row">
+          <p className="stat-strip__eyebrow">Arsip kerja</p>
+          <p className="stat-strip__label">
             <AppIconBadge name="dashboard" size="sm" tone="cool" />
             <span>Tiket selesai</span>
           </p>
-          <strong>{stats.resolved}</strong>
+          <strong className="stat-strip__value">{stats.resolved}</strong>
         </article>
       </div>
 
-      <div className="tickets-shell">
+      <div className={`tickets-shell ${isEmptyLayout ? "tickets-shell--empty" : ""}`}>
         <div className="tickets-shell__main stack-md">
-          <div className="tickets-toolbar tickets-toolbar--surface stack-md motion-reveal">
-            <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">Pencarian cepat</p>
-                <h3>{preset.helperText}</h3>
+          <div className="tickets-toolbar tickets-toolbar--surface surface surface--subtle motion-reveal">
+            <div className="compact-toolbar tickets-toolbar__header">
+              <div className="compact-toolbar__copy">
+                <p className="compact-toolbar__eyebrow">Toolbar operasional</p>
+                <strong>{preset.helperText}</strong>
+                <p>Menampilkan {tickets.length} dari {pagination.totalItems} tiket.</p>
               </div>
-              <p className="filter-summary">
-                Menampilkan {tickets.length} dari {pagination.totalItems} tiket
-              </p>
+              <div className="compact-toolbar__group">
+                {isRefreshing || (!preset.isSearchLocked && searchQuery.trim() !== activeSearchQuery) ? (
+                  <p className="filter-summary">
+                    {searchQuery.trim() !== activeSearchQuery ? "Menyaring daftar tiket..." : "Memperbarui daftar tiket..."}
+                  </p>
+                ) : null}
+              </div>
             </div>
 
-            {isRefreshing || (!preset.isSearchLocked && searchQuery.trim() !== activeSearchQuery) ? (
-              <p className="filter-summary">
-                {searchQuery.trim() !== activeSearchQuery ? "Menyaring daftar tiket..." : "Memperbarui daftar tiket..."}
-              </p>
-            ) : null}
             {error && tickets.length > 0 ? (
               <div className="inline-feedback inline-feedback--error">
                 <strong>Daftar belum sepenuhnya diperbarui.</strong>
@@ -335,8 +352,8 @@ export function TicketsPage() {
               </div>
             ) : null}
 
-            <div className="filter-grid filter-grid--tickets">
-              <label className="field field--search field--span-2">
+            <div className="filter-grid filter-grid--tickets tickets-toolbar__grid">
+              <label className="field field--search field--span-2 tickets-toolbar__search">
                 <span>Cari tiket</span>
                 <input
                   disabled={preset.isSearchLocked}
@@ -442,7 +459,7 @@ export function TicketsPage() {
               </label>
             </div>
 
-            <div className="form-actions form-actions--compact">
+            <div className="form-actions form-actions--compact tickets-toolbar__actions">
               <button
                 className="button button--secondary"
                 disabled={preset.isSearchLocked}
@@ -455,22 +472,7 @@ export function TicketsPage() {
                 <AppIcon name="search" size="sm" />
                 Cari
               </button>
-              <button
-                className="button button--secondary"
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveSearchQuery("");
-                  setStatusFilter("all");
-                  setPriorityFilter("all");
-                  setCategoryFilter("all");
-                  setTeamFilter("all");
-                  setAssigneeFilter(preset.assigneeFilter);
-                  setSortBy("updated_at");
-                  setSortOrder("desc");
-                  setPage(1);
-                }}
-                type="button"
-              >
+              <button className="button button--secondary" onClick={resetFilters} type="button">
                 <AppIcon name="reset" size="sm" />
                 Reset Filter
               </button>
@@ -479,7 +481,10 @@ export function TicketsPage() {
 
           {pagination.totalItems === 0 ? (
             <EmptyState
+              className="tickets-empty-state"
               eyebrow={preset.key === "assigned" ? "Penugasan" : preset.key === "mine" ? "Akun Saya" : "Daftar Tiket"}
+              width="wide"
+              surface="subtle"
               title={preset.emptyTitle}
               description={
                 preset.key === "assigned"
@@ -503,27 +508,15 @@ export function TicketsPage() {
             />
           ) : tickets.length === 0 ? (
             <EmptyState
+              className="tickets-empty-state"
               eyebrow="Pencarian"
+              width="wide"
+              surface="subtle"
               title="Tidak ada tiket yang cocok"
               description="Coba ubah kata kunci, filter, atau urutan agar hasil pencarian lebih relevan."
               supportText="Tidak ada tiket yang sesuai dengan kombinasi filter saat ini, tetapi data lain mungkin tetap tersedia di antrean utama."
               action={
-                <button
-                  className="button button--secondary"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setActiveSearchQuery("");
-                    setStatusFilter("all");
-                    setPriorityFilter("all");
-                    setCategoryFilter("all");
-                    setTeamFilter("all");
-                    setAssigneeFilter(preset.assigneeFilter);
-                    setSortBy("updated_at");
-                    setSortOrder("desc");
-                    setPage(1);
-                  }}
-                  type="button"
-                >
+                <button className="button button--secondary" onClick={resetFilters} type="button">
                   Reset Pencarian
                 </button>
               }
@@ -531,6 +524,7 @@ export function TicketsPage() {
           ) : (
             <>
               <TicketTable
+                className="table-panel--workspace"
                 tickets={tickets}
                 title={isReporterPortal ? "Portal tiket saya" : "Daftar tiket"}
                 eyebrow={isReporterPortal ? "Pelapor" : "Operasional"}
@@ -542,7 +536,7 @@ export function TicketsPage() {
                 }
               />
 
-              <div className="tickets-pager motion-reveal motion-reveal--delay-2">
+              <div className="tickets-pager surface surface--ghost motion-reveal motion-reveal--delay-2">
                 <div>
                   <p className="section-eyebrow">Navigasi halaman</p>
                   <h3>
@@ -576,11 +570,11 @@ export function TicketsPage() {
           )}
         </div>
 
-        <aside className="tickets-shell__rail stack-md">
-          <section className="rail-section rail-section--emphasis motion-reveal motion-reveal--delay-2">
+        <aside className={`tickets-shell__rail stack-md ${isEmptyLayout ? "tickets-shell__rail--empty" : ""}`}>
+          <section className="rail-section surface surface--subtle tickets-rail-section motion-reveal motion-reveal--delay-2">
             <div>
               <p className="section-eyebrow">{isReporterPortal ? "Nilai portal" : "Konteks tampilan"}</p>
-              <h3>{isReporterPortal ? "Bukan hanya kirim tiket" : "Filter aktif dan fokus kerja"}</h3>
+              <h3>{isReporterPortal ? "Ringkasan penggunaan portal" : "Status workspace saat ini"}</h3>
             </div>
             <div className="compact-list">
               {isReporterPortal ? (
@@ -617,38 +611,63 @@ export function TicketsPage() {
             </div>
           </section>
 
-          <section className="rail-section motion-reveal motion-reveal--delay-3">
-            <div className="section-heading">
-              <div>
-                <p className="section-eyebrow">{isReporterPortal ? "Panduan cepat" : "Preset tampilan"}</p>
-                <h3>{isReporterPortal ? "Artikel yang sering dibuka" : "Pindah fokus tanpa mengulang filter"}</h3>
+          <section className="rail-section surface surface--ghost tickets-rail-section motion-reveal motion-reveal--delay-3">
+            <div className="compact-toolbar tickets-rail-section__header">
+              <div className="compact-toolbar__copy">
+                <p className="compact-toolbar__eyebrow">{isReporterPortal ? "Panduan cepat" : "Preset tampilan"}</p>
+                <strong>{isReporterPortal ? "Artikel yang sering dibuka" : "Pindah fokus tanpa mengulang filter"}</strong>
               </div>
               {isReporterPortal ? (
-                <Link className="button button--secondary" to="/help">
-                  Lihat Semua
-                </Link>
+                <div className="compact-toolbar__group">
+                  <Link className="button button--secondary" to="/help">
+                    Lihat Semua
+                  </Link>
+                </div>
               ) : null}
             </div>
-            <div className="compact-link-list">
-              {isReporterPortal
-                ? featuredHelpArticles.map((article) => (
-                    <article className="compact-link-list__item motion-lift" key={article.id}>
-                      <strong>{article.title}</strong>
-                      <p>{article.summary}</p>
-                      <small>{article.readTimeMinutes} menit baca</small>
-                    </article>
-                  ))
-                : [
-                    { to: "/tickets", title: "Antrean utama", description: "Lihat semua tiket yang ada dalam jangkauan operasional." },
-                    { to: "/tickets/assigned", title: "Ditugaskan ke saya", description: "Fokus pada tiket yang menjadi tanggung jawab aktif Anda." },
-                    { to: "/tickets/mine", title: "Akses personal", description: "Lihat tiket dari sudut pandang pelapor bila perlu validasi pengalaman akhir." },
+
+            {isReporterPortal ? (
+              <div className="compact-link-list">
+                {featuredHelpArticles.map((article) => (
+                  <article className="compact-link-list__item motion-lift" key={article.id}>
+                    <strong>{article.title}</strong>
+                    <p>{article.summary}</p>
+                    <small>{article.readTimeMinutes} menit baca</small>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <>
+                <div className="preset-group preset-group--segmented tickets-preset-group" role="tablist" aria-label="Preset tampilan tiket">
+                  {[
+                    { to: "/tickets", title: "Antrean utama", isActive: preset.key === "all" },
+                    { to: "/tickets/assigned", title: "Ditugaskan ke saya", isActive: preset.key === "assigned" },
+                    { to: "/tickets/mine", title: "Akses personal", isActive: preset.key === "mine" },
                   ].map((item) => (
-                    <Link className="compact-link-list__item compact-link-list__item--interactive" key={item.to} to={item.to}>
-                      <strong>{item.title}</strong>
-                      <p>{item.description}</p>
+                    <Link
+                      aria-selected={item.isActive}
+                      className={`preset-chip ${item.isActive ? "preset-chip--active" : ""}`}
+                      key={item.to}
+                      role="tab"
+                      to={item.to}
+                    >
+                      {item.title}
                     </Link>
                   ))}
-            </div>
+                </div>
+
+                <div className="compact-list tickets-preset-notes">
+                  <article className="compact-list__item">
+                    <strong>Antrean utama</strong>
+                    <p>Lihat semua tiket yang ada dalam jangkauan operasional.</p>
+                  </article>
+                  <article className="compact-list__item">
+                    <strong>Ditugaskan ke saya</strong>
+                    <p>Fokus pada tiket yang menjadi tanggung jawab aktif Anda.</p>
+                  </article>
+                </div>
+              </>
+            )}
           </section>
         </aside>
       </div>

@@ -13,6 +13,7 @@ type TicketTableProps = {
   eyebrow?: string;
   helperText?: string;
   showOperatorSignals?: boolean;
+  className?: string;
 };
 
 export function TicketTable({
@@ -21,9 +22,10 @@ export function TicketTable({
   eyebrow = "Ringkasan",
   helperText,
   showOperatorSignals = false,
+  className,
 }: TicketTableProps) {
   return (
-    <div className="table-panel table-panel--hybrid motion-reveal motion-reveal--delay-1">
+    <div className={["table-panel", "table-panel--hybrid", "motion-reveal", "motion-reveal--delay-1", className].filter(Boolean).join(" ")}>
       <div className="table-panel__header">
         <div>
           <p className="section-eyebrow">{eyebrow}</p>
