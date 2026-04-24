@@ -109,7 +109,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
           {!isCollapsed ? (
             <div className="sidebar__footer-copy">
               <span>Akses akun</span>
-              <p>Keluar tetap tersedia di sini dan juga pada menu akun di kanan atas.</p>
+              <p>Keluar tetap tersedia di sini dan di menu akun kanan atas.</p>
             </div>
           ) : null}
           <button
