@@ -7,11 +7,38 @@ type EmptyStateProps = {
   action?: ReactNode;
   eyebrow?: string;
   supportText?: string;
+  className?: string;
+  surface?: "secondary" | "subtle" | "ghost";
+  width?: "narrow" | "default" | "wide";
 };
 
-export function EmptyState({ title, description, action, eyebrow, supportText }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  description,
+  action,
+  eyebrow,
+  supportText,
+  className,
+  surface = "secondary",
+  width = "default",
+}: EmptyStateProps) {
   return (
-    <div aria-live="polite" className="panel empty-state state-card" role="status">
+    <div
+      aria-live="polite"
+      className={[
+        "empty-shell",
+        "empty-shell--centered",
+        `empty-shell--${width}`,
+        `surface surface--${surface}`,
+        "panel",
+        "empty-state",
+        "state-card",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      role="status"
+    >
       <AppIconBadge className="state-card__icon" name="empty" tone="cool" />
       {eyebrow ? <span className="empty-state__eyebrow">{eyebrow}</span> : null}
       <div className="empty-state__content">

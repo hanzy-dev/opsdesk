@@ -5,6 +5,8 @@ type LoadingStateProps = {
   eyebrow?: string;
   supportText?: string;
   skeletonTitle?: string;
+  className?: string;
+  surface?: "secondary" | "subtle" | "ghost";
 };
 
 export function LoadingState({
@@ -14,12 +16,27 @@ export function LoadingState({
   eyebrow = "Memuat",
   supportText,
   skeletonTitle,
+  className,
+  surface = "subtle",
 }: LoadingStateProps) {
   return (
     <div
       aria-live="polite"
       aria-busy="true"
-      className={`panel loading-state state-card motion-reveal ${compact ? "loading-state--compact" : "loading-state--page"}`}
+      className={[
+        "empty-shell",
+        "empty-shell--centered",
+        "empty-shell--default",
+        `surface surface--${surface}`,
+        "panel",
+        "loading-state",
+        "state-card",
+        "motion-reveal",
+        compact ? "loading-state--compact" : "loading-state--page",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       role="status"
     >
       <div className="loading-state__header">

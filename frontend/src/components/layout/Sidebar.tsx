@@ -58,9 +58,9 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
         type="button"
       />
       <aside
-        className={`sidebar ${isCollapsed ? "sidebar--collapsed" : ""} ${isMobileOpen ? "sidebar--mobile-open" : ""}`}
+        className={`sidebar side-rail side-rail--app ${isCollapsed ? "sidebar--collapsed" : ""} ${isMobileOpen ? "sidebar--mobile-open" : ""}`}
       >
-        <div className="sidebar__header">
+        <div className="sidebar__header side-rail__header">
           <div className="sidebar__brand">
             <div className="sidebar__brand-mark">OD</div>
             <div className="sidebar__brand-copy">
@@ -81,15 +81,17 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
           </div>
         </div>
 
-        <div className="sidebar__body">
-          <nav className="sidebar__nav" aria-label="Navigasi utama">
+        <div className="sidebar__body side-rail__body">
+          <nav className="sidebar__nav side-rail__nav" aria-label="Navigasi utama">
             {visibleItems.map((item) => (
               <NavLink
                 end={item.to === "/tickets"}
                 key={item.to}
                 onClick={onCloseMobile}
                 to={item.to}
-                className={({ isActive }) => (isActive ? "sidebar__link sidebar__link--active" : "sidebar__link")}
+                className={({ isActive }) =>
+                  isActive ? "sidebar__link side-rail__link sidebar__link--active" : "sidebar__link side-rail__link"
+                }
               >
                 <span aria-hidden="true" className="sidebar__link-icon">
                   <AppIcon name={item.icon} />
@@ -103,7 +105,7 @@ export function Sidebar({ isCollapsed, isMobileOpen, onCloseMobile, onRequestLog
           </nav>
         </div>
 
-        <div className="sidebar__footer">
+        <div className="sidebar__footer side-rail__footer">
           {!isCollapsed ? (
             <div className="sidebar__footer-copy">
               <span>Akses akun</span>

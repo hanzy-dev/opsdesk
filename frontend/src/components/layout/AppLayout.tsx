@@ -109,7 +109,7 @@ export function AppLayout() {
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onRequestLogout={() => setIsLogoutDialogOpen(true)}
       />
-      <div className="app-shell__main">
+      <div className="app-shell__main shell-foundation">
         <div
           aria-hidden="true"
           className={`page-progress ${isRouteTransitioning ? "page-progress--active" : ""}`}
