@@ -194,6 +194,8 @@ Pastikan asumsi berikut benar sebelum rilis:
 5. Tidak ada dokumen utama yang mengarahkan reviewer ke preview domain
 6. Environment variable frontend di Vercel cocok dengan output stack Cognito terbaru
 
+Untuk verifikasi pasca-deploy yang lebih praktis, gunakan bagian [Smoke Test Setelah Deploy](./release-checklist.md#smoke-test-setelah-deploy) pada release checklist.
+
 ## Verify Deployed Backend
 
 Contoh verifikasi:

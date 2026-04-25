@@ -1,90 +1,217 @@
 # Release Checklist
 
-Checklist ini dipakai untuk verifikasi rilis final OpsDesk pada baseline implementasi saat ini.
+Checklist ini dipakai untuk verifikasi rilis OpsDesk setelah perubahan frontend, backend, infrastruktur, atau kontrak API. Fokusnya adalah memastikan deployment Vercel dan AWS tetap sinkron, endpoint live berperilaku sesuai OpenAPI, dan alur utama aplikasi masih aman dipakai.
 
-## Dokumen Yang Perlu Dicek
+## Dokumen yang Perlu Dicek
 
-1. [README.md](/d:/Semester%206/Cloud%20Computing/opsdesk/README.md)
-2. [docs/setup.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/setup.md)
-3. [docs/usage-guide.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/usage-guide.md)
-4. [docs/api.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/api.md)
-5. [docs/openapi.yaml](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/openapi.yaml)
-6. [docs/operations.md](/d:/Semester%206/Cloud%20Computing/opsdesk/docs/operations.md)
+1. [README.md](../README.md)
+2. [setup.md](./setup.md)
+3. [api.md](./api.md)
+4. [openapi.yaml](./openapi.yaml)
+5. [operations.md](./operations.md)
+6. [reviewer-checklist.md](./reviewer-checklist.md)
 
-## Konfigurasi Yang Harus Cocok
+## Konfigurasi yang Harus Cocok
 
-1. Frontend production memakai `https://opsdesk-teal.vercel.app`.
-2. Backend API base URL memakai `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`.
-3. SAM parameter `FrontendOrigin` hanya mengizinkan domain frontend production.
-4. SAM parameter `AppEnv` bernilai `dev`.
-5. `frontend/.env.example` dan dokumentasi deployment memakai URL backend yang sama.
-6. Tidak ada dokumentasi utama yang masih mengarahkan reviewer ke preview domain.
-7. `infra/template.yaml` masih memakai origin CORS `https://opsdesk-teal.vercel.app`.
+1. Frontend production tetap `https://opsdesk-teal.vercel.app`.
+2. Backend API base URL tetap `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`.
+3. Vercel env `VITE_API_BASE_URL` mengarah ke URL API Gateway `/dev/v1` yang sama.
+4. SAM parameter `FrontendOrigin` hanya mengizinkan domain frontend production.
+5. SAM parameter `ApiBasePath` bernilai `/v1`.
+6. `docs/openapi.yaml` memakai server URL live yang sama.
+7. Tidak ada dokumentasi utama yang mengarahkan reviewer ke preview domain.
 
-## Verifikasi Aplikasi
+## Smoke Test Setelah Deploy
 
-1. Buka halaman login dan pastikan field email/kata sandi tampil dengan benar.
-2. Masuk menggunakan akun Cognito yang valid.
-3. Pastikan user berada di group Cognito yang benar: `reporter`, `agent`, atau `admin`.
-4. Buka dashboard dan daftar tiket.
-5. Verifikasi ticket explorer:
-   pencarian, filter status, filter prioritas, sortir, dan pagination memanggil data server-side dengan benar.
-6. Verifikasi aksi sesuai role:
-   reporter dapat membuat tiket dan hanya melihat tiket miliknya.
-7. Verifikasi aksi sesuai role:
-   agent dapat melihat tiket operasional, memperbarui status, dan menambah komentar.
-8. Verifikasi assignment:
-   agent atau admin dapat memperbarui penanggung jawab tiket ke dirinya sendiri atau ke operator lain yang eligible, lalu informasi petugas terbaru tersimpan.
-9. Verifikasi aksi sesuai role:
-   admin memiliki akses penuh.
-10. Verifikasi lampiran:
-   unggah file PDF/JPG/PNG/TXT/CSV/DOCX di bawah 10 MB, lalu pastikan lampiran muncul pada detail tiket.
-11. Verifikasi buka lampiran:
-   klik tombol buka dan pastikan URL presigned berhasil membuka file tanpa membuat bucket menjadi publik.
-12. Verifikasi timeline aktivitas:
-   detail tiket menampilkan entri saat tiket dibuat, status diubah, komentar ditambahkan, tiket ditugaskan, dan lampiran ditambahkan.
-13. Verifikasi observability dasar:
-   saat ada error dari backend, UI menampilkan `Kode referensi` jika `requestId` tersedia.
-14. Verifikasi observability dasar:
-   cari `requestId` yang sama di CloudWatch Lambda log dan pastikan request dapat ditelusuri.
-15. Verifikasi dokumentasi API:
-   buka `https://opsdesk-teal.vercel.app/api-docs`, pastikan Swagger UI tampil, base URL benar, dan YAML OpenAPI dapat dibuka.
+Jalankan smoke test ini setelah `sam deploy`, setelah deployment Vercel, atau setelah perubahan kontrak API. Tujuannya bukan menguji semua edge case, tetapi memastikan jalur produksi utama tidak putus.
 
-## Verifikasi QA Visual dan Accessibility
+### 1. Verifikasi Build dan Test Lokal
 
-1. Navigasikan halaman utama dengan keyboard:
-   topbar, sidebar, dashboard cards, quick actions, dan dialog penting harus tetap bisa diakses dengan fokus yang terlihat jelas.
-2. Pastikan komponen kustom seperti select, menu akun, tray notifikasi, dan dialog konfirmasi tetap nyaman dipakai tanpa mouse.
-3. Pastikan empty state, loading state, dan error state pada dashboard, daftar tiket, detail tiket, dan help center memakai tone visual yang konsisten.
-4. Pastikan warna badge status, prioritas, dan role masih konsisten pada surface yang paling sering muncul.
-5. Jika perangkat memakai `prefers-reduced-motion`, pastikan animasi utama tidak mengganggu penggunaan.
+Dari folder `backend/`:
 
-## Checklist Demo dan Screenshot Final
+```bash
+go test ./...
+```
 
-1. Siapkan minimal:
-   satu screenshot dashboard, satu daftar tiket, satu detail tiket, satu form buat tiket, dan satu login screen.
-2. Pastikan data screenshot tidak memuat informasi pribadi nyata.
-3. Ambil screenshot pada state yang paling representatif:
-   dashboard berisi data, detail tiket dengan komentar/lampiran, dan queue operasional yang tidak kosong.
-4. Untuk demo live, siapkan tiga akun:
-   `reporter`, `agent`, dan `admin`.
-5. Pastikan dokumentasi tidak mengklaim fitur yang belum ada, terutama notifikasi real-time penuh, SLA enterprise, dan observability lanjutan.
+Dari folder `frontend/`:
 
-## Verifikasi Backend
+```bash
+npm test -- --run
+npm run build
+```
 
-1. Jalankan `curl https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health`.
-2. Pastikan respons health mengembalikan environment `dev`.
-3. Pastikan request browser dari frontend production tidak gagal karena CORS.
-4. Pastikan respons error backend menyertakan `error.requestId` dan header `X-Request-Id` saat terjadi kegagalan.
+Checklist:
 
-## Verifikasi Lokal
+- backend test suite selesai tanpa failure
+- frontend test suite selesai tanpa failure
+- build frontend berhasil menghasilkan output `dist`
+- tidak ada perubahan frontend/backend yang belum diikuti deployment sesuai layernya
 
-1. Jalankan `go test ./...` dari folder `backend/`.
-2. Jalankan `npm run test` dari folder `frontend/`.
-3. Jalankan `npm run build` dari folder `frontend/`.
+### 2. Verifikasi Deployment Backend AWS SAM
 
-## Yang Sengaja Belum Dicentang Pada Batch Ini
+Dari folder `infra/`:
 
-- malware scanning
-- observability lanjutan seperti tracing penuh dan alerting otomatis
-- audit accessibility formal tingkat WCAG menyeluruh
+```bash
+sam validate --template-file template.yaml
+sam build --template-file template.yaml
+sam deploy --config-file samconfig.toml --resolve-image-repos
+```
+
+Checklist:
+
+- `sam validate` berhasil
+- `sam build` berhasil membangun Lambda container image
+- `sam deploy` selesai tanpa rollback
+- output stack masih menampilkan `ApiBaseUrl`, `BackendFunctionName`, `CognitoUserPoolId`, dan `CognitoUserPoolClientId`
+- setelah ada perubahan backend, Lambda sudah benar-benar dideploy ulang, bukan hanya frontend yang diperbarui
+
+### 3. Verifikasi Health dan Routing API Gateway
+
+```bash
+curl -i https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
+```
+
+Ekspektasi:
+
+- status HTTP `200`
+- response memakai envelope `data`
+- `data.status` bernilai `ok`
+- `data.env` bernilai `dev`
+
+### 4. Verifikasi Endpoint Protected Tanpa Token
+
+```bash
+curl -i https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/auth/me
+curl -i "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/notifications?limit=12"
+curl -i https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/tickets
+```
+
+Ekspektasi:
+
+- endpoint protected mengembalikan `401 Unauthorized`
+- response error memakai envelope `error`
+- `GET /notifications?limit=12` tanpa token mengembalikan `401`, bukan `404`
+- tidak ada response plain text `404 page not found` untuk route yang didokumentasikan
+
+### 5. Verifikasi Endpoint Cognito-Authenticated
+
+Gunakan ID token Cognito dari sesi login valid:
+
+```bash
+TOKEN="<id-token>"
+
+curl -i -H "Authorization: Bearer $TOKEN" \
+  https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/auth/me
+
+curl -i -H "Authorization: Bearer $TOKEN" \
+  https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/profile/me
+
+curl -i -H "Authorization: Bearer $TOKEN" \
+  "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/notifications?limit=12"
+```
+
+Ekspektasi:
+
+- token valid diterima backend
+- response sukses memakai envelope `data`
+- `/auth/me` menampilkan role yang sesuai dengan Cognito group
+- `/notifications?limit=12` mengembalikan `200` dengan list notifikasi, atau `data: []` bila belum ada notifikasi
+
+### 6. Verifikasi Flow GET, POST, dan PATCH
+
+Uji dari UI production atau via API dengan bearer token yang sesuai.
+
+Checklist GET:
+
+- user dapat membuka dashboard
+- user dapat melihat daftar tiket
+- user dapat membuka detail tiket
+- user dapat membaca aktivitas tiket
+- user dapat membaca notifikasi tanpa error routing
+
+Checklist POST:
+
+- reporter atau admin dapat membuat tiket baru
+- user yang berwenang dapat menambahkan komentar
+- backend mengembalikan `201` untuk create ticket/comment yang valid
+
+Checklist PATCH/update:
+
+- `PATCH /profile/me` dapat menyimpan perubahan profil sederhana
+- agent/admin dapat mengubah status tiket
+- agent/admin dapat memperbarui assignment tiket
+- reporter tidak dapat melakukan update operasional yang bukan haknya dan menerima `403`
+
+Catatan: OpsDesk memakai `PATCH` untuk partial update. API OpsDesk tidak mengekspos endpoint `PUT`; `PUT` hanya dipakai saat upload langsung ke S3 melalui presigned URL.
+
+### 7. Verifikasi Flow Lampiran S3 Presigned URL
+
+Checklist:
+
+- user yang berwenang dapat meminta upload URL lampiran
+- response upload URL berisi `uploadUrl`, `uploadMethod`, `uploadHeaders`, dan `expiresAt`
+- file berhasil diunggah langsung ke S3 memakai presigned URL
+- metadata lampiran berhasil disimpan melalui endpoint backend
+- detail tiket menampilkan lampiran yang baru disimpan
+- download/open URL dapat dibuat dan membuka file
+- bucket S3 tetap privat, file tidak diakses melalui public object URL
+
+### 8. Verifikasi Swagger/OpenAPI
+
+Checklist:
+
+- buka `https://opsdesk-teal.vercel.app/api-docs`
+- Swagger UI berhasil dirender
+- link YAML OpenAPI dapat dibuka
+- server URL di Swagger mengarah ke `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
+- endpoint live yang diuji ada di `docs/openapi.yaml`
+- OpenAPI tidak mendokumentasikan endpoint aspirational yang belum diimplementasikan
+- contoh response error 401/403/404 memakai kode yang sesuai, bukan `validation_failed`
+
+### 9. Verifikasi Frontend Deployment Vercel
+
+Checklist:
+
+- deployment Vercel terbaru memakai root directory `frontend`
+- build command tetap `npm run build`
+- output directory tetap `dist`
+- env `VITE_API_BASE_URL` mengarah ke API Gateway live `/dev/v1`
+- login Cognito dari frontend production berhasil
+- request browser ke backend tidak gagal karena CORS
+- dashboard dan topbar tetap usable bila notifikasi kosong atau gagal sementara
+
+### 10. Cek Mismatch Versi Frontend dan Backend
+
+Masalah umum setelah deploy adalah frontend sudah memanggil endpoint baru, tetapi Lambda image live belum diperbarui.
+
+Checklist:
+
+- jika frontend menerima `404` dari endpoint yang ada di OpenAPI, cek apakah backend sudah `sam deploy`
+- jika `/health` sukses tetapi endpoint lain 404, curigai router Lambda live masih versi lama
+- jika Swagger sudah menampilkan endpoint baru, pastikan Lambda live juga sudah memuat route tersebut
+- jika frontend gagal CORS, cek `FrontendOrigin` di SAM dan domain Vercel yang sedang dipakai
+- jika auth gagal di frontend tetapi curl dengan token valid berhasil, cek env Cognito di Vercel
+
+## Verifikasi Visual dan Accessibility Ringan
+
+1. Navigasikan halaman utama dengan keyboard.
+2. Pastikan topbar, sidebar, dashboard cards, quick actions, tray notifikasi, dan dialog penting punya fokus yang terlihat.
+3. Pastikan empty state, loading state, dan error state tetap konsisten.
+4. Pastikan badge status, prioritas, dan role tetap mudah dibaca.
+5. Jika perangkat memakai `prefers-reduced-motion`, pastikan animasi utama tidak mengganggu.
+
+## Data Demo dan Screenshot
+
+1. Siapkan satu akun `reporter`, satu `agent`, dan satu `admin`.
+2. Siapkan minimal satu tiket terbuka dan satu tiket yang sudah assigned.
+3. Pastikan screenshot tidak memuat data pribadi nyata.
+4. Ambil screenshot representatif untuk dashboard, daftar tiket, detail tiket, form tiket, dan login.
+5. Jangan klaim fitur yang belum ada, seperti notifikasi email, SLA enterprise, atau observability lanjutan.
+
+## Yang Sengaja Belum Dicakup
+
+- malware scanning lampiran
+- alerting otomatis
+- distributed tracing penuh
+- audit accessibility formal WCAG
+- custom domain dan WAF
