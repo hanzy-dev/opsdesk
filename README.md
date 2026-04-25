@@ -272,6 +272,8 @@ OpsDesk sudah memiliki beberapa elemen kesiapan operasional dasar:
 - Request ID dan correlation ID pada response error.
 - Log request backend melalui Lambda dan API Gateway.
 - CORS backend dikunci ke frontend production.
+- S3 bucket lampiran privat dengan public access block, SSE-S3, dan cleanup incomplete multipart upload.
+- DynamoDB memakai billing on-demand dengan opsi Point-in-Time Recovery dari parameter SAM.
 - OpenAPI/Swagger sebagai kontrak API dan permukaan verifikasi.
 - Test frontend dan backend untuk alur penting.
 - Dokumentasi operator, setup, release checklist, dan demo guide.

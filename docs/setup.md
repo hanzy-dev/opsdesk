@@ -109,6 +109,7 @@ Template SAM memakai parameter berikut:
 - `ApiBasePath`
 - `FrontendOrigin`
 - `LogLevel`
+- `EnableDynamoPointInTimeRecovery`
 
 Nilai yang sudah distandarkan untuk repository ini:
 
@@ -119,9 +120,11 @@ AppEnv=dev
 ApiBasePath=/v1
 FrontendOrigin=https://opsdesk-teal.vercel.app
 LogLevel=info
+EnableDynamoPointInTimeRecovery=true
 ```
 
 CORS harus tetap menunjuk hanya ke frontend production final di atas.
+`EnableDynamoPointInTimeRecovery=true` memberi perlindungan pemulihan data dasar untuk tabel tiket dan profil. Untuk stack eksperimen yang sangat sementara, parameter ini dapat dibuat `false` agar biaya backup DynamoDB tidak aktif.
 
 ## Cognito Setup Minimum
 
@@ -213,6 +216,7 @@ Output stack yang penting:
 - `SuggestedHealthEndpoint`
 - `TicketsTableName`
 - `ProfilesTableName`
+- `AttachmentsBucketName`
 - `CognitoUserPoolId`
 - `CognitoUserPoolClientId`
 - `CognitoIssuerUrl`

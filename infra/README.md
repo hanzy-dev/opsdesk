@@ -1,43 +1,37 @@
-# Infrastructure
+# Infrastruktur AWS SAM
 
-This directory contains the AWS SAM configuration for the OpsDesk backend deployment.
+Folder ini berisi konfigurasi AWS SAM untuk deployment backend OpsDesk. Stack dibuat ringan dan praktis untuk proyek portfolio cloud: cukup aman untuk demonstrasi production-oriented, tetapi tetap menjaga biaya dan kompleksitas agar masuk akal untuk akun AWS student.
 
-## Scope
+## Cakupan Stack
 
-Current infrastructure scope is intentionally small:
+Resource utama yang dibuat:
 
-- one Go-based AWS Lambda function packaged as a container image
-- one API Gateway HTTP API
-- one DynamoDB table for ticket persistence
-- one DynamoDB table for user profile persistence
-- one private S3 bucket for ticket attachments
-- one Cognito User Pool and app client for authentication
-- three Cognito groups for RBAC: `reporter`, `agent`, and `admin`
-- CloudWatch-friendly log retention defaults
-- basic environment variable wiring for the backend
+- satu AWS Lambda function berbasis Go dan container image
+- satu API Gateway HTTP API
+- satu tabel DynamoDB untuk tiket
+- satu tabel DynamoDB untuk profil user
+- satu bucket S3 privat untuk lampiran
+- satu Cognito User Pool dan public app client
+- tiga Cognito group untuk RBAC: `reporter`, `agent`, dan `admin`
+- CloudWatch Log Group untuk Lambda dan API Gateway dengan retention 7 hari
 
-## Design Choices
+Stack ini tidak menambahkan WAF, custom domain, VPC, CloudFront, alarm lanjutan, atau layanan berbiaya tinggi lain.
 
-- **AWS SAM** is used to keep the infrastructure approachable and incremental.
-- **Lambda packaging** uses a Lambda-compatible container image built by SAM from `backend/Dockerfile.lambda`.
-- **API Gateway HTTP API** is used instead of REST API to keep cost and complexity lower.
-- **x86_64** is the current Lambda architecture configured in the template.
-- **CloudWatch log retention** is limited to 7 days to avoid unnecessary log storage growth.
+## Keputusan Desain
 
-## Deployment Boundary
+- **AWS SAM** dipakai agar infrastructure as code tetap mudah dibaca dan dideploy.
+- **Lambda container image** dibangun dari [backend/Dockerfile.lambda](../backend/Dockerfile.lambda).
+- **API Gateway HTTP API** dipilih karena lebih sederhana dan hemat biaya dibanding REST API untuk kebutuhan OpsDesk saat ini.
+- **DynamoDB PAY_PER_REQUEST** dipakai agar biaya mengikuti pemakaian tanpa perlu provisioning kapasitas manual.
+- **Point-in-Time Recovery DynamoDB** aktif secara default melalui parameter `EnableDynamoPointInTimeRecovery=true` untuk perlindungan data dasar. Jika biaya perlu ditekan saat eksperimen, parameter ini bisa diubah menjadi `false`.
+- **S3 bucket lampiran** tetap privat, memblokir public access, memakai bucket owner enforced, dan mengenkripsi object dengan SSE-S3.
+- **S3 lifecycle** hanya membersihkan incomplete multipart upload setelah 1 hari. Aturan ini tidak menghapus lampiran yang sudah berhasil disimpan.
+- **CORS** API Gateway dan S3 dibatasi ke `FrontendOrigin`, yaitu domain frontend Vercel production.
+- **Log retention** diset 7 hari agar log tetap tersedia untuk debugging dasar tanpa menumpuk biaya penyimpanan.
 
-The infrastructure stays intentionally small. It still does not include:
+## Parameter
 
-- custom domains
-- alarms, WAF, VPC networking, or advanced production hardening
-
-## Build Assumption
-
-The SAM template builds the backend Lambda image from [backend/Dockerfile.lambda](../backend/Dockerfile.lambda). The Dockerfile compiles `backend/cmd/lambda` into a `bootstrap` binary and places it into the AWS Lambda `provided.al2023` base image for `x86_64`.
-
-## Parameters
-
-Key deploy-time parameters:
+Parameter utama:
 
 - `ProjectName`
 - `StageName`
@@ -45,18 +39,25 @@ Key deploy-time parameters:
 - `ApiBasePath`
 - `FrontendOrigin`
 - `LogLevel`
+- `EnableDynamoPointInTimeRecovery`
 
-Current defaults in this repository:
+Baseline deployment repository ini:
 
-- `StageName=dev`
-- `AppEnv=dev`
-- `FrontendOrigin=https://opsdesk-teal.vercel.app`
-- API base URL output expected after deploy: `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
+```text
+ProjectName=opsdesk
+StageName=dev
+AppEnv=dev
+ApiBasePath=/v1
+FrontendOrigin=https://opsdesk-teal.vercel.app
+LogLevel=info
+EnableDynamoPointInTimeRecovery=true
+```
 
-Backend runtime environment variables wired by SAM:
+Environment variable backend yang diisi oleh SAM:
 
 - `APP_ENV`
 - `API_BASE_PATH`
+- `FRONTEND_ORIGIN`
 - `LOG_LEVEL`
 - `TICKET_TABLE_NAME`
 - `PROFILE_TABLE_NAME`
@@ -65,54 +66,58 @@ Backend runtime environment variables wired by SAM:
 - `COGNITO_USER_POOL_ID`
 - `COGNITO_APP_CLIENT_ID`
 
-## Example Commands
+Nilai tersebut tidak berisi secret. Cognito client dibuat sebagai public app client tanpa client secret karena dipakai oleh frontend browser.
 
-Validate:
+## Build dan Deploy
 
-```bash
-sam validate --template-file infra/template.yaml
-```
-
-Build:
+Dari folder `infra/`:
 
 ```bash
-sam build --template-file infra/template.yaml
-```
-
-Deploy with guided prompts:
-
-```bash
-sam deploy --guided --resolve-image-repos --template-file infra/template.yaml
-```
-
-Recommended first deploy from `infra/`:
-
-```bash
-sam build --template-file template.yaml
-sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
-```
-
-Recommended later deploys from `infra/` after `samconfig.toml` exists:
-
-```bash
+sam validate --template-file template.yaml
 sam build --template-file template.yaml
 sam deploy --config-file samconfig.toml --resolve-image-repos
 ```
 
-Useful stack outputs after deployment:
+Deploy pertama bisa menggunakan mode guided:
+
+```bash
+sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
+```
+
+`sam build` membutuhkan Docker karena backend dikemas sebagai Lambda container image.
+
+## Output Penting
+
+CloudFormation output yang berguna untuk verifikasi dan konfigurasi frontend:
 
 - `HttpApiUrl`
 - `ApiBaseUrl`
 - `SuggestedHealthEndpoint`
+- `BackendFunctionName`
 - `TicketsTableName`
 - `ProfilesTableName`
 - `AttachmentsBucketName`
-- `BackendFunctionName`
 - `CognitoUserPoolId`
 - `CognitoUserPoolClientId`
+- `CognitoIssuerUrl`
 
-## Current Hardening Notes
+`ApiBaseUrl` dipakai sebagai nilai `VITE_API_BASE_URL` di Vercel.
 
-- API Gateway CORS is intentionally locked to the final frontend domain.
-- Lambda and API Gateway logs both use 7-day retention.
-- The stack keeps a small AWS-native footprint to stay maintainable for this project.
+## Catatan Keamanan dan Biaya
+
+- Bucket lampiran tidak publik; upload dan download tetap melalui presigned URL.
+- DynamoDB memakai billing on-demand agar tidak perlu kapasitas idle.
+- PITR memberi opsi pemulihan data, tetapi tetap memiliki biaya. Untuk lingkungan sementara yang sangat hemat biaya, gunakan `EnableDynamoPointInTimeRecovery=false`.
+- IAM policy Lambda masih memakai SAM managed policy yang terikat pada nama tabel dan bucket. Ini cukup praktis untuk baseline portfolio, tetapi belum granular seperti setup enterprise penuh.
+- Stack ini sengaja tidak memakai WAF, VPC, custom domain, CloudFront, malware scanning lampiran, atau alerting otomatis.
+
+## Verifikasi Setelah Deploy
+
+Gunakan checklist rilis di [docs/release-checklist.md](../docs/release-checklist.md), terutama:
+
+- `sam validate`
+- `sam build`
+- `sam deploy`
+- `GET /v1/health`
+- endpoint protected tanpa token mengembalikan `401`
+- flow login Cognito, tiket, PATCH update, dan presigned URL S3 berjalan

@@ -59,6 +59,8 @@ DynamoDB dipakai untuk dua kebutuhan utama:
 
 Data tiket mencakup informasi inti seperti pelapor, assignee, status, prioritas, komentar, aktivitas, dan metadata lampiran. Data profil dipakai untuk kebutuhan tampilan akun dan daftar operator yang bisa menerima assignment.
 
+Kedua tabel memakai billing on-demand (`PAY_PER_REQUEST`) agar biaya mengikuti pemakaian. Stack SAM juga menyediakan Point-in-Time Recovery sebagai perlindungan data dasar yang bisa dinonaktifkan lewat parameter deployment bila stack hanya dipakai untuk eksperimen sementara.
+
 ### 6. S3 privat untuk lampiran
 
 Lampiran tidak diunggah langsung lewat backend sebagai file payload besar. Sebagai gantinya:
@@ -69,6 +71,8 @@ Lampiran tidak diunggah langsung lewat backend sebagai file payload besar. Sebag
 4. file dibuka kembali melalui presigned download URL
 
 Model ini menjaga backend tetap ringan dan membuat akses file tetap terkontrol.
+
+Bucket lampiran memblokir public access, memakai server-side encryption SSE-S3, dan memiliki lifecycle rule ringan untuk membersihkan incomplete multipart upload. Rule tersebut tidak menghapus lampiran yang sudah berhasil disimpan.
 
 ## Alur Request Utama
 

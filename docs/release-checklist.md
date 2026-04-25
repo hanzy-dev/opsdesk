@@ -62,8 +62,10 @@ Checklist:
 - `sam validate` berhasil
 - `sam build` berhasil membangun Lambda container image
 - `sam deploy` selesai tanpa rollback
-- output stack masih menampilkan `ApiBaseUrl`, `BackendFunctionName`, `CognitoUserPoolId`, dan `CognitoUserPoolClientId`
+- output stack masih menampilkan `ApiBaseUrl`, `SuggestedHealthEndpoint`, `BackendFunctionName`, `TicketsTableName`, `ProfilesTableName`, `AttachmentsBucketName`, `CognitoUserPoolId`, dan `CognitoUserPoolClientId`
 - setelah ada perubahan backend, Lambda sudah benar-benar dideploy ulang, bukan hanya frontend yang diperbarui
+- parameter `FrontendOrigin` tetap menunjuk ke domain frontend production
+- parameter `EnableDynamoPointInTimeRecovery` sesuai kebutuhan biaya dan perlindungan data stack aktif
 
 ### 3. Verifikasi Health dan Routing API Gateway
 
@@ -148,6 +150,7 @@ Catatan: OpsDesk memakai `PATCH` untuk partial update. API OpsDesk tidak mengeks
 
 Checklist:
 
+- bucket S3 tetap memblokir public access dan memakai server-side encryption
 - user yang berwenang dapat meminta upload URL lampiran
 - response upload URL berisi `uploadUrl`, `uploadMethod`, `uploadHeaders`, dan `expiresAt`
 - file berhasil diunggah langsung ke S3 memakai presigned URL

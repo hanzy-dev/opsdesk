@@ -44,6 +44,14 @@ Parameters:
       - error
     Description: Backend log level.
 
+  EnableDynamoPointInTimeRecovery:
+    Type: String
+    Default: "true"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable DynamoDB Point-in-Time Recovery for low-cost data protection.
+
 Globals:
   Function:
     Architectures:
@@ -133,6 +141,10 @@ Resources:
     Properties:
       TableName: !Sub "${ProjectName}-${StageName}-tickets"
       BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !Equals [!Ref EnableDynamoPointInTimeRecovery, "true"]
+      SSESpecification:
+        SSEEnabled: true
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
@@ -150,6 +162,10 @@ Resources:
     Properties:
       TableName: !Sub "${ProjectName}-${StageName}-profiles"
       BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: !Equals [!Ref EnableDynamoPointInTimeRecovery, "true"]
+      SSESpecification:
+        SSEEnabled: true
       AttributeDefinitions:
         - AttributeName: subject
           AttributeType: S
@@ -174,6 +190,16 @@ Resources:
       OwnershipControls:
         Rules:
           - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
       CorsConfiguration:
         CorsRules:
           - AllowedOrigins:

@@ -22,5 +22,6 @@ parameter_overrides = [
   "AppEnv=dev",
   "ApiBasePath=/v1",
   "FrontendOrigin=https://opsdesk-teal.vercel.app",
-  "LogLevel=info"
+  "LogLevel=info",
+  "EnableDynamoPointInTimeRecovery=true"
 ]
