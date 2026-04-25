@@ -168,7 +168,7 @@ export function AccountTopbar({
                   <div className="topbar__notification-empty">
                     <EmptyState
                       eyebrow="Notifikasi"
-                      title="Belum ada pembaruan penting"
+                      title="Semua sudah terbaca"
                       description="Tray ini akan menampilkan perubahan tiket, komentar, dan aktivitas penting yang perlu Anda lihat."
                       supportText="Untuk saat ini tidak ada notifikasi baru yang perlu ditinjau dari akun ini."
                     />
