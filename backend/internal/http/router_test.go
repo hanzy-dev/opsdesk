@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -349,6 +350,33 @@ func TestGetTicketsPreservesIncomingRequestID(t *testing.T) {
 
 	if recorder.Header().Get("X-Request-Id") != "external-ref-123" {
 		t.Fatalf("expected X-Request-Id to be preserved, got %q", recorder.Header().Get("X-Request-Id"))
+	}
+}
+
+func TestSanitizedQueryKeysDoesNotReturnQueryValues(t *testing.T) {
+	t.Parallel()
+
+	got := sanitizedQueryKeys("limit=12&X-Amz-Signature=secret-signature&token=secret-token&page=1")
+	want := "X-Amz-Signature,limit,page,token"
+
+	if got != want {
+		t.Fatalf("expected sanitized query keys %q, got %q", want, got)
+	}
+
+	if strings.Contains(got, "secret") || strings.Contains(got, "12") {
+		t.Fatalf("expected sanitized query keys to omit query values, got %q", got)
+	}
+}
+
+func TestSanitizedQueryKeysHandlesEmptyAndMalformedQuery(t *testing.T) {
+	t.Parallel()
+
+	if got := sanitizedQueryKeys(""); got != "" {
+		t.Fatalf("expected empty query keys for empty query, got %q", got)
+	}
+
+	if got := sanitizedQueryKeys("%zz"); got != "<invalid>" {
+		t.Fatalf("expected malformed query marker, got %q", got)
 	}
 }
 

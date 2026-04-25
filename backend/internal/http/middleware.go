@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -61,7 +63,7 @@ func withObservability(baseLogger *slog.Logger, next http.Handler) http.Handler 
 			slog.String("event", "request.start"),
 			slog.String("method", req.Method),
 			slog.String("path", req.URL.Path),
-			slog.String("query", req.URL.RawQuery),
+			slog.String("queryKeys", sanitizedQueryKeys(req.URL.RawQuery)),
 			slog.String("remoteAddr", req.RemoteAddr),
 			slog.String("userAgent", req.UserAgent()),
 		)
@@ -90,6 +92,29 @@ func withObservability(baseLogger *slog.Logger, next http.Handler) http.Handler 
 
 		next.ServeHTTP(recorder, req)
 	})
+}
+
+func sanitizedQueryKeys(rawQuery string) string {
+	if strings.TrimSpace(rawQuery) == "" {
+		return ""
+	}
+
+	values, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return "<invalid>"
+	}
+
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		trimmedKey := strings.TrimSpace(key)
+		if trimmedKey == "" {
+			continue
+		}
+		keys = append(keys, trimmedKey)
+	}
+
+	sort.Strings(keys)
+	return strings.Join(keys, ",")
 }
 
 type statusRecorder struct {
