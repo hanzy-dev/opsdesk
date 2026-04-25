@@ -2,7 +2,7 @@
 
 ## Ringkasan Singkat
 
-OpsDesk adalah aplikasi helpdesk dan ticketing internal berbasis cloud yang dibangun untuk menangani alur dukungan operasional secara lebih tertib, aman, dan mudah ditelusuri. Proyek ini menggabungkan frontend React, backend Go, dan infrastruktur AWS serverless untuk menunjukkan implementasi full-stack yang nyata, bukan sekadar prototipe antarmuka.
+OpsDesk adalah aplikasi helpdesk dan ticketing internal berbasis AWS yang dibangun untuk menangani alur dukungan operasional secara lebih tertib, aman, dan mudah ditelusuri. Proyek ini menggabungkan frontend React, backend Go, dan infrastruktur serverless AWS untuk menunjukkan implementasi full-stack cloud yang nyata, bukan sekadar prototipe antarmuka.
 
 ## Masalah yang Diselesaikan
 
@@ -16,7 +16,7 @@ Dalam banyak alur dukungan internal, isu sering tersebar di chat, email, atau ko
 
 ## Mengapa Arsitekturnya Menarik
 
-Nilai teknis utama OpsDesk ada pada kombinasi arsitektur yang pragmatis tetapi tetap modern:
+Nilai teknis utama OpsDesk ada pada kombinasi arsitektur yang pragmatis tetapi tetap production-oriented:
 
 - frontend React + Vite untuk antarmuka yang ringan dan responsif
 - backend Go yang dideploy sebagai AWS Lambda container image
@@ -26,7 +26,7 @@ Nilai teknis utama OpsDesk ada pada kombinasi arsitektur yang pragmatis tetapi t
 - S3 privat untuk lampiran dengan presigned URL
 - AWS SAM untuk pengelolaan infrastruktur sebagai kode
 
-Arsitektur ini menarik untuk portfolio karena menunjukkan pemahaman lintas layer: UI, API, auth, storage, deployment, dan dokumentasi operasional.
+Arsitektur ini kuat untuk portfolio karena menunjukkan pemahaman lintas layer: UI, RESTful API, auth, storage, deployment, dokumentasi operasional, dan kontrak API berbasis OpenAPI.
 
 ## Fitur Inti yang Sudah Diimplementasikan
 
@@ -47,6 +47,8 @@ Arsitektur ini menarik untuk portfolio karena menunjukkan pemahaman lintas layer
 - lampiran tidak dibuat publik; upload dan download dilakukan lewat presigned URL
 - audit trail tiket bersifat append-only sehingga perubahan status, assignment, komentar, dan lampiran dapat ditelusuri
 - pencarian dan pagination daftar tiket dipindahkan ke server agar perilaku aplikasi tetap konsisten untuk data yang lebih besar
+- operasi update memakai `PATCH` untuk partial update profil, status tiket, dan assignment; `PUT` hanya dipakai sebagai metode upload langsung ke S3 melalui presigned URL
+- OpenAPI menjadi kontrak API aktif yang dapat diverifikasi lewat Swagger UI
 
 ## Mengapa Ini Kuat Sebagai Proyek Portfolio
 
@@ -58,8 +60,8 @@ OpsDesk kuat sebagai proyek portfolio karena menunjukkan lebih dari sekadar kema
 - ada integrasi cloud yang relevan
 - ada dokumentasi operator dan API
 
-Dengan kata lain, OpsDesk merepresentasikan proyek yang cukup matang untuk dibahas dalam konteks akademik, recruiter screening, maupun technical conversation yang lebih serius.
+Dengan kata lain, OpsDesk merepresentasikan proyek yang cukup matang untuk dibahas dalam konteks portfolio, recruiter screening, maupun technical conversation yang lebih serius tanpa mengklaim sebagai platform ITSM enterprise penuh.
 
 ## Versi Singkat untuk Portfolio Page
 
-OpsDesk adalah aplikasi helpdesk internal berbasis cloud yang saya bangun dengan React, Go, AWS Lambda, API Gateway, DynamoDB, Cognito, dan S3. Fokus proyek ini adalah workflow tiket yang nyata, termasuk RBAC, assignment operator, audit trail, lampiran aman, dashboard operasional, dan dokumentasi API, sehingga cocok ditampilkan sebagai proyek full-stack cloud-native yang siap dipresentasikan.
+OpsDesk adalah aplikasi helpdesk internal berbasis AWS yang saya bangun dengan React, Go, AWS Lambda, API Gateway, DynamoDB, Cognito, S3, dan AWS SAM. Fokus proyek ini adalah workflow tiket yang nyata, termasuk RBAC, assignment operator, audit trail, lampiran aman melalui presigned URL, dashboard operasional, dan dokumentasi API berbasis OpenAPI/Swagger, sehingga cocok ditampilkan sebagai proyek full-stack cloud yang production-oriented.

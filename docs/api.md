@@ -53,18 +53,24 @@ https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1
 - Swagger UI memakai skema bearer Cognito yang sama dengan frontend production: tempel `Bearer <JWT>` dari sesi login Cognito untuk mencoba endpoint protected.
 - RBAC dibaca dari group Cognito `reporter`, `agent`, dan `admin`.
 - Semua timestamp memakai UTC RFC3339 / ISO 8601.
+- Operasi update memakai endpoint `PATCH` untuk partial update profil, status tiket, dan assignment tiket. Backend saat ini tidak mengekspos endpoint `PUT`.
 - Error backend memakai bentuk:
 
 ```json
 {
   "error": {
-    "code": "validation_failed",
-    "message": "request validation failed",
+    "code": "unauthorized",
+    "message": "authentication is required",
     "requestId": "req-abc123",
-    "details": []
+    "status": 401,
+    "method": "GET",
+    "path": "/notifications",
+    "timestamp": "2026-04-14T09:00:00Z"
   }
 }
 ```
+
+Nilai `error.code` mengikuti kasusnya: contoh umum adalah `unauthorized` atau `invalid_token` untuk 401, `forbidden` untuk 403, `ticket_not_found` atau `attachment_not_found` untuk 404, serta `validation_failed` atau `invalid_json` untuk 400.
 
 ## Quick Review Guide
 
@@ -111,7 +117,7 @@ Recommended quick checks:
 - Forbidden action tetap mengembalikan `403` walaupun aksi disembunyikan di frontend.
 - `PATCH /tickets/{id}/assignment` menerima body kosong untuk self-assign, atau `assigneeId` untuk memindahkan tiket ke operator `agent`/`admin` lain yang eligible.
 - Aktivitas tiket disimpan append-only di record tiket yang sama.
-- Lampiran memakai bucket S3 private dengan presigned PUT dan presigned GET.
+- Lampiran memakai bucket S3 private dengan presigned upload (HTTP `PUT` langsung ke S3) dan presigned download/open URL.
 - Validasi lampiran saat ini mengizinkan PDF, JPG, PNG, TXT, CSV, dan DOCX sampai 10 MB.
 - Profil akun mendukung perubahan `displayName` dan `avatarUrl` sederhana tanpa mengubah identitas dasar Cognito.
 - `GET /tickets` mendukung `assignee=me`, `assignee=unassigned`, dan alias backward-compatible `assignedToMe=true`.
