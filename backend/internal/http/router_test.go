@@ -642,6 +642,53 @@ func TestUnauthorizedErrorIncludesRequestContext(t *testing.T) {
 	}
 }
 
+func TestGetNotificationsRequiresAuthentication(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+	req := httptest.NewRequest(http.MethodGet, "/v1/notifications?limit=12", nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, req)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", recorder.Code)
+	}
+
+	var response dto.ErrorResponse
+	decodeResponse(t, recorder, &response)
+
+	if response.Error.Code != "unauthorized" {
+		t.Fatalf("expected unauthorized error code, got %q", response.Error.Code)
+	}
+
+	if response.Error.Status != http.StatusUnauthorized {
+		t.Fatalf("expected error status 401, got %d", response.Error.Status)
+	}
+}
+
+func TestGetNotificationsReturnsEmptyListWhenNoNotifications(t *testing.T) {
+	t.Parallel()
+
+	router := newTestRouter(testReporterIdentity())
+
+	recorder := performRequest(t, router, http.MethodGet, "/v1/notifications?limit=12", nil)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	var response dto.SuccessResponse[[]dto.NotificationResponse]
+	decodeResponse(t, recorder, &response)
+
+	if response.Data == nil {
+		t.Fatal("expected empty notification list, got nil")
+	}
+
+	if len(response.Data) != 0 {
+		t.Fatalf("expected 0 notifications, got %d", len(response.Data))
+	}
+}
+
 func TestReporterNotificationsHideInternalCommentActivity(t *testing.T) {
 	t.Parallel()
 
