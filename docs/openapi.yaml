@@ -25,6 +25,7 @@ info:
     All timestamps are returned in UTC using RFC3339 / ISO 8601 format.
     RBAC is enforced from Cognito groups reporter, agent, and admin.
     Error responses may include requestId for operational troubleshooting.
+    Update operations are represented with PATCH endpoints for partial resource updates; this backend does not expose PUT endpoints.
     All paths below are relative to the server base URL that already ends with /v1.
 externalDocs:
   description: Interactive Swagger UI viewer hosted on the frontend deployment
@@ -44,7 +45,7 @@ tags:
   - name: Notifications
     description: Authenticated notification feed derived from ticket activity relevant to the current user.
   - name: Tickets
-    description: Ticket CRUD-style workflow, activities, comments, assignment, and attachment operations.
+    description: Ticket workflow, activities, comments, PATCH-based updates, assignment, and attachment operations.
 
 paths:
   /health:
@@ -86,11 +87,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error:
-                  code: invalid_token
-                  message: authentication token is invalid or expired
-                  requestId: req-1a2b3c4d
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
 
   /profile/me:
     get:
@@ -113,6 +114,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
     patch:
       tags:
         - Profile
@@ -142,12 +148,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationFailed:
+                  $ref: "#/components/examples/ValidationFailedError"
         "401":
           description: Missing or invalid bearer token
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
 
   /profile/me/avatar/upload-url:
     post:
@@ -180,12 +194,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationFailed:
+                  $ref: "#/components/examples/ValidationFailedError"
         "401":
           description: Missing or invalid bearer token
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
 
   /profiles/assignable:
     get:
@@ -208,12 +230,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to list assignable users
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
   /notifications:
     get:
@@ -257,6 +287,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
 
   /tickets:
     get:
@@ -394,12 +429,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationFailed:
+                  $ref: "#/components/examples/ValidationFailedError"
         "401":
           description: Missing or invalid bearer token
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
     post:
       tags:
         - Tickets
@@ -456,12 +499,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to create a ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
   /tickets/{id}:
     get:
@@ -486,23 +537,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "404":
           description: Ticket was not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-              example:
-                error:
-                  code: ticket_not_found
-                  message: ticket not found
-                  requestId: req-1a2b3c4d
+              examples:
+                ticketNotFound:
+                  $ref: "#/components/examples/TicketNotFoundError"
         "403":
           description: Authenticated but not allowed to view this ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
   /tickets/{id}/status:
     patch:
@@ -549,18 +606,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "404":
           description: Ticket was not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ticketNotFound:
+                  $ref: "#/components/examples/TicketNotFoundError"
         "403":
           description: Authenticated but not allowed to update ticket status
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
   /tickets/{id}/assignment:
     patch:
@@ -593,24 +661,38 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationFailed:
+                  $ref: "#/components/examples/ValidationFailedError"
         "401":
           description: Missing or invalid bearer token
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to assign the ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
         "404":
           description: Ticket was not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ticketNotFound:
+                  $ref: "#/components/examples/TicketNotFoundError"
 
   /tickets/{id}/activities:
     get:
@@ -635,18 +717,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to view this ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
         "404":
           description: Ticket was not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ticketNotFound:
+                  $ref: "#/components/examples/TicketNotFoundError"
 
   /tickets/{id}/attachments/upload-url:
     post:
@@ -681,18 +774,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationFailed:
+                  $ref: "#/components/examples/ValidationFailedError"
         "401":
           description: Missing or invalid bearer token
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to add attachments to this ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
   /tickets/{id}/attachments:
     post:
@@ -727,18 +831,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                validationFailed:
+                  $ref: "#/components/examples/ValidationFailedError"
         "401":
           description: Missing or invalid bearer token
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to add attachments to this ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
   /tickets/{id}/attachments/{attachmentId}/download:
     get:
@@ -770,18 +885,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "403":
           description: Authenticated but not allowed to view this ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
         "404":
           description: Ticket or attachment was not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ticketNotFound:
+                  $ref: "#/components/examples/TicketNotFoundError"
+                attachmentNotFound:
+                  $ref: "#/components/examples/AttachmentNotFoundError"
 
   /tickets/{id}/comments:
     post:
@@ -830,18 +958,29 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                missingBearerToken:
+                  $ref: "#/components/examples/UnauthorizedError"
+                invalidOrExpiredToken:
+                  $ref: "#/components/examples/InvalidTokenError"
         "404":
           description: Ticket was not found
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                ticketNotFound:
+                  $ref: "#/components/examples/TicketNotFoundError"
         "403":
           description: Authenticated but not allowed to comment on this ticket
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                forbidden:
+                  $ref: "#/components/examples/ForbiddenError"
 
 components:
   securitySchemes:
@@ -850,6 +989,76 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Paste an Amazon Cognito ID token in the format `Bearer <JWT>` to call protected endpoints from Swagger UI.
+  examples:
+    UnauthorizedError:
+      summary: Missing bearer token
+      value:
+        error:
+          code: unauthorized
+          message: authentication is required
+          requestId: req-1a2b3c4d
+          status: 401
+          method: GET
+          path: /notifications
+          timestamp: "2026-04-14T09:00:00Z"
+    InvalidTokenError:
+      summary: Invalid or expired bearer token
+      value:
+        error:
+          code: invalid_token
+          message: authentication token is invalid or expired
+          requestId: req-1a2b3c4d
+          status: 401
+          method: GET
+          path: /notifications
+          timestamp: "2026-04-14T09:00:00Z"
+    ForbiddenError:
+      summary: Forbidden action
+      value:
+        error:
+          code: forbidden
+          message: you do not have permission to perform this action
+          requestId: req-1a2b3c4d
+          status: 403
+          method: PATCH
+          path: /tickets/TCK-0001/status
+          timestamp: "2026-04-14T09:00:00Z"
+    TicketNotFoundError:
+      summary: Ticket not found
+      value:
+        error:
+          code: ticket_not_found
+          message: ticket not found
+          requestId: req-1a2b3c4d
+          status: 404
+          method: GET
+          path: /tickets/TCK-0001
+          timestamp: "2026-04-14T09:00:00Z"
+    AttachmentNotFoundError:
+      summary: Attachment not found
+      value:
+        error:
+          code: attachment_not_found
+          message: attachment not found
+          requestId: req-1a2b3c4d
+          status: 404
+          method: GET
+          path: /tickets/TCK-0001/attachments/ATT-0001/download
+          timestamp: "2026-04-14T09:00:00Z"
+    ValidationFailedError:
+      summary: Validation failed
+      value:
+        error:
+          code: validation_failed
+          message: request validation failed
+          requestId: req-1a2b3c4d
+          status: 400
+          method: PATCH
+          path: /tickets/TCK-0001/status
+          timestamp: "2026-04-14T09:00:00Z"
+          details:
+            - field: status
+              message: "status must be one of: open, in_progress, resolved"
   parameters:
     TicketId:
       in: path
@@ -931,10 +1140,10 @@ components:
       properties:
         code:
           type: string
-          example: validation_failed
+          example: api_error
         message:
           type: string
-          example: request validation failed
+          example: request failed
         requestId:
           type: string
           description: Request identifier returned when available for troubleshooting.
@@ -1089,6 +1298,7 @@ components:
           example: https://opsdesk-dev-attachments.s3.amazonaws.com/...
         uploadMethod:
           type: string
+          description: HTTP method used against the generated S3 upload URL; this is not an OpsDesk API endpoint method.
           example: PUT
         uploadHeaders:
           type: object
@@ -1607,6 +1817,7 @@ components:
           example: https://opsdesk-dev-attachments.s3.amazonaws.com/...
         uploadMethod:
           type: string
+          description: HTTP method used against the generated S3 upload URL; this is not an OpsDesk API endpoint method.
           example: PUT
         uploadHeaders:
           type: object
