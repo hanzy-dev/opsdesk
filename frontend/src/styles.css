@@ -52,14 +52,15 @@
   --space-md: 18px;
   --space-lg: 24px;
   --space-xl: 32px;
-  --page-gap: 24px;
+  --page-gap: 22px;
   --page-gap-tight: 20px;
   --section-gap: 18px;
-  --section-gap-loose: 24px;
-  --section-gap-roomy: 32px;
+  --section-gap-loose: 22px;
+  --section-gap-roomy: 28px;
   --page-bottom-space: 24px;
-  --panel-padding: 24px;
-  --panel-padding-compact: 22px;
+  --panel-padding: 22px;
+  --panel-padding-compact: 20px;
+  --sticky-rail-top: 104px;
   --eyebrow-to-heading-gap: 4px;
   --heading-to-support-gap: 10px;
   --support-to-content-gap: 18px;
@@ -782,11 +783,17 @@ textarea:focus-visible {
   align-items: center;
   gap: var(--space-md);
   min-height: 76px;
-  padding: 16px 28px 0;
+  padding: 14px 28px 12px;
   position: sticky;
   top: 0;
   z-index: 18;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  background:
+    linear-gradient(180deg, rgba(22, 18, 22, 0.9), rgba(22, 18, 22, 0.72) 68%, rgba(22, 18, 22, 0)),
+    radial-gradient(circle at 16% 0%, rgba(239, 142, 83, 0.08), transparent 30%),
+    radial-gradient(circle at 84% 0%, rgba(121, 184, 255, 0.065), transparent 28%);
   backdrop-filter: blur(24px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
 }
 
 .page-progress {
@@ -878,7 +885,7 @@ textarea:focus-visible {
 }
 
 .page-content {
-  padding: 22px 28px 56px;
+  padding: 18px 28px 52px;
 }
 
 .page-content > * {
@@ -976,7 +983,7 @@ textarea:focus-visible {
 }
 
 .hero-card {
-  padding: 24px 26px;
+  padding: 22px 24px;
   border-radius: var(--radius-xl);
   background:
     radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 24%),
@@ -2539,9 +2546,9 @@ textarea:focus-visible {
 
 .dashboard-stat {
   display: grid;
-  gap: 12px;
-  min-height: 156px;
-  padding-top: 22px;
+  gap: 10px;
+  min-height: 148px;
+  padding-top: 20px;
 }
 
 .dashboard-stat__header {
@@ -2581,7 +2588,7 @@ textarea:focus-visible {
 
 .dashboard-stat--featured {
   grid-column: span 2;
-  min-height: 176px;
+  min-height: 164px;
 }
 
 .dashboard-stat--featured strong {
@@ -2603,7 +2610,7 @@ textarea:focus-visible {
 
 .dashboard-executive-layout__rail {
   position: sticky;
-  top: 98px;
+  top: var(--sticky-rail-top);
 }
 
 .dashboard-feature {
@@ -3439,7 +3446,7 @@ textarea:focus-visible {
 
 .ticket-layout__rail {
   position: sticky;
-  top: 98px;
+  top: var(--sticky-rail-top);
 }
 
 .ticket-overview-card,
@@ -5308,7 +5315,7 @@ textarea:focus-visible {
 
 .tickets-shell__rail {
   position: sticky;
-  top: 98px;
+  top: var(--sticky-rail-top);
 }
 
 .tickets-shell__rail--empty {
@@ -5666,7 +5673,7 @@ textarea:focus-visible {
 
 .help-center-layout__rail {
   position: sticky;
-  top: 98px;
+  top: var(--sticky-rail-top);
 }
 
 .help-center-hero__copy {
