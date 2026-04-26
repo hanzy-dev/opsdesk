@@ -169,22 +169,34 @@ Catatan ownership dan assignment:
 
 ## Build and Deploy Backend
 
+Frontend dan backend OpsDesk dirilis lewat jalur berbeda. Frontend production dideploy oleh Vercel dari folder `frontend`, sedangkan backend AWS dan infrastrukturnya dideploy manual lewat AWS SAM dari folder `infra`.
+
+Readiness check atau CI yang menjalankan `sam validate` dan `sam build` hanya membuktikan template serta image backend siap dibangun. Check tersebut tidak memperbarui Lambda live kecuali workflow secara eksplisit menjalankan `sam deploy`. Setelah perubahan backend atau infrastruktur, developer tetap harus menjalankan `sam build` dan `sam deploy`.
+
 Dari folder `infra/`:
 
 ```bash
 sam validate --template-file template.yaml
-sam build --template-file template.yaml
+sam build --template-file template.yaml --no-cached
 sam deploy --guided --resolve-image-repos --config-file samconfig.toml --template-file template.yaml
 ```
 
 Deploy berikutnya:
 
 ```bash
-sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml --resolve-image-repos
+sam build --template-file template.yaml --no-cached
+sam deploy --template-file .aws-sam\build\template.yaml --config-file samconfig.toml --stack-name opsdesk-dev --region ap-southeast-1 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --resolve-s3 --resolve-image-repos
 ```
 
 Lambda dibangun sebagai container image dari `backend/Dockerfile.lambda`, jadi Docker harus aktif saat `sam build`.
+
+Aturan release praktis:
+
+- frontend-only change: tunggu deployment Vercel dan verifikasi UI production
+- backend code change: jalankan `go test ./...`, `sam build`, `sam deploy`, lalu verifikasi live API
+- infra/template change: jalankan `sam validate`, `sam build`, `sam deploy`, lalu cek output stack
+- OpenAPI/docs change: jalankan build frontend bila Swagger UI mengonsumsi file OpenAPI
+- endpoint yang ditambahkan ke frontend atau OpenAPI harus sudah tersedia di backend live sebelum dianggap rilis
 
 ## Verify Final Deployment Assumptions
 
@@ -204,10 +216,13 @@ Untuk verifikasi pasca-deploy yang lebih praktis, gunakan bagian [Smoke Test Set
 Contoh verifikasi:
 
 ```bash
-curl https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
+curl -i https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
+curl -i "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/notifications?limit=12"
 curl -H "Authorization: Bearer <id-token>" https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/auth/me
 curl -H "Authorization: Bearer <id-token>" https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/profile/me
 ```
+
+`/health` seharusnya mengembalikan `200`. `GET /notifications?limit=12` tanpa token seharusnya mengembalikan `401`, bukan `404`; jika masih `404`, kemungkinan frontend/OpenAPI sudah lebih baru daripada Lambda live.
 
 Output stack yang penting:
 
@@ -240,6 +255,15 @@ VITE_COGNITO_CLIENT_ID=3gtbp1t96krpj6t9hfon4ljujn
 ```
 
 Karena backend CORS dikunci ke domain production final, jangan arahkan verifikasi utama ke preview domain.
+
+Setelah frontend-only change, deployment Vercel dan verifikasi UI biasanya cukup. Setelah perubahan OpenAPI yang dirender oleh Swagger UI, jalankan:
+
+```bash
+npm test -- --run
+npm run build
+```
+
+Lalu cek `https://opsdesk-teal.vercel.app/api-docs` setelah deployment Vercel selesai.
 
 ## Catatan
 

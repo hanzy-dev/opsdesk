@@ -1,4 +1,4 @@
-name: SAM Readiness
+name: SAM Readiness - Validate and Build Only
 
 on:
   workflow_dispatch:
@@ -40,3 +40,6 @@ jobs:
       - name: Build SAM application
         working-directory: infra
         run: sam build --template-file template.yaml
+
+      # This workflow intentionally stops at validate/build readiness.
+      # Live AWS deployment for opsdesk-dev is still a manual `sam deploy` step.

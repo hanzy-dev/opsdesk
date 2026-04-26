@@ -70,12 +70,14 @@ Nilai tersebut tidak berisi secret. Cognito client dibuat sebagai public app cli
 
 ## Build dan Deploy
 
+Backend OpsDesk tidak otomatis ikut terdeploy saat frontend Vercel berubah. Folder ini hanya mengelola backend AWS dan resource pendukungnya lewat SAM. Readiness check yang menjalankan `sam validate` atau `sam build` bukan bukti bahwa Lambda live sudah memakai image terbaru; backend live berubah setelah `sam deploy` berhasil.
+
 Dari folder `infra/`:
 
 ```bash
 sam validate --template-file template.yaml
-sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml --resolve-image-repos
+sam build --template-file template.yaml --no-cached
+sam deploy --template-file .aws-sam\build\template.yaml --config-file samconfig.toml --stack-name opsdesk-dev --region ap-southeast-1 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --resolve-s3 --resolve-image-repos
 ```
 
 Deploy pertama bisa menggunakan mode guided:
@@ -85,6 +87,13 @@ sam deploy --guided --resolve-image-repos --config-file samconfig.toml --templat
 ```
 
 `sam build` membutuhkan Docker karena backend dikemas sebagai Lambda container image.
+
+Gunakan aturan singkat berikut untuk mencegah version mismatch:
+
+- perubahan frontend saja cukup menunggu deployment Vercel dan verifikasi UI
+- perubahan backend Go perlu `go test ./...`, `sam build`, `sam deploy`, dan verifikasi API live
+- perubahan template SAM perlu `sam validate`, `sam build`, `sam deploy`, dan pengecekan output stack
+- endpoint yang muncul di frontend atau OpenAPI harus sudah tersedia di Lambda live sebelum dianggap rilis
 
 ## Output Penting
 
@@ -118,6 +127,7 @@ Gunakan checklist rilis di [docs/release-checklist.md](../docs/release-checklist
 - `sam validate`
 - `sam build`
 - `sam deploy`
-- `GET /v1/health`
-- endpoint protected tanpa token mengembalikan `401`
+- `curl -i https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health`
+- `curl -i "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/notifications?limit=12"`
+- endpoint protected tanpa token mengembalikan `401`, bukan `404`
 - flow login Cognito, tiket, PATCH update, dan presigned URL S3 berjalan

@@ -236,6 +236,8 @@ Panduan setup yang lebih rinci tersedia di [docs/setup.md](./docs/setup.md).
 
 ## Deployment dan Infrastruktur
 
+Release OpsDesk memakai dua jalur terpisah. Frontend dideploy oleh Vercel dari folder `frontend`, sedangkan backend AWS dan resource infrastrukturnya dideploy manual lewat AWS SAM dari folder `infra`. Readiness check yang hanya menjalankan validate/build belum berarti Lambda live sudah berubah; setelah perubahan backend atau template SAM, jalankan `sam build` dan `sam deploy`, lalu verifikasi endpoint live.
+
 Backend dideploy ke AWS menggunakan SAM. Parameter utama pada baseline aktif:
 
 - `ProjectName=opsdesk`
@@ -249,8 +251,8 @@ Perintah deploy dari folder `infra/`:
 
 ```bash
 sam validate --template-file template.yaml
-sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml --resolve-image-repos
+sam build --template-file template.yaml --no-cached
+sam deploy --template-file .aws-sam\build\template.yaml --config-file samconfig.toml --stack-name opsdesk-dev --region ap-southeast-1 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --resolve-s3 --resolve-image-repos
 ```
 
 Lambda dibangun sebagai container image dari [backend/Dockerfile.lambda](./backend/Dockerfile.lambda), sehingga Docker perlu aktif saat `sam build`.

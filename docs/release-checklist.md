@@ -21,6 +21,89 @@ Checklist ini dipakai untuk verifikasi rilis OpsDesk setelah perubahan frontend,
 6. `docs/openapi.yaml` memakai server URL live yang sama.
 7. Tidak ada dokumentasi utama yang mengarahkan reviewer ke preview domain.
 
+## Alur Release Frontend dan Backend
+
+OpsDesk memiliki dua jalur release yang terpisah:
+
+- Frontend dideploy oleh Vercel dari folder `frontend`.
+- Backend dan infrastruktur AWS dideploy manual lewat AWS SAM dari folder `infra`.
+
+CI/readiness check seperti workflow SAM validate/build hanya membuktikan template dan image backend siap dibangun. Check tersebut belum berarti Lambda live di AWS sudah diperbarui, kecuali workflow tersebut memang menjalankan `sam deploy`. Saat ini backend production-oriented untuk stack `opsdesk-dev` tetap perlu dideploy dengan perintah SAM.
+
+Aturan praktis:
+
+- Frontend-only change: tunggu deployment Vercel selesai, lalu verifikasi UI production.
+- Backend code change: jalankan backend test, `sam build`, `sam deploy`, lalu verifikasi live API.
+- Infra/template change: jalankan `sam validate`, `sam build`, `sam deploy`, lalu verifikasi output stack.
+- OpenAPI/docs change: jalankan build frontend bila Swagger UI mengonsumsi file OpenAPI tersebut.
+- Endpoint apa pun yang ditambahkan ke frontend atau OpenAPI harus sudah ada di backend live sebelum dianggap rilis.
+
+## Kapan Perlu Deploy Frontend
+
+Deploy frontend melalui Vercel diperlukan saat perubahan memengaruhi:
+
+- komponen React, route, halaman, style, atau asset frontend
+- konfigurasi build frontend
+- Swagger UI atau file OpenAPI yang ikut dikemas ke build frontend
+- environment variable frontend di Vercel
+
+Untuk frontend-only change, deployment Vercel dapat cukup selama kontrak API yang dipanggil sudah tersedia di backend live.
+
+## Kapan Perlu Deploy Backend AWS
+
+Deploy backend AWS lewat SAM diperlukan saat perubahan memengaruhi:
+
+- kode Go backend atau router endpoint
+- kontrak request/response yang dipakai frontend
+- Dockerfile Lambda atau dependency backend
+- `infra/template.yaml`, `samconfig.toml`, parameter SAM, IAM, DynamoDB, S3, Cognito, API Gateway, atau CloudWatch
+
+Jika endpoint baru sudah muncul di frontend atau OpenAPI tetapi Lambda live belum dideploy, user dapat melihat `404` dari API Gateway/Lambda meskipun `/health` masih `200`.
+
+## Risiko Frontend/Backend Version Mismatch
+
+Mismatch paling umum terjadi ketika Vercel sudah menayangkan frontend baru, tetapi AWS Lambda masih menjalankan image lama. Gejalanya:
+
+- endpoint yang ada di OpenAPI atau UI mengembalikan `404`
+- `/v1/health` tetap sukses karena route lama masih hidup
+- Swagger UI terlihat benar, tetapi curl ke backend live tidak sesuai
+- endpoint protected tanpa token mengembalikan `404`, padahal seharusnya `401`
+
+Jika gejala ini muncul, cek kapan `sam deploy` terakhir berhasil untuk stack `opsdesk-dev`.
+
+## Command Deploy Backend
+
+Dari folder `backend/`, jalankan test backend:
+
+```bash
+go test ./...
+```
+
+Dari folder `infra/`, jalankan validasi, build tanpa cache, dan deploy stack aktif:
+
+```bash
+sam validate --template-file template.yaml
+sam build --template-file template.yaml --no-cached
+sam deploy --template-file .aws-sam\build\template.yaml --config-file samconfig.toml --stack-name opsdesk-dev --region ap-southeast-1 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --resolve-s3 --resolve-image-repos
+```
+
+Perintah deploy di atas tetap manual. Jangan anggap backend live sudah berubah hanya karena build lokal atau workflow readiness berhasil.
+
+## Command Verifikasi Live Endpoint
+
+Setelah backend deploy, verifikasi endpoint live:
+
+```bash
+curl -i https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/health
+curl -i "https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1/notifications?limit=12"
+```
+
+Ekspektasi minimum:
+
+- `/health` mengembalikan `200`
+- `/notifications?limit=12` tanpa token mengembalikan `401`, bukan `404`
+- response error protected endpoint memakai envelope `error`
+
 ## Smoke Test Setelah Deploy
 
 Jalankan smoke test ini setelah `sam deploy`, setelah deployment Vercel, atau setelah perubahan kontrak API. Tujuannya bukan menguji semua edge case, tetapi memastikan jalur produksi utama tidak putus.
@@ -53,8 +136,8 @@ Dari folder `infra/`:
 
 ```bash
 sam validate --template-file template.yaml
-sam build --template-file template.yaml
-sam deploy --config-file samconfig.toml --resolve-image-repos
+sam build --template-file template.yaml --no-cached
+sam deploy --template-file .aws-sam\build\template.yaml --config-file samconfig.toml --stack-name opsdesk-dev --region ap-southeast-1 --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --resolve-s3 --resolve-image-repos
 ```
 
 Checklist:
@@ -62,6 +145,7 @@ Checklist:
 - `sam validate` berhasil
 - `sam build` berhasil membangun Lambda container image
 - `sam deploy` selesai tanpa rollback
+- readiness check/CI tidak dianggap sebagai pengganti deploy AWS kecuali workflow benar-benar menjalankan `sam deploy`
 - output stack masih menampilkan `ApiBaseUrl`, `SuggestedHealthEndpoint`, `BackendFunctionName`, `TicketsTableName`, `ProfilesTableName`, `AttachmentsBucketName`, `CognitoUserPoolId`, dan `CognitoUserPoolClientId`
 - setelah ada perubahan backend, Lambda sudah benar-benar dideploy ulang, bukan hanya frontend yang diperbarui
 - parameter `FrontendOrigin` tetap menunjuk ke domain frontend production
@@ -168,6 +252,7 @@ Checklist:
 - link YAML OpenAPI dapat dibuka
 - server URL di Swagger mengarah ke `https://ezkjgr2we9.execute-api.ap-southeast-1.amazonaws.com/dev/v1`
 - endpoint live yang diuji ada di `docs/openapi.yaml`
+- bila OpenAPI berubah dan dikemas ke frontend, `npm run build` sudah dijalankan dan deployment Vercel terbaru sudah dicek
 - OpenAPI tidak mendokumentasikan endpoint aspirational yang belum diimplementasikan
 - contoh response error 401/403/404 memakai kode yang sesuai, bukan `validation_failed`
 
