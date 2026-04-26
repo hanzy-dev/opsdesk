@@ -52,6 +52,9 @@ Parameters:
       - "false"
     Description: Enable DynamoDB Point-in-Time Recovery for low-cost data protection.
 
+Conditions:
+  EnableDynamoPITR: !Equals [!Ref EnableDynamoPointInTimeRecovery, "true"]
+
 Globals:
   Function:
     Architectures:
@@ -142,7 +145,7 @@ Resources:
       TableName: !Sub "${ProjectName}-${StageName}-tickets"
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: !Equals [!Ref EnableDynamoPointInTimeRecovery, "true"]
+        PointInTimeRecoveryEnabled: !If [EnableDynamoPITR, true, false]
       SSESpecification:
         SSEEnabled: true
       AttributeDefinitions:
@@ -163,7 +166,7 @@ Resources:
       TableName: !Sub "${ProjectName}-${StageName}-profiles"
       BillingMode: PAY_PER_REQUEST
       PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: !Equals [!Ref EnableDynamoPointInTimeRecovery, "true"]
+        PointInTimeRecoveryEnabled: !If [EnableDynamoPITR, true, false]
       SSESpecification:
         SSEEnabled: true
       AttributeDefinitions:
